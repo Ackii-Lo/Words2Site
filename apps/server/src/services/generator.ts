@@ -212,7 +212,7 @@ function mockHtml(userText: string): string {
 </head>
 <body>
   <div class="card">
-    <span class="badge">✨ Mock 模式生成</span>
+    <span class="badge">Mock 模式生成</span>
     <h1>你的网页已生成</h1>
     <p>${safe}</p>
     <footer>Words to Website · 活动演示</footer>

@@ -5,6 +5,7 @@ import Card from "@/components/ui/Card.vue";
 import Badge from "@/components/ui/Badge.vue";
 import Button from "@/components/ui/Button.vue";
 import SessionBoard, { type LiveSession } from "@/components/SessionBoard.vue";
+import { Lock, Wrench, Activity, CheckCircle2, AlertTriangle } from "lucide-vue-next";
 
 interface TaskRow {
   id: string;
@@ -111,7 +112,7 @@ const statusVariant: Record<string, "success" | "warning" | "destructive" | "sec
     <!-- 登录 -->
     <div v-if="!authed" class="mx-auto mt-20 max-w-sm">
       <Card class="space-y-4 p-6">
-        <h1 class="text-lg font-bold">🔐 工作人员登录</h1>
+        <h1 class="flex items-center gap-2 text-lg font-bold"><Lock class="h-5 w-5" /> 工作人员登录</h1>
         <input
           v-model="password"
           type="password"
@@ -126,16 +127,19 @@ const statusVariant: Record<string, "success" | "warning" | "destructive" | "sec
 
     <template v-else>
       <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 class="text-xl font-bold">🛠️ Words2Site 管理台</h1>
+        <h1 class="flex items-center gap-2 text-xl font-bold"><Wrench class="h-6 w-6" /> Words2Site 管理台</h1>
         <Button variant="outline" size="sm" :disabled="probing" @click="runProbe">
-          {{ probing ? "探活中…" : "🩺 codex 探活" }}
+          <Activity class="h-4 w-4" /> {{ probing ? "探活中…" : "codex 探活" }}
         </Button>
       </div>
 
       <!-- 探活结果 -->
       <Card v-if="probe" class="mb-6 p-4" :class="probe.ok ? 'border-emerald-300' : 'border-destructive bg-destructive/5'">
-        <div :class="probe.ok ? 'text-emerald-600' : 'text-destructive'" class="text-sm">
-          {{ probe.ok ? "✅ codex 正常" : "🚨 codex 异常" }} <span class="text-xs opacity-70">{{ probe.detail }}</span>
+        <div :class="probe.ok ? 'text-emerald-600' : 'text-destructive'" class="flex items-center gap-2 text-sm">
+          <CheckCircle2 v-if="probe.ok" class="h-4 w-4" />
+          <AlertTriangle v-else class="h-4 w-4" />
+          {{ probe.ok ? "codex 正常" : "codex 异常" }}
+          <span class="text-xs opacity-70">{{ probe.detail }}</span>
         </div>
       </Card>
 

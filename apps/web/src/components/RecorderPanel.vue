@@ -3,6 +3,7 @@ import { ref } from "vue";
 import { useRecorder } from "@/composables/useRecorder";
 import Button from "@/components/ui/Button.vue";
 import Badge from "@/components/ui/Badge.vue";
+import { Mic, Square } from "lucide-vue-next";
 
 const emit = defineEmits<{ transcribed: [text: string] }>();
 const uploading = ref(false);
@@ -40,7 +41,7 @@ const recording = rec.state;
         @click="rec.start()"
       >
         <div class="text-center">
-          <div class="text-5xl">🎤</div>
+          <Mic class="mx-auto h-12 w-12" />
           <div class="mt-1 text-sm font-medium">
             {{ recording === "uploading" ? "转写中…" : recording === "requesting" ? "请求麦克风…" : "点击说话" }}
           </div>
@@ -52,16 +53,18 @@ const recording = rec.state;
         <div class="relative flex h-32 w-32 items-center justify-center rounded-full bg-destructive text-white shadow-lg">
           <span class="absolute inset-0 animate-ping rounded-full bg-destructive/30"></span>
           <div class="text-center">
-            <div class="text-5xl">🎙️</div>
+            <Mic class="mx-auto h-12 w-12" />
             <div class="mt-1 text-sm">录音中 {{ rec.elapsed.value }}s / 90s</div>
           </div>
         </div>
-        <Button variant="destructive" size="xl" @click="rec.stop()">说完啦,停一下</Button>
+        <Button variant="destructive" size="xl" @click="rec.stop()">
+          <Square class="h-5 w-5" /> 说完啦,停一下
+        </Button>
       </div>
     </div>
 
-    <p v-if="rec.message.value" class="text-center text-sm text-amber-600">{{ rec.message.value }}</p>
-    <p v-if="uploadError" class="text-center text-sm text-destructive">{{ uploadError }} ,请打字输入 👇</p>
+    <p v-if="rec.message.value" class="text-center text-sm text-amber-600">{{ rec.message.value }},请打字输入</p>
+    <p v-if="uploadError" class="text-center text-sm text-destructive">{{ uploadError }},请打字输入</p>
 
     <div class="rounded-xl border border-dashed p-4 text-center text-sm text-muted-foreground">
       <Badge variant="secondary" class="mb-2">提示</Badge>

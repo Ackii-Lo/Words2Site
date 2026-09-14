@@ -3,6 +3,7 @@ import { onMounted, ref } from "vue";
 import QRCode from "qrcode";
 import Card from "@/components/ui/Card.vue";
 import Button from "@/components/ui/Button.vue";
+import { PartyPopper, Rocket } from "lucide-vue-next";
 
 const props = defineProps<{
   code: string;
@@ -28,7 +29,9 @@ function isRelative(u: string | null): boolean {
 <template>
   <Card class="mx-auto max-w-sm overflow-hidden text-center">
     <div class="bg-gradient-to-r from-violet-600 to-fuchsia-500 px-6 py-4 text-white">
-      <div class="text-2xl">🎉 网页发布成功!</div>
+      <div class="flex items-center justify-center gap-2 text-2xl font-bold">
+        <PartyPopper class="h-7 w-7" /> 网页发布成功!
+      </div>
       <div class="mt-1 text-sm opacity-90">凭此页面找工作人员集章</div>
     </div>
 
@@ -42,7 +45,7 @@ function isRelative(u: string | null): boolean {
       <p class="text-xs text-muted-foreground">工作人员扫此二维码核验</p>
 
       <a v-if="publishUrl" :href="publishUrl" :target="isRelative(publishUrl) ? undefined : '_blank'">
-        <Button size="xl" class="w-full">🚀 打开我的网站</Button>
+        <Button size="xl" class="w-full"><Rocket class="h-5 w-5" /> 打开我的网站</Button>
       </a>
       <p class="text-xs text-muted-foreground">记得截图分享哦~</p>
     </div>
