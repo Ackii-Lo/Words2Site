@@ -35,7 +35,7 @@ const draft = ref("");
 const email = ref("");
 const domainLabel = ref("");
 const isPublic = ref(true);
-const domainSuffix = ref(".hnrobert.space"); // 与服务端 DEPLOY_DOMAIN_TEMPLATE 对应,由提交响应带回真实域名
+const domainSuffix = ref(".unnc.space"); // 与服务端 DEPLOY_DOMAIN_TEMPLATE 对应
 const inputMode = ref<"voice" | "typing">("voice");
 const submitting = ref(false);
 const submitError = ref("");
@@ -282,7 +282,6 @@ const funFact = computed(() => funFacts[waitElapsed.value % funFacts.length]);
         <div>
           <label class="mb-1 block text-sm text-muted-foreground">网址(只能用小写字母、数字、连字符)</label>
           <div class="flex items-stretch overflow-hidden rounded-lg border bg-card focus-within:ring-2 focus-within:ring-ring">
-            <span class="flex items-center bg-muted px-3 font-mono text-sm text-muted-foreground">w2s-</span>
             <input
               v-model="domainLabel"
               placeholder="my-cat"
@@ -293,7 +292,7 @@ const funFact = computed(() => funFacts[waitElapsed.value % funFacts.length]);
             <span class="flex items-center bg-muted px-3 font-mono text-sm text-muted-foreground">{{ domainSuffix }}</span>
           </div>
           <p v-if="domainLabel" class="mt-1 text-xs text-muted-foreground">
-            你的网址:https://w2s-{{ domainLabel }}{{ domainSuffix }}/
+            你的网址:https://{{ domainLabel }}{{ domainSuffix }}/
           </p>
         </div>
 
