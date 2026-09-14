@@ -8,7 +8,8 @@
     "build": "tsc -p tsconfig.json --noEmit false --outDir dist",
     "start": "node dist/index.js",
     "seed": "tsx scripts/seed-test.ts",
-    "mock:publish": "tsx scripts/mock-publish-server.ts"
+    "mock:publish": "tsx scripts/mock-publish-server.ts",
+    "test:mail": "tsx scripts/test-mail.ts"
   },
   "dependencies": {
     "adm-zip": "^0.6.1",

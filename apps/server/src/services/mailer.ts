@@ -13,7 +13,7 @@ function getPoster(): EmailPoster | null {
   poster = new EmailPoster({
     postUrl: config.mail.webhookUrl,
     preset: config.mail.preset as "smtogo" | "generic" | "custom_example",
-    fromAddress: config.mail.from,
+    fromAddress: config.mail.from || undefined, // 流程侧发件人固定,from 留空即可
     headers: config.mail.token ? { Authorization: `Bearer ${config.mail.token}` } : {},
   });
   return poster;
