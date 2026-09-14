@@ -52,6 +52,9 @@ if (provider === "codex") {
 // DATA_DIR 相对路径一律相对仓库根解析(避免 tsx/dev/cwd 差异)
 const repoRoot = path.resolve(import.meta.dirname, "../../..");
 const dataDir = path.resolve(repoRoot, str("DATA_DIR", "data"));
+if (!process.env.DEPLOY_DOMAIN_TEMPLATE?.includes("{label}") && process.env.DEPLOY_DOMAIN_TEMPLATE) {
+  fail("DEPLOY_DOMAIN_TEMPLATE 必须包含 {label} 占位符");
+}
 fs.mkdirSync(path.join(dataDir, "tasks"), { recursive: true });
 fs.mkdirSync(path.join(dataDir, "logs"), { recursive: true });
 fs.mkdirSync(path.join(dataDir, "audio-tmp"), { recursive: true });
@@ -84,6 +87,23 @@ export const config = {
     endpoint: str("PUBLISH_ENDPOINT"),
     token: str("PUBLISH_TOKEN"),
     urlFlag: str("PUBLISH_URL_FLAG", "main"),
+  },
+
+  // sslly-nginx 网关静态部署(DeployService)
+  deploy: {
+    apiBase: str("SSLLY_API_BASE", "https://sslly-nas.hnrobert.space/api/v1").replace(/\/$/, ""),
+    token: str("SSLLY_API_TOKEN", "admin"),
+    group: str("DEPLOY_GROUP", "hf"),
+    // 参与者域名模板,{label} 为参与者自定义部分;一级子域才能命中 *.hnrobert.space 通配证书
+    domainTemplate: str("DEPLOY_DOMAIN_TEMPLATE", "w2s-{label}.hnrobert.space"),
+    // 域名模板缺 {label} 时 fail-fast
+  },
+
+  mail: {
+    webhookUrl: str("MAIL_WEBHOOK_URL"),
+    from: str("MAIL_FROM", "noreply@words2site.local"),
+    token: str("MAIL_TOKEN"),
+    preset: str("MAIL_PRESET", "smtogo"),
   },
 
   adminPassword: str("ADMIN_PASSWORD", "change-me"),

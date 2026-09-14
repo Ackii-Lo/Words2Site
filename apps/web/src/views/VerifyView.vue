@@ -14,6 +14,7 @@ const data = ref<{
   code: string;
   prompt: string;
   publishUrl: string | null;
+  domain: string | null;
   status: string;
   createdAt: number;
   finishedAt: number | null;
@@ -57,6 +58,7 @@ function fmt(ts: number | null): string {
         <Badge v-if="data.status === 'published'" variant="success" class="gap-1">
           <CheckCircle2 class="h-3.5 w-3.5" /> 已发布 · 可集章
         </Badge>
+        <Badge v-else-if="data.status === 'removed'" variant="destructive">已下线</Badge>
         <Badge v-else variant="warning">状态异常: {{ data.status }}</Badge>
       </div>
 

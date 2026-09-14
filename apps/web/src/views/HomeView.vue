@@ -23,19 +23,25 @@ import {
   PenLine,
   RefreshCw,
   Plus,
+  AtSign,
+  Eye,
 } from "lucide-vue-next";
 
-type Step = "intro" | "record" | "confirm" | "waiting" | "preview" | "certificate";
+type Step = "intro" | "record" | "confirm" | "info" | "waiting" | "preview" | "certificate";
 
 const step = ref<Step>("intro");
 const transcript = ref("");
 const draft = ref("");
+const email = ref("");
+const domainLabel = ref("");
+const isPublic = ref(true);
+const domainSuffix = ref(".hnrobert.space"); // 与服务端 DEPLOY_DOMAIN_TEMPLATE 对应,由提交响应带回真实域名
 const inputMode = ref<"voice" | "typing">("voice");
 const submitting = ref(false);
 const submitError = ref("");
 const taskId = ref("");
 const htmlVersion = ref(0);
-const cert = ref<{ code: string; publishUrl: string | null; verifyUrl: string } | null>(null);
+const cert = ref<{ code: string; publishUrl: string | null; verifyUrl: string; domain: string | null; email: string | null } | null>(null);
 const publishing = ref(false);
 
 const { status, start: startPolling } = useTaskPolling();
@@ -60,20 +66,29 @@ async function submitTask() {
   const text = draft.value.trim();
   if (text.length < 10) {
     submitError.value = "描述太短啦,至少 10 个字";
+    step.value = "confirm";
     return;
   }
   submitting.value = true;
   submitError.value = "";
   try {
-    const data = await api<{ taskId: string }>("/api/tasks", {
+    const data = await api<{ taskId: string; domain: string }>("/api/tasks", {
       method: "POST",
-      body: JSON.stringify({ text, deviceId: deviceId(), transcript: transcript.value || null }),
+      body: JSON.stringify({
+        text,
+        deviceId: deviceId(),
+        transcript: transcript.value || null,
+        email: email.value.trim(),
+        domainLabel: domainLabel.value.trim(),
+        isPublic: isPublic.value,
+      }),
     });
     taskId.value = data.taskId;
     step.value = "waiting";
     startPolling(data.taskId);
   } catch (e) {
     submitError.value = e instanceof Error ? e.message : String(e);
+    step.value = "info";
   } finally {
     submitting.value = false;
   }
@@ -114,6 +129,8 @@ async function publish() {
       code: data.code,
       publishUrl: data.publishUrl,
       verifyUrl: `${location.origin}/verify/${data.code}`,
+      domain: data.publishUrl.replace(/^https?:\/\//, "").replace(/\/$/, ""),
+      email: email.value.trim() || null,
     };
     step.value = "certificate";
   } catch (e) {
@@ -127,6 +144,9 @@ function restart() {
   step.value = "record";
   transcript.value = "";
   draft.value = "";
+  email.value = "";
+  domainLabel.value = "";
+  isPublic.value = true;
   taskId.value = "";
   cert.value = null;
   refineText.value = "";
@@ -236,10 +256,67 @@ const funFact = computed(() => funFacts[waitElapsed.value % funFacts.length]);
           {{ draft.length }} / 300(至少 10 字)
         </p>
         <p v-if="submitError" class="text-sm text-destructive">{{ submitError }}</p>
-        <Button size="xl" class="w-full" :disabled="submitting || draft.trim().length < 10 || draft.length > 300" @click="submitTask">
-          <Rocket class="h-5 w-5" /> {{ submitting ? "提交中…" : "让 AI 生成!" }}
+        <Button size="xl" class="w-full" :disabled="draft.trim().length < 10 || draft.length > 300" @click="step = 'info'">
+          <ArrowRight class="h-5 w-5" /> 下一步
         </Button>
         <Button variant="ghost" class="w-full" @click="restart"><RotateCcw class="h-4 w-4" /> 重新说</Button>
+      </Card>
+    </template>
+
+    <!-- ③b 邮箱 + 域名 + 公开设置 -->
+    <template v-else-if="step === 'info'">
+      <Card class="space-y-5 p-6">
+        <h2 class="flex items-center gap-2 font-semibold"><AtSign class="h-4 w-4" /> 填写邮箱,给自己的网页选个网址</h2>
+
+        <div>
+          <label class="mb-1 block text-sm text-muted-foreground">邮箱(接收网页链接和集章凭证)</label>
+          <input
+            v-model="email"
+            type="email"
+            inputmode="email"
+            placeholder="you@example.com"
+            class="h-12 w-full rounded-lg border bg-card px-3 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          />
+        </div>
+
+        <div>
+          <label class="mb-1 block text-sm text-muted-foreground">网址(只能用小写字母、数字、连字符)</label>
+          <div class="flex items-stretch overflow-hidden rounded-lg border bg-card focus-within:ring-2 focus-within:ring-ring">
+            <span class="flex items-center bg-muted px-3 font-mono text-sm text-muted-foreground">w2s-</span>
+            <input
+              v-model="domainLabel"
+              placeholder="my-cat"
+              autocapitalize="off"
+              autocorrect="off"
+              class="h-12 flex-1 px-3 font-mono text-base focus-visible:outline-none"
+            />
+            <span class="flex items-center bg-muted px-3 font-mono text-sm text-muted-foreground">{{ domainSuffix }}</span>
+          </div>
+          <p v-if="domainLabel" class="mt-1 text-xs text-muted-foreground">
+            你的网址:https://w2s-{{ domainLabel }}{{ domainSuffix }}/
+          </p>
+        </div>
+
+        <label class="flex cursor-pointer items-start gap-3 rounded-xl border p-4" :class="isPublic ? 'border-primary/40 bg-primary/5' : ''">
+          <input v-model="isPublic" type="checkbox" class="mt-1 h-5 w-5 accent-[var(--primary)]" />
+          <span>
+            <span class="flex items-center gap-1.5 text-sm font-medium"><Eye class="h-4 w-4" /> 上大屏展示</span>
+            <span class="mt-0.5 block text-xs text-muted-foreground">
+              勾选后你的网页会出现在现场大屏上滚动展示;不勾选仅自己通过链接访问
+            </span>
+          </span>
+        </label>
+
+        <p v-if="submitError" class="text-sm text-destructive">{{ submitError }}</p>
+        <Button
+          size="xl"
+          class="w-full"
+          :disabled="submitting || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim()) || !/^[a-z0-9][a-z0-9-]{2,30}$/.test(domainLabel.trim())"
+          @click="submitTask"
+        >
+          <Rocket class="h-5 w-5" /> {{ submitting ? "提交中…" : "让 AI 生成!" }}
+        </Button>
+        <Button variant="ghost" class="w-full" @click="step = 'confirm'"><RotateCcw class="h-4 w-4" /> 返回修改描述</Button>
       </Card>
     </template>
 
@@ -299,7 +376,7 @@ const funFact = computed(() => funFacts[waitElapsed.value % funFacts.length]);
 
     <!-- ⑥ 凭证 -->
     <template v-else-if="step === 'certificate' && cert">
-      <CertificateCard :code="cert.code" :publish-url="cert.publishUrl" :verify-url="cert.verifyUrl" />
+      <CertificateCard :code="cert.code" :publish-url="cert.publishUrl" :verify-url="cert.verifyUrl" :domain="cert.domain" :email="cert.email" />
       <Button variant="ghost" class="mt-4 w-full" @click="restart"><Plus class="h-4 w-4" /> 帮朋友也做一个</Button>
     </template>
 

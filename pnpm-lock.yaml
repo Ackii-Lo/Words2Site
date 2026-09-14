@@ -14,12 +14,18 @@ importers:
 
   apps/server:
     dependencies:
+      adm-zip:
+        specifier: ^0.6.1
+        version: 0.6.1
       better-sqlite3:
         specifier: ^11.8.1
         version: 11.10.0
       dotenv:
         specifier: ^16.4.7
         version: 16.6.1
+      email-poster:
+        specifier: ^0.3.9
+        version: 0.3.9(vue@3.5.42(typescript@5.9.3))
       express:
         specifier: ^4.21.2
         version: 4.22.2(supports-color@8.1.1)
@@ -30,6 +36,9 @@ importers:
         specifier: ^1.5.4
         version: 1.5.4
     devDependencies:
+      '@types/adm-zip':
+        specifier: ^0.5.8
+        version: 0.5.8
       '@types/better-sqlite3':
         specifier: ^7.6.12
         version: 7.6.13
@@ -684,6 +693,9 @@ packages:
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7 || ^8
 
+  '@types/adm-zip@0.5.8':
+    resolution: {integrity: sha512-RVVH7QvZYbN+ihqZ4kX/dMiowf6o+Jk1fNwiSdx0NahBJLU787zkULhGhJM8mf/obmLGmgdMM0bXsQTmyfbR7Q==}
+
   '@types/better-sqlite3@7.6.13':
     resolution: {integrity: sha512-NMv9ASNARoKksWtsq/SHakpYAYnhBrQgGD8zkLYk/jaK8jUGn08CfEdTRgYhMypUQAfzSP8W6gNLe0q19/t4VA==}
 
@@ -797,6 +809,10 @@ packages:
   accepts@1.3.8:
     resolution: {integrity: sha512-PYAthTa2m2VKxuvSD3DPC/Gy+U+sOA1LAuT8mkmRuvw+NACSaeXEQ+NHcVF7rONl6qcaxV3Uuemwawk+7+SJLw==}
     engines: {node: '>= 0.6'}
+
+  adm-zip@0.6.1:
+    resolution: {integrity: sha512-Xwrja8nx9e5o2N1my4DsKCeKpdrnACyr1wtbPxBDgGzKzKyE9kRtBFA8mWldI+RVlD7CBZNWY/wQ2+ydwOR6kQ==}
+    engines: {node: '>=14.0'}
 
   alien-signals@1.0.13:
     resolution: {integrity: sha512-OGj9yyTnJEttvzhTUWuscOvtqxq5vrhF7vL9oS0xJ2mK0ItPYP1/y+vCFebfxoEyAz0++1AIwJ5CMr+Fk3nDmg==}
@@ -969,6 +985,13 @@ packages:
 
   ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
+
+  email-poster@0.3.9:
+    resolution: {integrity: sha512-lMDqdMXWjfebgL8vjDs+aKsL/nTcfgrEt0GrmMg7rkNynHhj3wCdDEmU75qmZmXX8mXgcqkfNCHvQzUJL5ZpTQ==}
+    engines: {node: '>=18'}
+    hasBin: true
+    peerDependencies:
+      vue: ^3.4
 
   emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
@@ -1688,6 +1711,9 @@ packages:
     resolution: {integrity: sha512-7dSzzRQ++CKnNI/krKnYRV7JKKPUXMEh61soaHKg9mrWEhzFWhFnxPxGl+69cD1Ou63C13NUPCnmIcrvqCuM6w==}
     engines: {node: '>=12'}
 
+  zod@3.23.8:
+    resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
+
 snapshots:
 
   '@babel/helper-string-parser@7.29.7': {}
@@ -2024,6 +2050,10 @@ snapshots:
       tailwindcss: 4.3.3
       vite: 6.4.3(@types/node@22.20.2)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.13)
 
+  '@types/adm-zip@0.5.8':
+    dependencies:
+      '@types/node': 22.20.2
+
   '@types/better-sqlite3@7.6.13':
     dependencies:
       '@types/node': 22.20.2
@@ -2185,6 +2215,8 @@ snapshots:
     dependencies:
       mime-types: 2.1.35
       negotiator: 0.6.3
+
+  adm-zip@0.6.1: {}
 
   alien-signals@1.0.13: {}
 
@@ -2357,6 +2389,11 @@ snapshots:
       gopd: 1.2.0
 
   ee-first@1.1.1: {}
+
+  email-poster@0.3.9(vue@3.5.42(typescript@5.9.3)):
+    dependencies:
+      vue: 3.5.42(typescript@5.9.3)
+      zod: 3.23.8
 
   emoji-regex@8.0.0: {}
 
@@ -3117,3 +3154,5 @@ snapshots:
       string-width: 4.2.3
       y18n: 5.0.8
       yargs-parser: 21.1.1
+
+  zod@3.23.8: {}

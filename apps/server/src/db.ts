@@ -22,6 +22,11 @@ CREATE TABLE IF NOT EXISTS tasks (
   device_id TEXT,
   html_size INTEGER,
   publish_url TEXT,
+  email TEXT,
+  domain TEXT,
+  is_public INTEGER DEFAULT 1,
+  removed_at INTEGER,
+  screenshot INTEGER DEFAULT 0,     -- 0 无 1 有(data/tasks/<id>/shot.png)
   created_at INTEGER,
   finished_at INTEGER
 );
@@ -39,6 +44,21 @@ CREATE TABLE IF NOT EXISTS codex_sessions (
 );
 `);
 
+// 旧库迁移:补齐新增列(SQLite 无 ADD COLUMN IF NOT EXISTS,逐个尝试)
+for (const col of [
+  "ALTER TABLE tasks ADD COLUMN email TEXT",
+  "ALTER TABLE tasks ADD COLUMN domain TEXT",
+  "ALTER TABLE tasks ADD COLUMN is_public INTEGER DEFAULT 1",
+  "ALTER TABLE tasks ADD COLUMN removed_at INTEGER",
+  "ALTER TABLE tasks ADD COLUMN screenshot INTEGER DEFAULT 0",
+]) {
+  try { db.prepare(col).run(); } catch { /* 已存在 */ }
+}
+// 依赖新列的唯一索引(须在迁移之后创建)
+db.exec(
+  "CREATE UNIQUE INDEX IF NOT EXISTS idx_tasks_domain ON tasks(domain) WHERE domain IS NOT NULL AND removed_at IS NULL",
+);
+
 export interface TaskRow {
   id: string;
   code: string | null;
@@ -55,6 +75,11 @@ export interface TaskRow {
   device_id: string | null;
   html_size: number | null;
   publish_url: string | null;
+  email: string | null;
+  domain: string | null;
+  is_public: number;
+  removed_at: number | null;
+  screenshot: number;
   created_at: number;
   finished_at: number | null;
 }
@@ -71,8 +96,8 @@ export interface SessionRow {
 
 const stmts = {
   insertTask: db.prepare(`
-    INSERT INTO tasks (id, prompt, transcript, status, ip, device_id, created_at)
-    VALUES (@id, @prompt, @transcript, 'queued', @ip, @device_id, @created_at)
+    INSERT INTO tasks (id, prompt, transcript, status, ip, device_id, email, domain, is_public, created_at)
+    VALUES (@id, @prompt, @transcript, 'queued', @ip, @device_id, @email, @domain, @is_public, @created_at)
   `),
   getTask: db.prepare("SELECT * FROM tasks WHERE id = ?"),
   getTaskByCode: db.prepare("SELECT * FROM tasks WHERE code = ?"),
@@ -88,6 +113,9 @@ const stmts = {
       html_size = COALESCE(@html_size, html_size),
       publish_url = COALESCE(@publish_url, publish_url),
       code = COALESCE(@code, code),
+      is_public = COALESCE(@is_public, is_public),
+      removed_at = COALESCE(@removed_at, removed_at),
+      screenshot = COALESCE(@screenshot, screenshot),
       finished_at = COALESCE(@finished_at, finished_at)
     WHERE id = @id
   `),
@@ -95,6 +123,15 @@ const stmts = {
   listQueueAhead: db.prepare(
     "SELECT COUNT(*) AS n FROM tasks WHERE status = 'queued' AND created_at < ?",
   ),
+  domainTaken: db.prepare(
+    "SELECT COUNT(*) AS n FROM tasks WHERE domain = ? COLLATE NOCASE AND removed_at IS NULL",
+  ),
+  listScreen: db.prepare(`
+    SELECT id, code, domain, prompt, publish_url, screenshot, created_at
+    FROM tasks
+    WHERE status = 'published' AND is_public = 1 AND removed_at IS NULL AND publish_url IS NOT NULL
+    ORDER BY created_at DESC LIMIT 50
+  `),
   listTasksPage: db.prepare(`
     SELECT * FROM tasks ORDER BY created_at DESC LIMIT @limit OFFSET @offset
   `),
@@ -125,15 +162,33 @@ const stmts = {
 };
 
 export const tasks = {
-  create(p: { id: string; prompt: string; transcript: string | null; ip: string; deviceId: string }) {
+  create(p: {
+    id: string;
+    prompt: string;
+    transcript: string | null;
+    ip: string;
+    deviceId: string;
+    email: string;
+    domain: string;
+    isPublic: boolean;
+  }) {
     stmts.insertTask.run({
       id: p.id,
       prompt: p.prompt,
       transcript: p.transcript,
       ip: p.ip,
       device_id: p.deviceId,
+      email: p.email,
+      domain: p.domain,
+      is_public: p.isPublic ? 1 : 0,
       created_at: Date.now(),
     });
+  },
+  domainTaken(domain: string): boolean {
+    return (stmts.domainTaken.get(domain) as { n: number }).n > 0;
+  },
+  listScreen(): Array<{ id: string; code: string | null; domain: string | null; prompt: string; publish_url: string | null; screenshot: number; created_at: number }> {
+    return stmts.listScreen.all() as never;
   },
   get(id: string): TaskRow | undefined {
     return stmts.getTask.get(id) as TaskRow | undefined;
@@ -152,6 +207,9 @@ export const tasks = {
       html_size: null,
       publish_url: null,
       code: null,
+      is_public: null,
+      removed_at: null,
+      screenshot: null,
       finished_at: null,
       ...p,
     };

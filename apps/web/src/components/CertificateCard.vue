@@ -9,6 +9,8 @@ const props = defineProps<{
   code: string;
   publishUrl: string | null;
   verifyUrl: string;
+  domain?: string | null;
+  email?: string | null;
 }>();
 
 const qrDataUrl = ref("");
@@ -47,7 +49,10 @@ function isRelative(u: string | null): boolean {
       <a v-if="publishUrl" :href="publishUrl" :target="isRelative(publishUrl) ? undefined : '_blank'">
         <Button size="xl" class="w-full"><Rocket class="h-5 w-5" /> 打开我的网站</Button>
       </a>
-      <p class="text-xs text-muted-foreground">记得截图分享哦~</p>
+      <p v-if="domain" class="font-mono text-xs text-muted-foreground">{{ domain }}</p>
+      <p v-if="email" class="rounded-lg bg-muted/60 p-2 text-xs text-muted-foreground">
+        链接和凭证编号已发送到 {{ email }},记得查收(含垃圾邮件箱)
+      </p>
     </div>
   </Card>
 </template>

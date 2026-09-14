@@ -3,6 +3,7 @@ import { config } from "../config.js";
 import { tasks } from "../db.js";
 import { queue } from "../services/queue.js";
 import { sessionManager, probeCodex } from "../services/codexSession.js";
+import { unpublish } from "../services/publisher.js";
 
 export const adminRouter = Router();
 
@@ -58,6 +59,28 @@ adminRouter.post("/tasks/:id/skip", (req, res) => {
     return;
   }
   tasks.update({ id: t.id, status: "published", stage: "人工处理(跳过发布)", finished_at: Date.now() });
+  res.json({ ok: true });
+});
+
+/** 下线:调网关 DeleteStatic 删部署 + 标记 removed(大屏消失,直接链接失效) */
+adminRouter.post("/tasks/:id/delete", async (req, res) => {
+  const t = tasks.get(req.params.id);
+  if (!t) {
+    res.status(404).json({ error: "任务不存在" });
+    return;
+  }
+  if (t.removed_at) {
+    res.json({ ok: true }); // 幂等
+    return;
+  }
+  if (t.status === "published" && t.domain) {
+    const r = await unpublish(t.id, t.domain);
+    if (!r.ok) {
+      res.status(502).json({ error: r.error });
+      return;
+    }
+  }
+  tasks.update({ id: t.id, removed_at: Date.now(), stage: "已下线" });
   res.json({ ok: true });
 });
 

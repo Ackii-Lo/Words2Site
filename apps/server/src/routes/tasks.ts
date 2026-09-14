@@ -6,28 +6,54 @@ import { tasks } from "../db.js";
 import { allow } from "../services/ratelimit.js";
 import { queue } from "../services/queue.js";
 import { publish } from "../services/publisher.js";
+import { sendCompletionMail } from "../services/mailer.js";
+import { captureScreenshot, shotPath } from "../services/screenshot.js";
 import { newTaskId, newCertCode, isValidDeviceId } from "../util/ids.js";
 
 export const tasksRouter = Router();
 
 const TERMINAL = new Set(["done", "published", "failed"]);
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const DOMAIN_LABEL_RE = /^[a-z0-9][a-z0-9-]{2,30}$/;
 
 function clientIp(req: Request): string {
   return req.ip ?? "unknown";
 }
 
-/** 创建生成任务 */
+export function fullDomain(label: string): string {
+  return config.deploy.domainTemplate.replace("{label}", label);
+}
+
+/** 创建生成任务(prompt + 邮箱 + 自定义域名 + 是否公开) */
 tasksRouter.post("/", (req: Request, res: Response) => {
-  const { text, deviceId, transcript } = (req.body ?? {}) as {
+  const { text, deviceId, transcript, email, domainLabel, isPublic } = (req.body ?? {}) as {
     text?: string;
     deviceId?: string;
     transcript?: string;
+    email?: string;
+    domainLabel?: string;
+    isPublic?: boolean;
   };
   const trimmed = (text ?? "").trim();
   if (trimmed.length < 10 || trimmed.length > config.maxTextLen) {
     res.status(400).json({
       error: `描述需要 10–${config.maxTextLen} 个字符(当前 ${trimmed.length})`,
     });
+    return;
+  }
+  const mail = (email ?? "").trim().toLowerCase();
+  if (!EMAIL_RE.test(mail) || mail.length > 100) {
+    res.status(400).json({ error: "邮箱格式不正确" });
+    return;
+  }
+  const label = (domainLabel ?? "").trim().toLowerCase();
+  if (!DOMAIN_LABEL_RE.test(label)) {
+    res.status(400).json({ error: "域名只能用小写字母、数字和连字符,3–31 位,以字母或数字开头" });
+    return;
+  }
+  const domain = fullDomain(label);
+  if (tasks.domainTaken(domain)) {
+    res.status(409).json({ error: `「${label}」已被别人用了,换一个试试` });
     return;
   }
   const device = isValidDeviceId(deviceId) ? deviceId : "anon";
@@ -38,9 +64,18 @@ tasksRouter.post("/", (req: Request, res: Response) => {
   }
 
   const id = newTaskId();
-  tasks.create({ id, prompt: trimmed, transcript: transcript ?? null, ip, deviceId: device });
+  tasks.create({
+    id,
+    prompt: trimmed,
+    transcript: transcript ?? null,
+    ip,
+    deviceId: device,
+    email: mail,
+    domain,
+    isPublic: isPublic !== false,
+  });
   queue.enqueueGen(id);
-  res.json({ taskId: id, queuePosition: queue.positionOf(id) });
+  res.json({ taskId: id, queuePosition: queue.positionOf(id), domain });
 });
 
 /** 轮询状态 */
@@ -63,7 +98,27 @@ tasksRouter.get("/:id", (req: Request, res: Response) => {
     createdAt: t.created_at,
     publishUrl: t.publish_url,
     code: t.code,
+    domain: t.domain,
+    email: t.email,
+    isPublic: !!t.is_public,
+    removed: !!t.removed_at,
   });
+});
+
+/** 大屏数据:已发布 + 公开 + 未下线的页面 */
+export const screenRouter = Router();
+screenRouter.get("/all", (_req: Request, res: Response) => {
+  res.json(
+    tasks.listScreen().map((t) => ({
+      taskId: t.id,
+      code: t.code,
+      domain: t.domain,
+      url: t.publish_url,
+      prompt: t.prompt,
+      hasScreenshot: !!t.screenshot,
+      createdAt: t.created_at,
+    })),
+  );
 });
 
 /** 获取产物 HTML(iframe 预览) */
@@ -79,6 +134,16 @@ tasksRouter.get("/:id/html", (req: Request, res: Response) => {
     return;
   }
   res.type("html").send(fs.readFileSync(file, "utf-8"));
+});
+
+/** 大屏截图(有则 PNG,无则 404,前端降级 iframe) */
+tasksRouter.get("/:id/screenshot", (req: Request, res: Response) => {
+  const file = shotPath(req.params.id);
+  if (!fs.existsSync(file)) {
+    res.status(404).send("no screenshot");
+    return;
+  }
+  res.type("png").send(fs.readFileSync(file));
 });
 
 /** refine:按修改意见改写(resume codex 会话) */
@@ -122,21 +187,39 @@ tasksRouter.post("/:id/publish", async (req: Request, res: Response) => {
     return;
   }
   const file = path.join(config.dataDir, "tasks", t.id, "index.html");
-  const result = await publish(t.id, file);
-  if (!result.ok) {
-    res.status(502).json({ error: `${result.error},稍后重试或找工作人员` });
+  const domain = t.domain ?? fullDomain(t.id);
+  const result = await publish(t.id, file, domain);
+  if (!result.ok || !result.url) {
+    res.status(502).json({ error: `${result.error ?? "发布失败"},稍后重试或找工作人员` });
     return;
   }
+  const url = result.url;
   const code = t.code ?? newCertCode();
   tasks.update({
     id: t.id,
     status: "published",
     stage: "已发布",
-    publish_url: result.url,
+    publish_url: url,
     code,
     finished_at: Date.now(),
   });
-  res.json({ publishUrl: result.url, code });
+  res.json({ publishUrl: url, code });
+
+  // 异步收尾:完成邮件 + 大屏截图(失败不影响发布结果)
+  if (t.email) {
+    void sendCompletionMail({
+      taskId: t.id,
+      to: t.email,
+      code,
+      domain,
+      url,
+      verifyUrl: `${config.publicBaseUrl}/verify/${code}`,
+      prompt: t.prompt,
+    });
+  }
+  if (url.startsWith("https://")) {
+    void captureScreenshot(t.id, url);
+  }
 });
 
 /** 凭证数据 */
@@ -166,8 +249,9 @@ verifyRouter.get("/:code", (req: Request, res: Response) => {
   res.json({
     code: t.code,
     prompt: t.prompt,
-    publishUrl: t.publish_url,
-    status: t.status,
+    publishUrl: t.removed_at ? null : t.publish_url,
+    domain: t.domain,
+    status: t.removed_at ? "removed" : t.status,
     createdAt: t.created_at,
     finishedAt: t.finished_at,
   });

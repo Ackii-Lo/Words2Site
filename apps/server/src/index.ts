@@ -4,7 +4,7 @@ import path from "node:path";
 import { config } from "./config.js";
 import { db, tasks } from "./db.js";
 import { transcribeRouter } from "./routes/transcribe.js";
-import { tasksRouter, verifyRouter } from "./routes/tasks.js";
+import { tasksRouter, verifyRouter, screenRouter } from "./routes/tasks.js";
 import { adminRouter } from "./routes/admin.js";
 import { log, logError } from "./util/logger.js";
 
@@ -15,6 +15,7 @@ app.use(express.json({ limit: "64kb" }));
 app.use("/api/transcribe", transcribeRouter);
 app.use("/api/tasks", tasksRouter);
 app.use("/api/verify", verifyRouter);
+app.use("/api/screen", screenRouter);
 app.use("/api/admin", adminRouter);
 
 app.get("/api/health", (_req, res) => {
