@@ -3,7 +3,9 @@ import fs from "node:fs";
 import { execFileSync } from "node:child_process";
 import dotenv from "dotenv";
 
-// .env 优先取仓库根目录(兼容 workspace 内启动)
+// 环境变量来源:
+// - dev:`tsx watch --env-file-if-exists=../../.env` 预加载仓库根 .env(tsx 会监听其变更并自动重启)
+// - 生产(pm2/直接运行):下面这行 dotenv 兜底加载
 const rootEnv = path.resolve(import.meta.dirname, "../../../.env");
 if (fs.existsSync(rootEnv)) dotenv.config({ path: rootEnv });
 else dotenv.config();
