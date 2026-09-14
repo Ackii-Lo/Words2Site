@@ -1,0 +1,16 @@
+{
+  "name": "words2site",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@11.20.0",
+  "scripts": {
+    "dev": "concurrently -n server,web -c blue,magenta \"pnpm --filter @words2site/server dev\" \"pnpm --filter @words2site/web dev\"",
+    "build": "pnpm --filter @words2site/web build && pnpm --filter @words2site/server build",
+    "start": "pm2 start deploy/ecosystem.config.js",
+    "seed": "pnpm --filter @words2site/server seed",
+    "mock:publish": "pnpm --filter @words2site/server mock:publish"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

@@ -1,0 +1,93 @@
+import path from "node:path";
+import fs from "node:fs";
+import { execFileSync } from "node:child_process";
+import dotenv from "dotenv";
+
+// .env 优先取仓库根目录(兼容 workspace 内启动)
+const rootEnv = path.resolve(import.meta.dirname, "../../../.env");
+if (fs.existsSync(rootEnv)) dotenv.config({ path: rootEnv });
+else dotenv.config();
+
+function num(key: string, def: number): number {
+  const v = process.env[key];
+  if (!v) return def;
+  const n = Number(v);
+  if (Number.isNaN(n) || n <= 0) throw new Error(`环境变量 ${key} 不是合法正数: ${v}`);
+  return n;
+}
+
+function str(key: string, def = ""): string {
+  return process.env[key] ?? def;
+}
+
+function fail(msg: string): never {
+  console.error(`[config] ${msg}`);
+  process.exit(1);
+}
+
+const provider = str("GENERATION_PROVIDER", "mock");
+if (provider !== "codex" && provider !== "mock") {
+  fail(`GENERATION_PROVIDER 只能是 codex 或 mock,当前: ${provider}`);
+}
+
+const whisperProvider = str("WHISPER_PROVIDER", "mock");
+if (!["openai-api", "local", "mock"].includes(whisperProvider)) {
+  fail(`WHISPER_PROVIDER 只能是 openai-api / local / mock,当前: ${whisperProvider}`);
+}
+if (whisperProvider === "openai-api" && !str("OPENAI_API_KEY")) {
+  fail("WHISPER_PROVIDER=openai-api 需要配置 OPENAI_API_KEY");
+}
+if (provider === "codex") {
+  // 提前暴露常见问题:codex 不存在
+  const bin = str("CODEX_BIN", "codex");
+  try {
+    execFileSync("which", [bin], { stdio: "ignore" });
+  } catch {
+    fail(`CODEX_BIN=${bin} 不存在,请安装 codex 或改用 GENERATION_PROVIDER=mock`);
+  }
+}
+
+// DATA_DIR 相对路径一律相对仓库根解析(避免 tsx/dev/cwd 差异)
+const repoRoot = path.resolve(import.meta.dirname, "../../..");
+const dataDir = path.resolve(repoRoot, str("DATA_DIR", "data"));
+fs.mkdirSync(path.join(dataDir, "tasks"), { recursive: true });
+fs.mkdirSync(path.join(dataDir, "logs"), { recursive: true });
+fs.mkdirSync(path.join(dataDir, "audio-tmp"), { recursive: true });
+
+export const config = {
+  port: num("PORT", 3000),
+  dataDir,
+  publicBaseUrl: str("PUBLIC_BASE_URL", "http://localhost:5173").replace(/\/$/, ""),
+
+  generation: {
+    provider: provider as "codex" | "mock",
+    codexBin: str("CODEX_BIN", "codex"),
+    baseUrl: str("CODEX_BASE_URL"),
+    apiKey: str("CODEX_API_KEY"),
+    modelProvider: str("CODEX_MODEL_PROVIDER", "w2s"),
+    model: str("CODEX_MODEL"),
+    maxConcurrent: num("MAX_CONCURRENT", 3),
+    timeoutMs: num("GEN_TIMEOUT_MS", 240_000),
+    maxRefine: num("MAX_REFINE", 2),
+  },
+
+  whisper: {
+    provider: whisperProvider as "openai-api" | "local" | "mock",
+    apiKey: str("OPENAI_API_KEY"),
+    model: str("OPENAI_TRANSCRIBE_MODEL", "whisper-1"),
+    localCmd: str("LOCAL_WHISPER_CMD", "whisper"),
+  },
+
+  publish: {
+    endpoint: str("PUBLISH_ENDPOINT"),
+    token: str("PUBLISH_TOKEN"),
+    urlFlag: str("PUBLISH_URL_FLAG", "main"),
+  },
+
+  adminPassword: str("ADMIN_PASSWORD", "change-me"),
+  rate: {
+    tasksPerHour: num("RATE_MAX_PER_HOUR", 3),
+    transcribePerHour: num("RATE_TRANSCRIBE_PER_HOUR", 10),
+  },
+  maxTextLen: num("MAX_TEXT_LEN", 300),
+} as const;

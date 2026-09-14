@@ -1,0 +1,7 @@
+# Caddy 反向代理:自动 HTTPS(麦克风权限要求 secure context)
+# 域名解析到服务器后:sudo caddy run --config deploy/Caddyfile
+words2site.example.com {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:3000
+	max_request_body 20MB
+}
