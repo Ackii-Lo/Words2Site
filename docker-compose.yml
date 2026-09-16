@@ -7,7 +7,7 @@ services:
     build: . # docker compose build 时使用（CI 发布走 .github/workflows/docker.yml）
     init: true # codex 子进程回收，避免孤儿进程
     ports:
-      - "3000:3000"
+      - "30245:3000"
     env_file:
       - .env
     environment:
