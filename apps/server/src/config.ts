@@ -107,6 +107,11 @@ export const config = {
   },
 
   adminPassword: str("ADMIN_PASSWORD", "change-me"),
+  // 前端异地部署（如 EdgeOne Pages 连远程后端）时的跨域放行来源，逗号分隔；留空 = 仅同源
+  allowOrigins: str("ALLOWED_ORIGINS")
+    .split(",")
+    .map((s) => s.trim().replace(/\/+$/, ""))
+    .filter(Boolean),
   rate: {
     tasksPerHour: num("RATE_MAX_PER_HOUR", 3),
     transcribePerHour: num("RATE_TRANSCRIBE_PER_HOUR", 10),

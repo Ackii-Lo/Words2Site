@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { apiUrl } from "@/lib/apiBase";
 
 const props = defineProps<{ taskId: string; version?: number }>();
-const src = computed(() => `/api/tasks/${props.taskId}/html?v=${props.version ?? 0}`);
+const src = computed(() => apiUrl(`/api/tasks/${props.taskId}/html?v=${props.version ?? 0}`));
 </script>
 
 <template>

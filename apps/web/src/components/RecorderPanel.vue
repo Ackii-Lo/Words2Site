@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRecorder } from "@/composables/useRecorder";
+import { apiUrl } from "@/lib/apiBase";
 import Button from "@/components/ui/Button.vue";
 import Badge from "@/components/ui/Badge.vue";
 import { Mic, Square } from "lucide-vue-next";
@@ -15,7 +16,7 @@ async function uploadAudio(blob: Blob) {
   try {
     const form = new FormData();
     form.append("audio", blob, "audio.webm");
-    const res = await fetch("/api/transcribe", { method: "POST", body: form });
+    const res = await fetch(apiUrl("/api/transcribe"), { method: "POST", body: form });
     const data = (await res.json().catch(() => ({}))) as { text?: string; error?: string };
     if (!res.ok || !data.text) throw new Error(data.error || `转写失败（${res.status}）`);
     emit("transcribed", data.text);

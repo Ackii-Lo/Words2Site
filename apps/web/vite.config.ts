@@ -5,6 +5,8 @@ import path from "node:path";
 
 export default defineConfig({
   plugins: [vue(), tailwindcss()],
+  // Vite 默认只读 apps/web/.env；指到仓库根，让 VITE_*（如 VITE_API_BASE）与后端共用一份 .env
+  envDir: path.resolve(import.meta.dirname, "../.."),
   resolve: {
     alias: { "@": path.resolve(import.meta.dirname, "src") },
   },

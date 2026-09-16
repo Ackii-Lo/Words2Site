@@ -1,6 +1,8 @@
+import { apiUrl } from "@/lib/apiBase";
+
 /** 轻量 API 封装：统一错误信息提取 */
 export async function api<T = unknown>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, {
+  const res = await fetch(apiUrl(path), {
     headers: init?.body ? { "Content-Type": "application/json" } : undefined,
     ...init,
   });

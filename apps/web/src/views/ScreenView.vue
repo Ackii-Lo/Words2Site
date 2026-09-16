@@ -3,6 +3,7 @@ import { onMounted, onUnmounted, ref, computed } from "vue";
 import { api } from "@/composables/useApi";
 import LazyFrame from "@/components/LazyFrame.vue";
 import { demoPage, demoItems } from "@/lib/demoPages";
+import { apiUrl } from "@/lib/apiBase";
 
 interface WallItem {
   taskId: string;
@@ -94,10 +95,10 @@ const duration = (track: WallItem[]) => Math.max(40, track.length * 22);
               />
               <LazyFrame
                 v-else-if="it.hasScreenshot"
-                :src="`/api/tasks/${it.taskId}/screenshot`"
+                :src="apiUrl(`/api/tasks/${it.taskId}/screenshot`)"
                 :title="it.domain ?? ''"
               />
-              <LazyFrame v-else :src="`/api/tasks/${it.taskId}/html`" :title="it.domain ?? ''" />
+              <LazyFrame v-else :src="apiUrl(`/api/tasks/${it.taskId}/html`)" :title="it.domain ?? ''" />
             </div>
             <!-- 卡脚：门牌 + 红章编号 -->
             <div class="flex items-center justify-between gap-2 rounded-b-lg border-x border-b border-[rgba(214,236,248,.25)] bg-[#0B2E4B] px-3 py-2">

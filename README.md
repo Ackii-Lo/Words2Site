@@ -28,6 +28,7 @@ pnpm dev               # 前端 :5173(代理 API 到 :3000)
 - `WHISPER_PROVIDER=openai-api|local|mock` — 语音转写
 - `PUBLISH_ENDPOINT` — 留空走内置 mock 发布；填活动方接口走真实发布
 - `CODEX_BASE_URL` + `CODEX_API_KEY` — codex 自定义接入（中转/网关），不配则用服务器 codex 登录态
+- `VITE_API_BASE` — 前端请求的后端地址（留空同源；Pages 等异地部署时填后端 https 域名，后端配 `ALLOWED_ORIGINS` 放行跨域）
 
 ## 页面
 
