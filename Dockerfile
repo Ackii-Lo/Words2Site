@@ -9,7 +9,8 @@ FROM node:22-slim AS deps
 RUN corepack enable
 WORKDIR /app
 # pnpm workspace：--frozen-lockfile 要求所有 workspace 的 package.json 就位
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+# .npmrc 把 @buf scope 指向 BSR registry（BSR 生成的 SDK 不在 npmjs 上）
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./
 COPY apps/server/package.json apps/server/
 COPY apps/web/package.json apps/web/
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
@@ -31,7 +32,7 @@ RUN corepack enable \
     && npm install -g @openai/codex \
     && mkdir -p /data && chown node:node /data
 WORKDIR /app
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./
 COPY apps/server/package.json apps/server/
 COPY apps/web/package.json apps/web/
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
