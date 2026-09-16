@@ -45,6 +45,17 @@ pnpm dev               # 前端 :5173(代理 API 到 :3000)
 
 也可用腾讯云 EdgeOne 做边缘接入（HTTPS＋加速，可替代 Caddy）或 Pages 托管演示版，见 `deploy/edgeone.md`。
 
+### Docker（后端 + 自托管转写）
+
+镜像是纯后端（不含前端构建产物），内置 codex CLI（`CODEX_BASE_URL`/`CODEX_API_KEY` 认证）：
+
+```bash
+cp .env.example .env   # 按需改（codex 接入、ADMIN_PASSWORD、发布模板等）
+docker compose up -d   # server + speaches（OpenAI 兼容转写服务）一键编排
+```
+
+镜像由 GitHub Actions 自动发布到 `ghcr.io/comppsyunion/words2site`（push main → `latest`，tag `v*` → 语义化版本，PR 只构建不推送）。前端配 `VITE_API_BASE=https://<后端域名>` 即可异地部署（见 `deploy/edgeone.md` 方案 B-2）。
+
 ## 演练
 
 完整清单见 `apps/server/scripts/e2e.md`(mock 全链路 / 超时注入 / 杀进程恢复 / 真实 codex 压测 / 发布联调)。

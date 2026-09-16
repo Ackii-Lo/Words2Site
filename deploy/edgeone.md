@@ -117,7 +117,7 @@ Node 版本：     22
 
 ### 连接远程后端（B-2，完整流程）
 
-1. 后端必须已可公网 HTTPS 访问（即方案 A 已接好，或源站保留 Caddy 自有证书）。Pages 是 HTTPS 站点，浏览器禁止其向 `http://` 地址发请求（混合内容限制），因此 `VITE_API_BASE` 必须是 `https://`；
+1. 后端必须已可公网 HTTPS 访问（即方案 A 已接好，或源站保留 Caddy 自有证书；后端也可以是 Docker 容器——`ghcr.io/comppsyunion/words2site`，`docker compose up -d` 连 Speaches 转写一起编排）。Pages 是 HTTPS 站点，浏览器禁止其向 `http://` 地址发请求（混合内容限制），因此 `VITE_API_BASE` 必须是 `https://`；
 2. 后端 `.env` 设 `ALLOWED_ORIGINS=https://<pages 域名>`（逗号分隔可配多个），`pm2 restart words2site`——后端默认仅同源，不放行则所有请求被浏览器 CORS 拦截；
 3. 前端注入后端地址：Pages 项目环境变量加 `VITE_API_BASE=https://<后端域名>` 后重新部署；CLI 本地构建则写进仓库根 `.env` 再执行构建（注意本地 dev 也会读到它而绕过 Vite 代理，届时 `ALLOWED_ORIGINS` 需附带 `http://localhost:5173`）；
 4. 验证：首页任务状态正常轮询、`/admin` 能登录（`Authorization` 头跨域预检通过）、录音上传转写成功（multipart 跨域直传，无预检）。

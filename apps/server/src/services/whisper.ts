@@ -26,7 +26,8 @@ async function transcribeViaApi(audioPath: string): Promise<string> {
   form.append("file", new Blob([fs.readFileSync(audioPath)], { type: "audio/webm" }), "audio.webm");
   form.append("model", config.whisper.model);
   form.append("language", "zh");
-  const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+  form.append("response_format", "json");
+  const res = await fetch(`${config.whisper.baseUrl}/audio/transcriptions`, {
     method: "POST",
     headers: { Authorization: `Bearer ${config.whisper.apiKey}` },
     body: form,

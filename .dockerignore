@@ -1,0 +1,26 @@
+# 构建上下文与每一层都不该进的东西
+node_modules
+**/node_modules
+dist
+build
+coverage
+.git
+.github
+.vscode
+.idea
+.env
+.env.*
+*.log
+*.md
+docs
+deploy
+data
+tests
+test
+__tests__
+Dockerfile
+.dockerignore
+docker-compose*.yml
+# 纯后端镜像不需要 web 源码，但 package.json 要留着（workspace 锁文件一致性）
+apps/web/*
+!apps/web/package.json

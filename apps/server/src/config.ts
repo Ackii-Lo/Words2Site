@@ -79,6 +79,8 @@ export const config = {
   whisper: {
     provider: whisperProvider as "openai-api" | "local" | "mock",
     apiKey: str("OPENAI_API_KEY"),
+    // 自建 OpenAI 兼容转写服务(如 Speaches)时指向 http://<host>:8000/v1
+    baseUrl: str("OPENAI_BASE_URL", "https://api.openai.com/v1").replace(/\/+$/, ""),
     model: str("OPENAI_TRANSCRIBE_MODEL", "whisper-1"),
     localCmd: str("LOCAL_WHISPER_CMD", "whisper"),
   },
