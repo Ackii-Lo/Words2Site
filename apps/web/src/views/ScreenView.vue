@@ -20,12 +20,13 @@ const demoCount = Number(new URLSearchParams(location.search).get("demo") ?? 0);
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 
 async function refresh() {
+  let real: WallItem[] = [];
   try {
-    const real = (await api<WallItem[]>("/api/screen/all")) as WallItem[];
-    items.value = demoCount > 0 ? [...real, ...demoItems(demoCount)] : real;
+    real = await api<WallItem[]>("/api/screen/all");
   } catch {
-    /* 弱网容忍 */
+    /* 后端不可达:演示模式下仍可独立展示,真实模式留给空态 */
   }
+  items.value = demoCount > 0 ? [...real, ...demoItems(demoCount)] : real;
 }
 onMounted(() => {
   void refresh();
