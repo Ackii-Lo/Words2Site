@@ -13,8 +13,9 @@ WORKDIR /app
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./
 COPY apps/server/package.json apps/server/
 COPY apps/web/package.json apps/web/
+# HUSKY=0：容器内无 .git，跳过根 prepare 的 husky 初始化
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile --filter @words2site/server...
+    HUSKY=0 pnpm install --frozen-lockfile --filter @words2site/server...
 
 # ---- Stage 2: build ----
 FROM node:22-slim AS build
@@ -36,7 +37,7 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./
 COPY apps/server/package.json apps/server/
 COPY apps/web/package.json apps/web/
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
-    pnpm install --prod --frozen-lockfile --filter @words2site/server...
+    HUSKY=0 pnpm install --prod --frozen-lockfile --filter @words2site/server...
 COPY --from=build /app/apps/server/dist apps/server/dist
 USER node
 WORKDIR /app/apps/server

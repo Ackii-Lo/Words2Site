@@ -56,7 +56,7 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: HUSKY=0 pnpm install --frozen-lockfile
 
       - name: Check formatting (Prettier)
         run: pnpm exec prettier --check .
