@@ -42,6 +42,8 @@ pnpm dev               # 前端 :5173(代理 API 到 :3000)
 3. `pm2 start deploy/ecosystem.config.js && pm2 save`
 4. Caddy：改 `deploy/Caddyfile` 域名，`sudo caddy run --config deploy/Caddyfile`(自动 HTTPS)
 
+也可用腾讯云 EdgeOne 做边缘接入（HTTPS＋加速，可替代 Caddy）或 Pages 托管演示版，见 `deploy/edgeone.md`。
+
 ## 演练
 
 完整清单见 `apps/server/scripts/e2e.md`(mock 全链路 / 超时注入 / 杀进程恢复 / 真实 codex 压测 / 发布联调)。

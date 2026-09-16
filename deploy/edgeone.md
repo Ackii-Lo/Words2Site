@@ -1,0 +1,119 @@
+# EdgeOne 部署指南
+
+本项目支持两种腾讯云 EdgeOne 部署形态，按场景选用：
+
+| 形态 | 适用场景 | 功能完整性 |
+| --- | --- | --- |
+| 方案 A：接入加速（边缘反向代理） | 正式活动，源站保持 pm2 部署 | 完整（录音 / 生成 / 发布 / 核验 / 管理台） |
+| 方案 B：Pages 静态托管 | 路演 / 展示，无源站 | 仅大屏演示模式，主流程不可用 |
+
+## 为什么方案 A 可行
+
+对代码的三个事实决定了 EdgeOne 接入是透明的：
+
+- 前端所有 API 调用均为同源相对路径（`/api/…`、`/preview/…`），生产模式下由 Express（:3000）同时托管 SPA、API 与已发布页面，边缘层只需把请求原样回源即可；
+- 前后端之间没有 WebSocket / SSE，队列与状态全部靠 HTTP 轮询，边缘无需任何长连接配置；
+- 麦克风权限要求 secure context，EdgeOne 边缘自带 HTTPS（免费证书），可完整替代 Caddy 的自动 HTTPS 职责。
+
+## 方案 A：接入加速（推荐）
+
+### 前置条件
+
+- 腾讯云账号，已开通 [EdgeOne](https://console.cloud.tencent.com/edgeone)；
+- 一个域名（如 `words2site.example.com`），DNS 解析可控；
+- **加速区域若包含中国大陆，域名必须已完成 ICP 备案**；仅境外加速则不需要；
+- 源站服务器上 `pnpm build && pm2 start deploy/ecosystem.config.js` 已跑通，`:3000` 可在本机访问。
+
+### 步骤 1：添加站点与加速域名
+
+控制台「站点加速」→ 添加站点 → 输入主域（如 `example.com`），按需选择套餐与加速区域，接入模式选 **CNAME 接入**（保持现有 DNS 服务商，只加一条解析，最省事）。
+
+随后在站点内添加加速域名 `words2site.example.com`。
+
+### 步骤 2：CNAME 解析与免费证书
+
+到 DNS 服务商添加：
+
+```text
+words2site.example.com  CNAME  <控制台分配的 CNAME 地址>
+```
+
+注意：CNAME 接入时 EdgeOne 会自动为域名申请免费 DV 证书，**CA 验证依赖这条 CNAME，须在申请发起后 1 小时内配置生效**，超时验证失败需在控制台重新触发。生效后 HTTPS 由边缘节点终止，客户端到边缘即为加密（麦克风可用）。
+
+### 步骤 3：回源配置
+
+「源站」中把源站类型设为 IP，填写源站服务器公网 IP；回源协议选 **HTTP**，回源端口填 **3000**（EdgeOne 默认 HTTP 回源走 80 端口，自定义端口需确保源站防火墙放行）。
+
+此方案下源站直接暴露的是 Express，Caddy 可以退役；若想保留 Caddy（例如同机还有别的站点），改为 EdgeOne 回源 443、Caddy 继续反代 3000 也可以，二选一即可。
+
+### 步骤 4：缓存规则（关键）
+
+在「缓存规则 / 规则引擎」中按路径区分，缓存错配会直接导致功能异常：
+
+| 匹配 | 策略 | 原因 |
+| --- | --- | --- |
+| URL 路径 前缀 `/api/` | 不缓存 | 任务队列、管理台全部走这里，缓存会让状态僵死 |
+| URL 路径 前缀 `/preview/` | 不缓存（或 ≤ 60s） | 参与者刚发布的页面必须立即可见 |
+| URL 路径 前缀 `/assets/` | 遵循源站 / 长缓存 | Vite 产物带内容 hash，可放心缓存 30 天 |
+| 其余（HTML） | 不缓存 | SPA 入口，发布后要立即拿到新版本 |
+
+### 步骤 5：上传体积上限
+
+录音转写接口（`/api/transcribe`）上传音频，multer 限制单文件 10MB。EdgeOne 侧确认「最大上传大小」≥ 20MB（留余量），不足时边缘会直接返回 413，与源站无关——这是接入后最常见的事故点，可参考[上传大小限制配置](https://edgeone.ai/zh/document/46172)。
+
+### 步骤 6：源站防护（建议）
+
+在源站防火墙关闭 3000 端口的公网直连，仅放行 [EdgeOne 回源 IP 网段](https://cloud.tencent.com/document/product/1552/76086)，避免有人绕过边缘直接打源站。
+
+### 步骤 7：更新配置并验证
+
+`.env` 中把 `PUBLIC_BASE_URL` 改为 `https://words2site.example.com`（凭证二维码与 `/verify` 链接用它生成），然后 `pm2 restart words2site`。
+
+验证清单：
+
+- [ ] `https://<域名>` 能打开，浏览器地址栏无证书告警；
+- [ ] 首页能唤起麦克风并录音（secure context 生效）；
+- [ ] mock 模式走完 录音 → 确认 → 排队 → 发布 → 凭证 全链路（`GENERATION_PROVIDER=mock`）；
+- [ ] 凭证页二维码指向 `https://` 域名，扫码后 `/verify/W2S-XXXX` 正常核验；
+- [ ] `/admin` 可登录，任务表 3 秒轮询数据在动（说明 `/api/` 未被缓存）；
+- [ ] 上传一段 > 5MB 的音频转写不报 413。
+
+## 方案 B：Pages 静态托管（仅演示）
+
+没有源站时，可把前端静态产物托管到 [EdgeOne Pages](https://edgeone.ai/pages)（免费），配合大屏演示模式 `/screen?demo=12` 独立展示。**主流程、管理台、核验页、`/preview` 均不可用**（API 无处可去），仅用于路演。
+
+### 方式一：CLI 部署
+
+```bash
+pnpm install
+pnpm --filter @words2site/web build   # 产物在 apps/web/dist
+npm install -g edgeone
+edgeone pages deploy apps/web/dist
+```
+
+monorepo 场景建议像上面这样先本地构建、再对 `dist` 目录部署，避免 CLI 自动构建时无法识别 pnpm workspace。
+
+### 方式二：控制台 Git 连接
+
+Pages 控制台 → 创建项目 → 导入 Git 仓库，构建配置填：
+
+```text
+构建命令：      pnpm install && pnpm --filter @words2site/web build
+产物目录：      apps/web/dist
+Node 版本：     22
+```
+
+推送即自动部署，Pages 会分配默认域名，也可绑定自定义域名。
+
+### 访问
+
+- 大屏演示：`https://<pages 域名>/screen?demo=12`（后端不可达时自动用内置演示卡片填充）；
+- 首页 `/` 可打开但流程走不通，别在正式活动用这种形态。
+
+## 常见问题
+
+- **免费证书一直「验证中」**：九成是 CNAME 没在 1 小时窗口内生效，检查解析是否冲突（同名的 A 记录要先删），然后在控制台重新申请。
+- **上传音频 413**：先查 EdgeOne「最大上传大小」，再查源站（若保留 Caddy，`max_request_body` 仍需 ≥ 20MB）。
+- **管理台数据不动 / 任务状态不更新**：`/api/` 被缓存了，回步骤 4 修正并清缓存。
+- **大陆访问慢或被拒**：加速区域含中国大陆但域名未备案时无法开启，改用「全球（不含中国大陆）」或先完成备案。
+- **`/preview` 页面 404**：该路径由源站 `data/published` 目录动态提供，确认走的是方案 A 且回源正常，Pages 形态下无此路径。
