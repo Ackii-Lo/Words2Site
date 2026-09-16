@@ -82,10 +82,12 @@ words2site.example.com  CNAME  <控制台分配的 CNAME 地址>
 
 没有源站时，可把前端静态产物托管到 [EdgeOne Pages](https://edgeone.ai/pages)（免费），配合大屏演示模式 `/screen?demo=12` 独立展示。**主流程、管理台、核验页、`/preview` 均不可用**（API 无处可去），仅用于路演。
 
+**注意：没有「后端 URL 环境变量」可配。** 前端所有接口调用都写死了同源相对路径 `/api/…`（散落在各 view，无统一封装，代码里也不存在 `VITE_API_BASE` 之类的变量），构建时注入后端地址无处生效——主流程在 Pages 上不可用的根因在此，而不是缺一项环境变量配置。若将来想让 Pages 前端连远程后端，需要先改代码引入 API 基础地址变量，并在后端放开该 Pages 域名的 CORS，属于代码改动，超出本指南范围。
+
 ### 方式一：CLI 部署
 
 ```bash
-pnpm install
+pnpm install --frozen-lockfile
 pnpm --filter @words2site/web build   # 产物在 apps/web/dist
 npm install -g edgeone
 edgeone pages deploy apps/web/dist
@@ -95,13 +97,16 @@ monorepo 场景建议像上面这样先本地构建、再对 `dist` 目录部署
 
 ### 方式二：控制台 Git 连接
 
-Pages 控制台 → 创建项目 → 导入 Git 仓库，构建配置填：
+Pages 控制台 → 创建项目 → 导入 Git 仓库，安装与构建是两个独立配置项，分别填：
 
 ```text
-构建命令：      pnpm install && pnpm --filter @words2site/web build
-产物目录：      apps/web/dist
+安装命令：      pnpm install --frozen-lockfile
+构建命令：      pnpm --filter @words2site/web build
+输出目录：      apps/web/dist
 Node 版本：     22
 ```
+
+安装命令锁定 `pnpm-lock.yaml`（`--frozen-lockfile`），保证 CI 产物与本地一致；若构建日志提示找不到 `pnpm`，把安装命令改为 `npm install -g pnpm && pnpm install --frozen-lockfile`（仓库 `packageManager` 字段已固定 pnpm 版本）。
 
 推送即自动部署，Pages 会分配默认域名，也可绑定自定义域名。
 
