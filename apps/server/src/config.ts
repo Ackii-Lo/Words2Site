@@ -91,9 +91,10 @@ export const config = {
     urlFlag: str("PUBLISH_URL_FLAG", "main"),
   },
 
-  // sslly-nginx 网关静态部署（DeployService）
+  // sslly-nginx 网关静态部署（DeployService，两步认证）
   deploy: {
     apiBase: str("SSLLY_API_BASE", "https://sslly-nas.hnrobert.space/api/v1").replace(/\/$/, ""),
+    user: str("SSLLY_API_USER", "admin"),
     token: str("SSLLY_API_TOKEN", "admin"),
     group: str("DEPLOY_GROUP", "hf"),
     // 参与者域名模板，{label} 为参与者自定义部分；一级子域才能命中 *.hnrobert.space 通配证书

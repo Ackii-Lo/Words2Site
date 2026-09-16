@@ -14,6 +14,12 @@ importers:
 
   apps/server:
     dependencies:
+      '@buf/sslly-nginx_sslly-nginx.bufbuild_es':
+        specifier: 2.15.0-20260916164407-a4408fa83949.1
+        version: 2.15.0-20260916164407-a4408fa83949.1(@bufbuild/protobuf@2.15.0)
+      '@bufbuild/protobuf':
+        specifier: ^2.15.0
+        version: 2.15.0
       adm-zip:
         specifier: ^0.6.1
         version: 0.6.1
@@ -125,6 +131,19 @@ packages:
   '@babel/types@7.29.8':
     resolution: {integrity: sha512-Vj1jF3cPfxg7OAfoI7QnVKLoILlm2JF9pnVHrX8qx7AHMiYWT+NDAA7jChlNgRS4WTLc/fD1lXLmPixluj+3Gg==}
     engines: {node: '>=6.9.0'}
+
+  '@buf/googleapis_googleapis.bufbuild_es@2.15.0-20260414192239-c17df5b2beca.1':
+    resolution: {integrity: sha512-/5yQAlkF1KW/cetK9I4IFEp11mGFqrEE2zkmKWPVL4Y43VNo/sVy8NuR4urZMvTgBXyis0Ub/iTqs2BMBQb50w==}
+    peerDependencies:
+      '@bufbuild/protobuf': ^2.15.0
+
+  '@buf/sslly-nginx_sslly-nginx.bufbuild_es@2.15.0-20260916164407-a4408fa83949.1':
+    resolution: {integrity: sha512-TVOshMC3b0uOEB3HPGLxiTJ6rCkPS7R6doSnA2T38UiWVTZgMo1kDAjirGR5AOfebjW/4zVzvpnDvSv0OcxoaA==}
+    peerDependencies:
+      '@bufbuild/protobuf': ^2.15.0
+
+  '@bufbuild/protobuf@2.15.0':
+    resolution: {integrity: sha512-DAheWUkVr/SJTWCc+lg9dhY0eN4SaWlf4+bG1KzHeXbnqt0AfB/NX0Z+VunGlM1ki1B4zVvye27MpKh/svySUA==}
 
   '@esbuild/aix-ppc64@0.25.12':
     resolution: {integrity: sha512-Hhmwd6CInZ3dwpuGTF8fJG6yoWmsToE+vYgD4nytZVxcu1ulHpUQRAB1UJ8+N1Am3Mz4+xOByoQoSZf4D+CpkA==}
@@ -1728,6 +1747,17 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.29.7
       '@babel/helper-validator-identifier': 7.29.7
+
+  '@buf/googleapis_googleapis.bufbuild_es@2.15.0-20260414192239-c17df5b2beca.1(@bufbuild/protobuf@2.15.0)':
+    dependencies:
+      '@bufbuild/protobuf': 2.15.0
+
+  '@buf/sslly-nginx_sslly-nginx.bufbuild_es@2.15.0-20260916164407-a4408fa83949.1(@bufbuild/protobuf@2.15.0)':
+    dependencies:
+      '@buf/googleapis_googleapis.bufbuild_es': 2.15.0-20260414192239-c17df5b2beca.1(@bufbuild/protobuf@2.15.0)
+      '@bufbuild/protobuf': 2.15.0
+
+  '@bufbuild/protobuf@2.15.0': {}
 
   '@esbuild/aix-ppc64@0.25.12':
     optional: true

@@ -3,3 +3,5 @@ packages:
 allowBuilds:
   better-sqlite3: true
   esbuild: true
+minimumReleaseAgeExclude:
+  - '@buf/sslly-nginx_sslly-nginx.bufbuild_es@2.15.0-20260916164407-a4408fa83949.1'

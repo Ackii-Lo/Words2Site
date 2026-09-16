@@ -12,6 +12,8 @@
     "test:mail": "tsx scripts/test-mail.ts"
   },
   "dependencies": {
+    "@buf/sslly-nginx_sslly-nginx.bufbuild_es": "2.15.0-20260916164407-a4408fa83949.1",
+    "@bufbuild/protobuf": "^2.15.0",
     "adm-zip": "^0.6.1",
     "better-sqlite3": "^11.8.1",
     "dotenv": "^16.4.7",
