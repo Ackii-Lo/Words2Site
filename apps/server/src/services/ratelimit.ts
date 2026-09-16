@@ -1,9 +1,9 @@
-/** 内存滑动窗口限流(IP + deviceId 双维度,活动级规模足够) */
+/** 内存滑动窗口限流（IP + deviceId 双维度，活动级规模足够） */
 
 const windows = new Map<string, number[]>();
 
 /**
- * @returns true = 放行;false = 超限
+ * @returns true = 放行；false = 超限
  */
 export function allow(key: string, max: number, windowMs = 3600_000): boolean {
   const now = Date.now();
@@ -17,7 +17,7 @@ export function allow(key: string, max: number, windowMs = 3600_000): boolean {
   return true;
 }
 
-/** 定期清理,防内存缓慢增长 */
+/** 定期清理，防内存缓慢增长 */
 setInterval(() => {
   const now = Date.now();
   for (const [k, arr] of windows) {

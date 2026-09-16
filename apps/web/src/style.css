@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* shadcn 风格设计令牌(Tailwind v4 CSS-first) */
+/* shadcn 风格设计令牌（Tailwind v4 CSS-first） */
 :root {
   --background: oklch(0.985 0.005 300);
   --foreground: oklch(0.21 0.02 300);

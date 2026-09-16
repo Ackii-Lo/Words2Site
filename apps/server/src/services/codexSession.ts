@@ -12,7 +12,7 @@ export interface LiveSession {
   startedAt: number;
 }
 
-/** 内存注册表:当前/最近的 codex 进程(DB 存历史,内存管活跃态) */
+/** 内存注册表：当前/最近的 codex 进程（DB 存历史，内存管活跃态） */
 const live = new Map<string, LiveSession>();
 
 export const sessionManager = {
@@ -36,7 +36,7 @@ export const sessionManager = {
     if (s) s.state = state;
     sessions.setState(sessionId, state, true);
   },
-  /** 移除占位会话(pending-*,真实 session 就位后替换) */
+  /** 移除占位会话（pending-*，真实 session 就位后替换） */
   remove(sessionId: string) {
     live.delete(sessionId);
   },
@@ -60,7 +60,7 @@ export const sessionManager = {
   activeCount(): number {
     return [...live.values()].filter((s) => s.state === "spawning" || s.state === "generating").length;
   },
-  /** 会话池占用快照(admin SessionBoard 用) */
+  /** 会话池占用快照（admin SessionBoard 用） */
   stats() {
     const all = this.list();
     const active = all.filter((s) => s.state === "spawning" || s.state === "generating");
@@ -72,10 +72,10 @@ export const sessionManager = {
   },
 };
 
-/** 健康探活:codex exec "say ok"(60s 超时) */
+/** 健康探活：codex exec "say ok"(60s 超时) */
 export async function probeCodex(): Promise<{ ok: boolean; detail: string }> {
   if (config.generation.provider === "mock") {
-    return { ok: true, detail: "mock 模式,无需探活" };
+    return { ok: true, detail: "mock 模式，无需探活" };
   }
   const args = ["exec", "--sandbox", "read-only", "--skip-git-repo-check"];
   const g = config.generation;
@@ -97,7 +97,7 @@ export async function probeCodex(): Promise<{ ok: boolean; detail: string }> {
     let out = "";
     const timer = setTimeout(() => {
       try { child.pid && process.kill(child.pid, "SIGKILL"); } catch { /* noop */ }
-      resolve({ ok: false, detail: "探活超时(60s)" });
+      resolve({ ok: false, detail: "探活超时（60s）" });
     }, 60_000);
     child.stdout.on("data", (d) => (out += d));
     child.stderr.on("data", (d) => (out += d));

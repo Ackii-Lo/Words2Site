@@ -9,7 +9,7 @@ import { taskLog, log } from "../util/logger.js";
 
 type Job = { taskId: string; kind: "gen" | "refine"; instruction?: string };
 
-/** FIFO(refine 优先插队:参与者正盯着屏幕等第二版) */
+/** FIFO(refine 优先插队：参与者正盯着屏幕等第二版) */
 const pending: Job[] = [];
 let activeCount = 0;
 
@@ -26,7 +26,7 @@ function dispatch() {
     const job = pending.shift()!;
     activeCount++;
     runJob(job)
-      .catch((err) => taskLog(job.taskId, `runJob 异常: ${err instanceof Error ? err.message : String(err)}`))
+      .catch((err) => taskLog(job.taskId, `runJob 异常： ${err instanceof Error ? err.message : String(err)}`))
       .finally(() => {
         activeCount--;
         dispatch();
@@ -63,11 +63,11 @@ async function runJob(job: Job) {
       job.kind === "refine" && t.codex_session_id && !t.codex_session_id.startsWith("mock-") && !t.codex_session_id.startsWith("pending-") && !t.codex_session_id.startsWith("local-")
         ? { instruction: job.instruction!, sessionId: t.codex_session_id }
         : job.kind === "refine"
-          ? { instruction: job.instruction!, sessionId: "" } // mock/local:重新完整生成
+          ? { instruction: job.instruction!, sessionId: "" } // mock/local：重新完整生成
           : undefined,
   });
 
-  // 会话登记:用真实 sessionId 替换占位
+  // 会话登记：用真实 sessionId 替换占位
   if (result.sessionId && result.sessionId !== tempSession) {
     sessionManager.remove(tempSession);
     sessionManager.register({
@@ -97,8 +97,8 @@ async function runJob(job: Job) {
   const v = validateHtmlFile(result.htmlPath);
   if (!v.ok) {
     sessionManager.finish(result.sessionId ?? tempSession, "failed");
-    taskLog(taskId, `校验失败: ${v.reason}`);
-    await handleFailure(taskId, job, `产物校验失败: ${v.reason}`);
+    taskLog(taskId, `校验失败： ${v.reason}`);
+    await handleFailure(taskId, job, `产物校验失败： ${v.reason}`);
     return;
   }
 
@@ -113,14 +113,14 @@ async function runJob(job: Job) {
     refinements: job.kind === "refine" ? t.refinements + 1 : t.refinements,
     error: null,
   });
-  taskLog(taskId, `完成(${job.kind}),${(size / 1024).toFixed(1)}KB`);
+  taskLog(taskId, `完成（${job.kind}）,${(size / 1024).toFixed(1)}KB`);
 }
 
 async function handleFailure(taskId: string, job: Job, error: string) {
   const t = tasks.get(taskId)!;
   const attempts = (t.attempts ?? 0) + 1;
   if (attempts < 2) {
-    taskLog(taskId, `第 ${attempts} 次失败,自动重试: ${error}`);
+    taskLog(taskId, `第 ${attempts} 次失败，自动重试： ${error}`);
     tasks.update({ id: taskId, status: "queued", stage: "自动重试排队中", attempts, error });
     enqueue({ taskId, kind: job.kind, instruction: job.instruction });
   } else {
@@ -132,7 +132,7 @@ async function handleFailure(taskId: string, job: Job, error: string) {
       error,
       finished_at: Date.now(),
     });
-    taskLog(taskId, `最终失败: ${error}`);
+    taskLog(taskId, `最终失败： ${error}`);
   }
 }
 
@@ -155,6 +155,6 @@ export const queue = {
 function enqueue(job: Job) {
   if (job.kind === "refine") pending.unshift(job);
   else pending.push(job);
-  log("queue", `入队 ${job.kind}:${job.taskId},待处理 ${pending.length}`);
+  log("queue", `入队 ${job.kind}:${job.taskId}，待处理 ${pending.length}`);
   dispatch();
 }

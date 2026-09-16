@@ -7,7 +7,7 @@ const src = computed(() => `/api/tasks/${props.taskId}/html?v=${props.version ??
 
 <template>
   <div class="overflow-hidden rounded-xl border bg-white shadow-inner">
-    <!-- sandbox:仅允许脚本,禁止同源/表单/弹窗,防生成物触碰活动站 -->
+    <!-- sandbox：仅允许脚本，禁止同源/表单/弹窗，防生成物触碰活动站 -->
     <iframe
       :src="src"
       sandbox="allow-scripts"

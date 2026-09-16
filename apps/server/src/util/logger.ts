@@ -15,7 +15,7 @@ export function logError(scope: string, msg: string, err?: unknown): void {
   console.error(`[${ts()}] [${scope}] ${msg} ${detail}`);
 }
 
-/** 任务日志:console + data/logs/<taskId>.log(现场排障) */
+/** 任务日志：console + data/logs/<taskId>.log(现场排障) */
 export function taskLog(taskId: string, msg: string): void {
   const line = `[${ts()}] ${msg}\n`;
   console.log(`[task:${taskId}] ${msg}`);

@@ -5,10 +5,10 @@ import { tasks } from "../db.js";
 import { taskLog } from "../util/logger.js";
 
 /**
- * 大屏截图:发布成功后对线上 URL 截全页 PNG。
- * 运行时按需加载 puppeteer(可选依赖,未安装则大屏自动降级为 iframe 实时预览):
+ * 大屏截图：发布成功后对线上 URL 截全页 PNG。
+ * 运行时按需加载 puppeteer(可选依赖，未安装则大屏自动降级为 iframe 实时预览):
  *   pnpm --filter @words2site/server add puppeteer
- * 部署机首次运行会下载 Chromium,活动前务必预热。
+ * 部署机首次运行会下载 Chromium，活动前务必预热。
  */
 
 export function shotPath(taskId: string): string {
@@ -25,14 +25,14 @@ export async function captureScreenshot(taskId: string, url: string): Promise<bo
     close: () => Promise<void>;
   }>;
   try {
-    // 可选依赖:变量引入绕过 TS 静态解析,未安装时大屏自动降级 iframe
+    // 可选依赖：变量引入绕过 TS 静态解析，未安装时大屏自动降级 iframe
     const spec = "puppeteer";
     const mod = (await import(spec)) as unknown as {
       default: { launch: typeof launch };
     };
     launch = mod.default.launch;
   } catch {
-    taskLog(taskId, "puppeteer 未安装,跳过截图(大屏将用 iframe 预览)");
+    taskLog(taskId, "puppeteer 未安装，跳过截图（大屏将用 iframe 预览）");
     return false;
   }
   let browser: Awaited<ReturnType<typeof launch>> | null = null;
@@ -50,7 +50,7 @@ export async function captureScreenshot(taskId: string, url: string): Promise<bo
     taskLog(taskId, `截图完成 → ${url}`);
     return true;
   } catch (err) {
-    taskLog(taskId, `截图失败(大屏将用 iframe 预览): ${err instanceof Error ? err.message : String(err)}`);
+    taskLog(taskId, `截图失败（大屏将用 iframe 预览）: ${err instanceof Error ? err.message : String(err)}`);
     return false;
   } finally {
     await browser?.close().catch(() => {});

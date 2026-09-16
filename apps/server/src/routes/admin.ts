@@ -24,7 +24,7 @@ function auth(req: Request, res: Response, next: NextFunction) {
 }
 adminRouter.use(auth);
 
-/** 总览:统计 + 队列 */
+/** 总览：统计 + 队列 */
 adminRouter.get("/overview", (_req, res) => {
   res.json({ stats: tasks.stats(), queue: queue.stats() });
 });
@@ -51,18 +51,18 @@ adminRouter.post("/tasks/:id/retry", (req, res) => {
   res.json({ ok: true });
 });
 
-/** 跳过发布(标记人工处理) */
+/** 跳过发布（标记人工处理） */
 adminRouter.post("/tasks/:id/skip", (req, res) => {
   const t = tasks.get(req.params.id);
   if (!t) {
     res.status(404).json({ error: "任务不存在" });
     return;
   }
-  tasks.update({ id: t.id, status: "published", stage: "人工处理(跳过发布)", finished_at: Date.now() });
+  tasks.update({ id: t.id, status: "published", stage: "人工处理（跳过发布）", finished_at: Date.now() });
   res.json({ ok: true });
 });
 
-/** 下线:调网关 DeleteStatic 删部署 + 标记 removed(大屏消失,直接链接失效) */
+/** 下线：调网关 DeleteStatic 删部署 + 标记 removed(大屏消失，直接链接失效) */
 adminRouter.post("/tasks/:id/delete", async (req, res) => {
   const t = tasks.get(req.params.id);
   if (!t) {
@@ -84,7 +84,7 @@ adminRouter.post("/tasks/:id/delete", async (req, res) => {
   res.json({ ok: true });
 });
 
-/** 会话池状态(SessionBoard) */
+/** 会话池状态（SessionBoard） */
 adminRouter.get("/sessions", (_req, res) => {
   res.json(sessionManager.stats());
 });

@@ -4,7 +4,7 @@ export type RecorderState = "idle" | "requesting" | "recording" | "uploading" | 
 
 const MAX_MS = 90_000;
 
-/** 浏览器录音:按住/点击开关,自动 90s 封顶,产出上传用的 Blob */
+/** 浏览器录音：按住/点击开关，自动 90s 封顶，产出上传用的 Blob */
 export function useRecorder(onDone: (audio: Blob) => void) {
   const state = ref<RecorderState>("idle");
   const elapsed = ref(0);
@@ -19,7 +19,7 @@ export function useRecorder(onDone: (audio: Blob) => void) {
     state.value = "requesting";
     if (!navigator.mediaDevices?.getUserMedia) {
       state.value = "denied";
-      message.value = "当前浏览器不支持录音,请打字输入";
+      message.value = "当前浏览器不支持录音，请打字输入";
       return;
     }
     try {
@@ -47,8 +47,8 @@ export function useRecorder(onDone: (audio: Blob) => void) {
       state.value = "denied";
       message.value =
         err instanceof Error && err.name === "NotAllowedError"
-          ? "麦克风权限被拒绝,请打字输入(或在浏览器设置中允许麦克风)"
-          : "无法访问麦克风,请打字输入";
+          ? "麦克风权限被拒绝，请打字输入（或在浏览器设置中允许麦克风）"
+          : "无法访问麦克风，请打字输入";
     }
   }
 

@@ -10,7 +10,7 @@ export function newTaskId(len = 10): string {
   return out;
 }
 
-/** 凭证编号 W2S-XXXX(Base32 风格,去混淆) */
+/** 凭证编号 W2S-XXXX(Base32 风格，去混淆) */
 export function newCertCode(): string {
   const bytes = crypto.randomBytes(4);
   let out = "";

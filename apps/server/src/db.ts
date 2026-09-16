@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   domain TEXT,
   is_public INTEGER DEFAULT 1,
   removed_at INTEGER,
-  screenshot INTEGER DEFAULT 0,     -- 0 无 1 有(data/tasks/<id>/shot.png)
+  screenshot INTEGER DEFAULT 0,     -- 0 无 1 有（data/tasks/<id>/shot.png）
   created_at INTEGER,
   finished_at INTEGER
 );
@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS codex_sessions (
 );
 `);
 
-// 旧库迁移:补齐新增列(SQLite 无 ADD COLUMN IF NOT EXISTS,逐个尝试)
+// 旧库迁移：补齐新增列（SQLite 无 ADD COLUMN IF NOT EXISTS，逐个尝试）
 for (const col of [
   "ALTER TABLE tasks ADD COLUMN email TEXT",
   "ALTER TABLE tasks ADD COLUMN domain TEXT",
@@ -54,7 +54,7 @@ for (const col of [
 ]) {
   try { db.prepare(col).run(); } catch { /* 已存在 */ }
 }
-// 依赖新列的唯一索引(须在迁移之后创建)
+// 依赖新列的唯一索引（须在迁移之后创建）
 db.exec(
   "CREATE UNIQUE INDEX IF NOT EXISTS idx_tasks_domain ON tasks(domain) WHERE domain IS NOT NULL AND removed_at IS NULL",
 );

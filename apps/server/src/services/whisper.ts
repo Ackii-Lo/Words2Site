@@ -7,7 +7,7 @@ const run = promisify(execFile);
 
 /**
  * 音频转写。audioPath 为浏览器上传的 webm/opus 文件。
- * 返回非空文本;失败抛错(路由层转 500,前端提示改用打字)。
+ * 返回非空文本；失败抛错（路由层转 500，前端提示改用打字）。
  */
 export async function transcribe(audioPath: string): Promise<string> {
   switch (config.whisper.provider) {
@@ -16,7 +16,7 @@ export async function transcribe(audioPath: string): Promise<string> {
     case "local":
       return transcribeLocal(audioPath);
     case "mock":
-      return "帮我做一个介绍我家猫咪咪咪的网页,要可爱一点的风格,粉色系。";
+      return "帮我做一个介绍我家猫咪咪咪的网页，要可爱一点的风格，粉色系。";
   }
 }
 

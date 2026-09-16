@@ -24,7 +24,7 @@ export function fullDomain(label: string): string {
   return config.deploy.domainTemplate.replace("{label}", label);
 }
 
-/** 创建生成任务(prompt + 邮箱 + 自定义域名 + 是否公开) */
+/** 创建生成任务（prompt + 邮箱 + 自定义域名 + 是否公开） */
 tasksRouter.post("/", (req: Request, res: Response) => {
   const { text, deviceId, transcript, email, domainLabel, isPublic } = (req.body ?? {}) as {
     text?: string;
@@ -37,7 +37,7 @@ tasksRouter.post("/", (req: Request, res: Response) => {
   const trimmed = (text ?? "").trim();
   if (trimmed.length < 10 || trimmed.length > config.maxTextLen) {
     res.status(400).json({
-      error: `描述需要 10–${config.maxTextLen} 个字符(当前 ${trimmed.length})`,
+      error: `描述需要 10–${config.maxTextLen} 个字符（当前 ${trimmed.length}）`,
     });
     return;
   }
@@ -48,18 +48,18 @@ tasksRouter.post("/", (req: Request, res: Response) => {
   }
   const label = (domainLabel ?? "").trim().toLowerCase();
   if (!DOMAIN_LABEL_RE.test(label)) {
-    res.status(400).json({ error: "域名只能用小写字母、数字和连字符,3–31 位,以字母或数字开头" });
+    res.status(400).json({ error: "域名只能用小写字母、数字和连字符，3–31 位，以字母或数字开头" });
     return;
   }
   const domain = fullDomain(label);
   if (tasks.domainTaken(domain)) {
-    res.status(409).json({ error: `「${label}」已被别人用了,换一个试试` });
+    res.status(409).json({ error: `「${label}」已被别人用了，换一个试试` });
     return;
   }
   const device = isValidDeviceId(deviceId) ? deviceId : "anon";
   const ip = clientIp(req);
   if (!allow(`g:${ip}`, config.rate.tasksPerHour) || !allow(`d:${device}`, config.rate.tasksPerHour)) {
-    res.status(429).json({ error: "生成次数已达上限,找工作人员帮忙吧" });
+    res.status(429).json({ error: "生成次数已达上限，找工作人员帮忙吧" });
     return;
   }
 
@@ -105,7 +105,7 @@ tasksRouter.get("/:id", (req: Request, res: Response) => {
   });
 });
 
-/** 大屏数据:已发布 + 公开 + 未下线的页面 */
+/** 大屏数据：已发布 + 公开 + 未下线的页面 */
 export const screenRouter = Router();
 screenRouter.get("/all", (_req: Request, res: Response) => {
   res.json(
@@ -136,7 +136,7 @@ tasksRouter.get("/:id/html", (req: Request, res: Response) => {
   res.type("html").send(fs.readFileSync(file, "utf-8"));
 });
 
-/** 大屏截图(有则 PNG,无则 404,前端降级 iframe) */
+/** 大屏截图（有则 PNG，无则 404，前端降级 iframe） */
 tasksRouter.get("/:id/screenshot", (req: Request, res: Response) => {
   const file = shotPath(req.params.id);
   if (!fs.existsSync(file)) {
@@ -146,7 +146,7 @@ tasksRouter.get("/:id/screenshot", (req: Request, res: Response) => {
   res.type("png").send(fs.readFileSync(file));
 });
 
-/** refine:按修改意见改写(resume codex 会话) */
+/** refine：按修改意见改写（resume codex 会话） */
 tasksRouter.post("/:id/refine", (req: Request, res: Response) => {
   const t = tasks.get(req.params.id);
   if (!t) {
@@ -154,11 +154,11 @@ tasksRouter.post("/:id/refine", (req: Request, res: Response) => {
     return;
   }
   if (t.status !== "done") {
-    res.status(409).json({ error: "当前状态不能修改(仅生成完成可修改)" });
+    res.status(409).json({ error: "当前状态不能修改（仅生成完成可修改）" });
     return;
   }
   if (t.refinements >= config.generation.maxRefine) {
-    res.status(429).json({ error: "修改次数已用完,直接发布或重新生成吧" });
+    res.status(429).json({ error: "修改次数已用完，直接发布或重新生成吧" });
     return;
   }
   const instruction = ((req.body?.text as string) ?? "").trim();
@@ -190,7 +190,7 @@ tasksRouter.post("/:id/publish", async (req: Request, res: Response) => {
   const domain = t.domain ?? fullDomain(t.id);
   const result = await publish(t.id, file, domain);
   if (!result.ok || !result.url) {
-    res.status(502).json({ error: `${result.error ?? "发布失败"},稍后重试或找工作人员` });
+    res.status(502).json({ error: `${result.error ?? "发布失败"}，稍后重试或找工作人员` });
     return;
   }
   const url = result.url;
@@ -205,7 +205,7 @@ tasksRouter.post("/:id/publish", async (req: Request, res: Response) => {
   });
   res.json({ publishUrl: url, code });
 
-  // 异步收尾:完成邮件 + 大屏截图(失败不影响发布结果)
+  // 异步收尾：完成邮件 + 大屏截图（失败不影响发布结果）
   if (t.email) {
     void sendCompletionMail({
       taskId: t.id,
@@ -238,7 +238,7 @@ tasksRouter.get("/:id/certificate", (req: Request, res: Response) => {
   });
 });
 
-/** 凭证核验(扫码落地页取数,挂载于 /api/verify) */
+/** 凭证核验（扫码落地页取数，挂载于 /api/verify） */
 export const verifyRouter = Router();
 verifyRouter.get("/:code", (req: Request, res: Response) => {
   const t = tasks.getByCode(req.params.code);

@@ -12,7 +12,7 @@ interface WallItem {
   prompt: string;
   hasScreenshot: boolean;
   createdAt: number;
-  demoIndex?: number; // 演示卡片:用 srcdoc
+  demoIndex?: number; // 演示卡片：用 srcdoc
 }
 
 const items = ref<WallItem[]>([]);
@@ -24,7 +24,7 @@ async function refresh() {
   try {
     real = await api<WallItem[]>("/api/screen/all");
   } catch {
-    /* 后端不可达:演示模式下仍可独立展示,真实模式留给空态 */
+    /* 后端不可达：演示模式下仍可独立展示，真实模式留给空态 */
   }
   items.value = demoCount > 0 ? [...real, ...demoItems(demoCount)] : real;
 }
@@ -34,7 +34,7 @@ onMounted(() => {
 });
 onUnmounted(() => pollTimer && clearInterval(pollTimer));
 
-/** 分轨:卡片轮流进轨,每轨独立滚动;内容复制一份衔接首尾实现无缝循环 */
+/** 分轨：卡片轮流进轨，每轨独立滚动；内容复制一份衔接首尾实现无缝循环 */
 const TRACKS = 3;
 const tracks = computed(() => {
   const t: WallItem[][] = Array.from({ length: TRACKS }, () => []);
@@ -47,7 +47,7 @@ const duration = (track: WallItem[]) => Math.max(40, track.length * 22);
 
 <template>
   <div class="fixed inset-0 flex flex-col overflow-hidden bg-[#0E3A5D] text-[#EAF4FA]">
-    <!-- 图签(title block)-->
+    <!-- 图签（title block）-->
     <header class="relative z-10 flex items-stretch justify-between border-b border-[rgba(214,236,248,.25)] bg-[#0B2E4B]/95 px-6 py-3">
       <div class="flex items-baseline gap-4">
         <span class="text-lg font-black tracking-[0.3em]">WORDS TO WEBSITE</span>
@@ -68,7 +68,7 @@ const duration = (track: WallItem[]) => Math.max(40, track.length * 22);
       </div>
     </div>
 
-    <!-- 滚动墙:横屏多轨,交替方向,悬停暂停 -->
+    <!-- 滚动墙：横屏多轨，交替方向，悬停暂停 -->
     <div v-else class="grid flex-1 grid-rows-[var(--track-n)] gap-4 overflow-hidden p-4" :style="{ '--track-n': tracks.length }">
       <div
         v-for="(track, ti) in tracks"
@@ -99,7 +99,7 @@ const duration = (track: WallItem[]) => Math.max(40, track.length * 22);
               />
               <LazyFrame v-else :src="`/api/tasks/${it.taskId}/html`" :title="it.domain ?? ''" />
             </div>
-            <!-- 卡脚:门牌 + 红章编号 -->
+            <!-- 卡脚：门牌 + 红章编号 -->
             <div class="flex items-center justify-between gap-2 rounded-b-lg border-x border-b border-[rgba(214,236,248,.25)] bg-[#0B2E4B] px-3 py-2">
               <span class="truncate font-mono text-[11px] text-[#EAF4FA]">{{ it.domain ?? it.taskId }}</span>
               <span class="shrink-0 rotate-[-4deg] border-2 border-[#E0492E] px-1.5 py-px font-mono text-[10px] font-semibold tracking-widest text-[#E0492E]">{{ it.code }}</span>
@@ -112,7 +112,7 @@ const duration = (track: WallItem[]) => Math.max(40, track.length * 22);
 </template>
 
 <style scoped>
-/* 卡片:竖版小页,高随轨道自适应 */
+/* 卡片：竖版小页，高随轨道自适应 */
 .wall-card {
   height: 100%;
   aspect-ratio: 5 / 8;

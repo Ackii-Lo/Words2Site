@@ -21,7 +21,7 @@ transcribeRouter.post("/transcribe", upload.single("audio"), (req, res) => {
   const ip = req.ip ?? "unknown";
   if (!allow(`t:${ip}`, config.rate.transcribePerHour)) {
     if (req.file) fs.unlink(req.file.path, () => {});
-    res.status(429).json({ error: "转写次数过多,请改用打字输入" });
+    res.status(429).json({ error: "转写次数过多，请改用打字输入" });
     return;
   }
   if (!req.file) {
@@ -34,9 +34,9 @@ transcribeRouter.post("/transcribe", upload.single("audio"), (req, res) => {
     })
     .catch((err) => {
       const msg = err instanceof Error ? err.message : String(err);
-      res.status(500).json({ error: `转写失败(${msg}),请改用打字输入` });
+      res.status(500).json({ error: `转写失败（${msg}），请改用打字输入` });
     })
     .finally(() => {
-      fs.unlink(req.file!.path, () => {}); // 转写后即删,不留音频
+      fs.unlink(req.file!.path, () => {}); // 转写后即删，不留音频
     });
 });

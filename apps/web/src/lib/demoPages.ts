@@ -1,7 +1,7 @@
 /**
- * 大屏演示页生成器:/screen?demo=N 时填充 N 张模拟卡片(srcdoc),
- * 用于压测滚动墙与活动前大屏预演,不依赖服务端数据。
- * 产物为自包含 HTML(无外链、无 emoji),按模板参数生成多样化版式。
+ * 大屏演示页生成器：/screen?demo=N 时填充 N 张模拟卡片（srcdoc）,
+ * 用于压测滚动墙与活动前大屏预演，不依赖服务端数据。
+ * 产物为自包含 HTML(无外链、无 emoji)，按模板参数生成多样化版式。
  */
 
 interface DemoSpec {
@@ -104,7 +104,7 @@ export function demoPage(index: number): string {
 </body></html>`;
 }
 
-/** 模拟条目(与真实条目同构) */
+/** 模拟条目（与真实条目同构） */
 export function demoItems(count: number): Array<{
   taskId: string;
   code: string | null;

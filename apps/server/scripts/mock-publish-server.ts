@@ -1,6 +1,6 @@
 /**
- * 本地 mock 发布接口:接收 { html, url },存盘并托管预览。
- * 用法:pnpm mock:publish(默认 :9090)
+ * 本地 mock 发布接口：接收 { html, url }，存盘并托管预览。
+ * 用法：pnpm mock:publish(默认 :9090)
  * 将 .env 的 PUBLISH_ENDPOINT 指向 http://localhost:9090/publish 即可演练真实发布链路。
  */
 import express from "express";
@@ -20,7 +20,7 @@ app.post("/publish", (req, res) => {
     res.status(400).json({ error: "html 内容无效" });
     return;
   }
-  // url flag 作为发布路径(模拟活动方的多目标发布)
+  // url flag 作为发布路径（模拟活动方的多目标发布）
   const slug = String(url || "main").replace(/[^a-z0-9-_]/gi, "");
   const file = path.join(dir, slug, `page-${Date.now()}.html`);
   fs.mkdirSync(path.dirname(file), { recursive: true });

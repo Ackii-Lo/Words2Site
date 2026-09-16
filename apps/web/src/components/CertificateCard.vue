@@ -32,7 +32,7 @@ function isRelative(u: string | null): boolean {
   <Card class="mx-auto max-w-sm overflow-hidden text-center">
     <div class="bg-gradient-to-r from-violet-600 to-fuchsia-500 px-6 py-4 text-white">
       <div class="flex items-center justify-center gap-2 text-2xl font-bold">
-        <PartyPopper class="h-7 w-7" /> 网页发布成功!
+        <PartyPopper class="h-7 w-7" /> 网页发布成功！
       </div>
       <div class="mt-1 text-sm opacity-90">凭此页面找工作人员集章</div>
     </div>
@@ -51,7 +51,7 @@ function isRelative(u: string | null): boolean {
       </a>
       <p v-if="domain" class="font-mono text-xs text-muted-foreground">{{ domain }}</p>
       <p v-if="email" class="rounded-lg bg-muted/60 p-2 text-xs text-muted-foreground">
-        链接和凭证编号已发送到 {{ email }},记得查收(含垃圾邮件箱)
+        链接和凭证编号已发送到 {{ email }}，记得查收（含垃圾邮件箱）
       </p>
     </div>
   </Card>

@@ -1,7 +1,7 @@
 import { ref, onUnmounted } from "vue";
 import { api, type TaskStatus } from "./useApi";
 
-/** 2s 轮询任务状态,终态自动停 */
+/** 2s 轮询任务状态，终态自动停 */
 export function useTaskPolling() {
   const status = ref<TaskStatus | null>(null);
   const error = ref<string | null>(null);

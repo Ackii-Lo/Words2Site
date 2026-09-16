@@ -66,7 +66,7 @@ async function refresh() {
     taskList.value = tl.tasks;
     sessions.value = ss;
   } catch {
-    /* 弱网容忍,下轮再取 */
+    /* 弱网容忍，下轮再取 */
   }
 }
 
@@ -83,7 +83,7 @@ async function kill(sid: string) {
   void refresh();
 }
 async function removeTask(id: string) {
-  if (!confirm("下线该网页?将删除网关上的部署,直接链接随即失效。")) return;
+  if (!confirm("下线该网页？将删除网关上的部署，直接链接随即失效。")) return;
   try {
     await api(`/api/admin/tasks/${id}/delete`, { method: "POST", headers: authHeader() });
   } catch (e) {
@@ -128,7 +128,7 @@ const statusVariant: Record<string, "success" | "warning" | "destructive" | "sec
         <input
           v-model="password"
           type="password"
-          placeholder="管理密码(ADMIN_PASSWORD)"
+          placeholder="管理密码（ADMIN_PASSWORD）"
           class="h-11 w-full rounded-lg border bg-card px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           @keydown.enter="login"
         />

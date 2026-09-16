@@ -17,7 +17,7 @@ async function uploadAudio(blob: Blob) {
     form.append("audio", blob, "audio.webm");
     const res = await fetch("/api/transcribe", { method: "POST", body: form });
     const data = (await res.json().catch(() => ({}))) as { text?: string; error?: string };
-    if (!res.ok || !data.text) throw new Error(data.error || `转写失败(${res.status})`);
+    if (!res.ok || !data.text) throw new Error(data.error || `转写失败（${res.status}）`);
     emit("transcribed", data.text);
   } catch (e) {
     uploadError.value = e instanceof Error ? e.message : String(e);
@@ -58,18 +58,18 @@ const recording = rec.state;
           </div>
         </div>
         <Button variant="destructive" size="xl" @click="rec.stop()">
-          <Square class="h-5 w-5" /> 说完啦,停一下
+          <Square class="h-5 w-5" /> 说完啦，停一下
         </Button>
       </div>
     </div>
 
-    <p v-if="rec.message.value" class="text-center text-sm text-amber-600">{{ rec.message.value }},请打字输入</p>
-    <p v-if="uploadError" class="text-center text-sm text-destructive">{{ uploadError }},请打字输入</p>
+    <p v-if="rec.message.value" class="text-center text-sm text-amber-600">{{ rec.message.value }}，请打字输入</p>
+    <p v-if="uploadError" class="text-center text-sm text-destructive">{{ uploadError }}，请打字输入</p>
 
     <div class="rounded-xl border border-dashed p-4 text-center text-sm text-muted-foreground">
       <Badge variant="secondary" class="mb-2">提示</Badge>
-      想想你要什么网页:介绍你的猫?你的社团?你最喜欢的球队?
-      说得越具体,生成的网页越精彩。
+      想想你要什么网页：介绍你的猫？你的社团？你最喜欢的球队？
+      说得越具体，生成的网页越精彩。
     </div>
   </div>
 </template>
