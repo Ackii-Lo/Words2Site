@@ -38,13 +38,17 @@ let session: { token: string; expiresAt: number } | null = null;
 
 /** 两步认证第一步：name + 长效 token → 短期会话 bearer */
 async function getBearer(): Promise<string> {
-  if (session && session.expiresAt > Date.now() / 1000 + 60) return session.token;
+  if (session && session.expiresAt > Date.now() / 1000 + 60)
+    return session.token;
   const res = await fetch(`${config.deploy.apiBase}/Authenticate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: toJsonString(
       AuthenticateRequestSchema,
-      create(AuthenticateRequestSchema, { name: config.deploy.user, token: config.deploy.token }),
+      create(AuthenticateRequestSchema, {
+        name: config.deploy.user,
+        token: config.deploy.token,
+      }),
     ),
   });
   if (!res.ok) {
@@ -62,7 +66,10 @@ async function rpc(method: string, body: string): Promise<Response> {
   for (let attempt = 0; ; attempt++) {
     res = await fetch(`${config.deploy.apiBase}/${method}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${await getBearer()}` },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${await getBearer()}`,
+      },
       body,
     });
     if (res.status !== 401 || attempt >= 1) return res;
@@ -72,13 +79,19 @@ async function rpc(method: string, body: string): Promise<Response> {
 }
 
 /** 响应体统一按 JSON 解析：错误时抽 message，成功时交给生成类型反序列化 */
-async function parseBody(res: Response): Promise<{ message: string; json: JsonObject }> {
+async function parseBody(
+  res: Response,
+): Promise<{ message: string; json: JsonObject }> {
   const json = (await res.json().catch(() => ({}))) as JsonObject;
   const message = typeof json.message === "string" ? json.message : "";
   return { message, json };
 }
 
-export async function publish(taskId: string, htmlPath: string, domain: string): Promise<PublishResult> {
+export async function publish(
+  taskId: string,
+  htmlPath: string,
+  domain: string,
+): Promise<PublishResult> {
   if (!config.deploy.apiBase) return mockPublish(taskId, htmlPath);
   try {
     const zip = new AdmZip();
@@ -106,7 +119,10 @@ export async function publish(taskId: string, htmlPath: string, domain: string):
       return { ok: false, error: `部署未生效： ${reason}` };
     }
     const url = `https://${domain}/`;
-    taskLog(taskId, `已部署 ${domain}(staticKey=${data.staticKey},group=${config.deploy.group})`);
+    taskLog(
+      taskId,
+      `已部署 ${domain}(staticKey=${data.staticKey},group=${config.deploy.group})`,
+    );
     return { ok: true, url };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -116,7 +132,10 @@ export async function publish(taskId: string, htmlPath: string, domain: string):
 }
 
 /** 删除部署（管理台下线） */
-export async function unpublish(taskId: string, domain: string): Promise<PublishResult> {
+export async function unpublish(
+  taskId: string,
+  domain: string,
+): Promise<PublishResult> {
   try {
     const body = toJsonString(
       DeleteStaticRequestSchema,
@@ -126,7 +145,10 @@ export async function unpublish(taskId: string, domain: string): Promise<Publish
     const { message, json } = await parseBody(res);
     const data = fromJson(DeleteStaticResponseSchema, json);
     if (!res.ok || !data.apply?.applied) {
-      return { ok: false, error: `网关删除失败（${message || data.apply?.error || res.status}）` };
+      return {
+        ok: false,
+        error: `网关删除失败（${message || data.apply?.error || res.status}）`,
+      };
     }
     taskLog(taskId, `已删除部署 ${domain}`);
     return { ok: true };

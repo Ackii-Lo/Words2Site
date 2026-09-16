@@ -14,7 +14,8 @@ export function newTaskId(len = 10): string {
 export function newCertCode(): string {
   const bytes = crypto.randomBytes(4);
   let out = "";
-  for (let i = 0; i < 4; i++) out += ALPHABET[bytes[i] % ALPHABET.length].toUpperCase();
+  for (let i = 0; i < 4; i++)
+    out += ALPHABET[bytes[i] % ALPHABET.length].toUpperCase();
   return `W2S-${out}`;
 }
 

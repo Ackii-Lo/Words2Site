@@ -47,16 +47,31 @@ const duration = (track: WallItem[]) => Math.max(40, track.length * 22);
 </script>
 
 <template>
-  <div class="fixed inset-0 flex flex-col overflow-hidden bg-[#0E3A5D] text-[#EAF4FA]">
+  <div
+    class="fixed inset-0 flex flex-col overflow-hidden bg-[#0E3A5D] text-[#EAF4FA]"
+  >
     <!-- 图签（title block）-->
-    <header class="relative z-10 flex items-stretch justify-between border-b border-[rgba(214,236,248,.25)] bg-[#0B2E4B]/95 px-6 py-3">
+    <header
+      class="relative z-10 flex items-stretch justify-between border-b border-[rgba(214,236,248,.25)] bg-[#0B2E4B]/95 px-6 py-3"
+    >
       <div class="flex items-baseline gap-4">
-        <span class="text-lg font-black tracking-[0.3em]">WORDS TO WEBSITE</span>
-        <span class="border border-[#E0492E] px-2 py-0.5 font-mono text-[10px] tracking-widest text-[#E0492E]">现场大屏 · 投影</span>
+        <span class="text-lg font-black tracking-[0.3em]"
+          >WORDS TO WEBSITE</span
+        >
+        <span
+          class="border border-[#E0492E] px-2 py-0.5 font-mono text-[10px] tracking-widest text-[#E0492E]"
+          >现场大屏 · 投影</span
+        >
       </div>
       <div class="flex items-center gap-6 font-mono text-[11px] text-[#7FA8C4]">
-        <span v-if="demoCount > 0" class="text-[#FFC53D]">演示模式 ×{{ demoCount }}</span>
-        <span>已上线 <b class="text-[#EAF4FA]">{{ items.length - demoCount }}</b> 个网页</span>
+        <span v-if="demoCount > 0" class="text-[#FFC53D]"
+          >演示模式 ×{{ demoCount }}</span
+        >
+        <span
+          >已上线
+          <b class="text-[#EAF4FA]">{{ items.length - demoCount }}</b>
+          个网页</span
+        >
         <span class="hidden sm:inline">SHEET 01 · SCALE 1:1</span>
       </div>
     </header>
@@ -64,18 +79,22 @@ const duration = (track: WallItem[]) => Math.max(40, track.length * 22);
     <!-- 空态 -->
     <div v-if="items.length === 0" class="grid flex-1 place-items-center">
       <div class="text-center text-[#7FA8C4]">
-        <div class="mx-auto h-16 w-16 rounded-full border-2 border-dashed border-[#4E7A9B]"></div>
-        <p class="mt-5 font-mono text-xs tracking-widest">WAITING FOR THE FIRST PAGE…</p>
+        <div
+          class="mx-auto h-16 w-16 rounded-full border-2 border-dashed border-[#4E7A9B]"
+        ></div>
+        <p class="mt-5 font-mono text-xs tracking-widest">
+          WAITING FOR THE FIRST PAGE…
+        </p>
       </div>
     </div>
 
     <!-- 滚动墙：横屏多轨，交替方向，悬停暂停 -->
-    <div v-else class="grid flex-1 grid-rows-[var(--track-n)] gap-4 overflow-hidden p-4" :style="{ '--track-n': tracks.length }">
-      <div
-        v-for="(track, ti) in tracks"
-        :key="ti"
-        class="overflow-hidden"
-      >
+    <div
+      v-else
+      class="grid flex-1 grid-rows-[var(--track-n)] gap-4 overflow-hidden p-4"
+      :style="{ '--track-n': tracks.length }"
+    >
+      <div v-for="(track, ti) in tracks" :key="ti" class="overflow-hidden">
         <div
           class="flex h-full w-max items-center gap-4 wall-track"
           :class="ti % 2 === 1 && 'wall-track--rtl'"
@@ -87,7 +106,9 @@ const duration = (track: WallItem[]) => Math.max(40, track.length * 22);
             class="wall-card"
           >
             <!-- 页面预览 -->
-            <div class="h-full overflow-hidden rounded-t-lg border-x border-t border-[rgba(214,236,248,.25)]">
+            <div
+              class="h-full overflow-hidden rounded-t-lg border-x border-t border-[rgba(214,236,248,.25)]"
+            >
               <LazyFrame
                 v-if="it.demoIndex !== undefined"
                 :srcdoc="demoPage(it.demoIndex)"
@@ -98,12 +119,23 @@ const duration = (track: WallItem[]) => Math.max(40, track.length * 22);
                 :src="apiUrl(`/api/tasks/${it.taskId}/screenshot`)"
                 :title="it.domain ?? ''"
               />
-              <LazyFrame v-else :src="apiUrl(`/api/tasks/${it.taskId}/html`)" :title="it.domain ?? ''" />
+              <LazyFrame
+                v-else
+                :src="apiUrl(`/api/tasks/${it.taskId}/html`)"
+                :title="it.domain ?? ''"
+              />
             </div>
             <!-- 卡脚：门牌 + 红章编号 -->
-            <div class="flex items-center justify-between gap-2 rounded-b-lg border-x border-b border-[rgba(214,236,248,.25)] bg-[#0B2E4B] px-3 py-2">
-              <span class="truncate font-mono text-[11px] text-[#EAF4FA]">{{ it.domain ?? it.taskId }}</span>
-              <span class="shrink-0 rotate-[-4deg] border-2 border-[#E0492E] px-1.5 py-px font-mono text-[10px] font-semibold tracking-widest text-[#E0492E]">{{ it.code }}</span>
+            <div
+              class="flex items-center justify-between gap-2 rounded-b-lg border-x border-b border-[rgba(214,236,248,.25)] bg-[#0B2E4B] px-3 py-2"
+            >
+              <span class="truncate font-mono text-[11px] text-[#EAF4FA]">{{
+                it.domain ?? it.taskId
+              }}</span>
+              <span
+                class="shrink-0 rotate-[-4deg] border-2 border-[#E0492E] px-1.5 py-px font-mono text-[10px] font-semibold tracking-widest text-[#E0492E]"
+                >{{ it.code }}</span
+              >
             </div>
           </div>
         </div>
@@ -123,17 +155,43 @@ const duration = (track: WallItem[]) => Math.max(40, track.length * 22);
   flex-direction: column;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
 }
-.wall-card > div:first-child { flex: 1; }
+.wall-card > div:first-child {
+  flex: 1;
+}
 
-@keyframes wall-scroll-ltr { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-@keyframes wall-scroll-rtl { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+@keyframes wall-scroll-ltr {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+@keyframes wall-scroll-rtl {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
 
-.wall-track { animation: wall-scroll-ltr var(--dur) linear infinite; }
-.wall-track--rtl { animation-name: wall-scroll-rtl; }
-.wall-track:hover { animation-play-state: paused; }
+.wall-track {
+  animation: wall-scroll-ltr var(--dur) linear infinite;
+}
+.wall-track--rtl {
+  animation-name: wall-scroll-rtl;
+}
+.wall-track:hover {
+  animation-play-state: paused;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .wall-track { animation: none; }
-  .wall-track:hover { overflow-x: auto; }
+  .wall-track {
+    animation: none;
+  }
+  .wall-track:hover {
+    overflow-x: auto;
+  }
 }
 </style>

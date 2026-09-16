@@ -1,4 +1,3 @@
-import fs from "node:fs";
 import path from "node:path";
 import { config } from "../config.js";
 import { tasks } from "../db.js";
@@ -15,7 +14,10 @@ export function shotPath(taskId: string): string {
   return path.join(config.dataDir, "tasks", taskId, "shot.png");
 }
 
-export async function captureScreenshot(taskId: string, url: string): Promise<boolean> {
+export async function captureScreenshot(
+  taskId: string,
+  url: string,
+): Promise<boolean> {
   let launch: (opts?: object) => Promise<{
     newPage: () => Promise<{
       setViewport: (o: object) => Promise<void>;
@@ -39,7 +41,11 @@ export async function captureScreenshot(taskId: string, url: string): Promise<bo
   try {
     browser = await launch({
       headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+      ],
     });
     const page = await browser.newPage();
     await page.setViewport({ width: 420, height: 760, deviceScaleFactor: 2 });
@@ -50,7 +56,10 @@ export async function captureScreenshot(taskId: string, url: string): Promise<bo
     taskLog(taskId, `截图完成 → ${url}`);
     return true;
   } catch (err) {
-    taskLog(taskId, `截图失败（大屏将用 iframe 预览）: ${err instanceof Error ? err.message : String(err)}`);
+    taskLog(
+      taskId,
+      `截图失败（大屏将用 iframe 预览）: ${err instanceof Error ? err.message : String(err)}`,
+    );
     return false;
   } finally {
     await browser?.close().catch(() => {});

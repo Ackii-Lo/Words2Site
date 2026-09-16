@@ -14,13 +14,13 @@ pnpm dev               # 前端 :5173(代理 API 到 :3000)
 
 ## 常用命令
 
-| 命令 | 说明 |
-|---|---|
-| `pnpm dev` | 前后端同时热重载开发 |
-| `pnpm build` | 构建 web + server |
-| `pnpm start` | pm2 生产启动（先 `pnpm build`，配好 `.env`） |
+| 命令                | 说明                                              |
+| ------------------- | ------------------------------------------------- |
+| `pnpm dev`          | 前后端同时热重载开发                              |
+| `pnpm build`        | 构建 web + server                                 |
+| `pnpm start`        | pm2 生产启动（先 `pnpm build`，配好 `.env`）      |
 | `pnpm mock:publish` | 本地 mock 发布服务（:9090，模拟活动方 POST 接口） |
-| `pnpm seed` | 造 10 个测试任务压测队列 |
+| `pnpm seed`         | 造 10 个测试任务压测队列                          |
 
 ## 模式切换（.env）
 

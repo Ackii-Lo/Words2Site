@@ -11,6 +11,12 @@
     "mock:publish": "pnpm --filter @words2site/server mock:publish"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "@eslint/js": "^10.0.1",
+    "concurrently": "^9.1.2",
+    "eslint": "^10.10.0",
+    "eslint-plugin-vue": "^10.11.0",
+    "prettier": "^3.9.6",
+    "typescript-eslint": "^8.70.0",
+    "vue-eslint-parser": "^10.4.1"
   }
 }

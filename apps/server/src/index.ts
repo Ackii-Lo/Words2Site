@@ -6,7 +6,7 @@ import { db, tasks } from "./db.js";
 import { transcribeRouter } from "./routes/transcribe.js";
 import { tasksRouter, verifyRouter, screenRouter } from "./routes/tasks.js";
 import { adminRouter } from "./routes/admin.js";
-import { log, logError } from "./util/logger.js";
+import { log } from "./util/logger.js";
 
 const app = express();
 app.set("trust proxy", true); // Caddy 反代后取真实 IP
@@ -19,8 +19,14 @@ if (config.allowOrigins.length) {
     if (origin && config.allowOrigins.includes(origin)) {
       res.setHeader("Access-Control-Allow-Origin", origin);
       res.setHeader("Vary", "Origin");
-      res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
-      res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+      res.setHeader(
+        "Access-Control-Allow-Methods",
+        "GET, POST, DELETE, OPTIONS",
+      );
+      res.setHeader(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization",
+      );
       res.setHeader("Access-Control-Max-Age", "86400");
       if (req.method === "OPTIONS") {
         res.sendStatus(204);
@@ -38,11 +44,18 @@ app.use("/api/screen", screenRouter);
 app.use("/api/admin", adminRouter);
 
 app.get("/api/health", (_req, res) => {
-  res.json({ ok: true, provider: config.generation.provider, whisper: config.whisper.provider });
+  res.json({
+    ok: true,
+    provider: config.generation.provider,
+    whisper: config.whisper.provider,
+  });
 });
 
 /** mock 发布产物预览 */
-app.use("/preview", express.static(path.join(config.dataDir, "published"), { fallthrough: true }));
+app.use(
+  "/preview",
+  express.static(path.join(config.dataDir, "published"), { fallthrough: true }),
+);
 
 /** 生产：托管 web 构建产物（SPA fallback 到 index.html,/verify 由前端路由处理） */
 const webDist = path.resolve(import.meta.dirname, "../../web/dist");
@@ -56,8 +69,14 @@ if (fs.existsSync(webDist)) {
 // 启动恢复：上次运行中断的任务标记失败（admin 可重试）
 {
   const interrupted = [
-    ...db.prepare("SELECT id FROM tasks WHERE status = 'queued'").all() as { id: string }[],
-    ...db.prepare("SELECT id FROM tasks WHERE status IN ('generating','validating')").all() as { id: string }[],
+    ...(db.prepare("SELECT id FROM tasks WHERE status = 'queued'").all() as {
+      id: string;
+    }[]),
+    ...(db
+      .prepare(
+        "SELECT id FROM tasks WHERE status IN ('generating','validating')",
+      )
+      .all() as { id: string }[]),
   ];
   for (const { id } of interrupted) {
     tasks.update({
@@ -72,7 +91,10 @@ if (fs.existsSync(webDist)) {
 }
 
 const server = app.listen(config.port, () => {
-  log("boot", `Words2Site server 启动 :${config.port}(生成：${config.generation.provider} / 转写：${config.whisper.provider})`);
+  log(
+    "boot",
+    `Words2Site server 启动 :${config.port}(生成：${config.generation.provider} / 转写：${config.whisper.provider})`,
+  );
 });
 
 function shutdown() {

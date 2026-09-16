@@ -21,7 +21,10 @@ const emit = defineEmits<{ kill: [sessionId: string] }>();
 function dur(ts: number): string {
   return `${Math.round((Date.now() - ts) / 1000)}s`;
 }
-const stateVariant: Record<string, "success" | "warning" | "destructive" | "secondary"> = {
+const stateVariant: Record<
+  string,
+  "success" | "warning" | "destructive" | "secondary"
+> = {
   generating: "warning",
   spawning: "warning",
   done: "success",
@@ -36,15 +39,25 @@ const stateVariant: Record<string, "success" | "warning" | "destructive" | "seco
       <Badge variant="secondary">会话池 {{ active }}/{{ slots }}</Badge>
       <span class="text-muted-foreground">活跃 codex 进程实时状态</span>
     </div>
-    <div v-if="sessions.length === 0" class="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+    <div
+      v-if="sessions.length === 0"
+      class="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground"
+    >
       暂无会话记录
     </div>
-    <div v-for="s in sessions" :key="s.sessionId" class="flex items-center justify-between gap-3 rounded-xl border p-3">
+    <div
+      v-for="s in sessions"
+      :key="s.sessionId"
+      class="flex items-center justify-between gap-3 rounded-xl border p-3"
+    >
       <div class="min-w-0 flex-1">
         <div class="flex items-center gap-2">
-          <Badge :variant="stateVariant[s.state] ?? 'secondary'">{{ s.state }}</Badge>
+          <Badge :variant="stateVariant[s.state] ?? 'secondary'">{{
+            s.state
+          }}</Badge>
           <span class="truncate font-mono text-xs text-muted-foreground">
-            {{ s.sessionId.slice(0, 24) }}<span v-if="s.pid"> · pid {{ s.pid }}</span>
+            {{ s.sessionId.slice(0, 24)
+            }}<span v-if="s.pid"> · pid {{ s.pid }}</span>
           </span>
         </div>
         <div class="mt-1 text-xs text-muted-foreground">

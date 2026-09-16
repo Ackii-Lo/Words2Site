@@ -1,0 +1,68 @@
+name: CI
+
+# PR 与 push main 的 lint 门禁：Prettier 格式、ESLint 代码质量、
+# 全量构建（vue-tsc + tsc + vite 即完整类型检查）。
+# 文档-only 改动不触发；fork 上不运行（守卫在 job 级）。
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".npmrc"
+      - "eslint.config.ts"
+      - ".prettierrc"
+      - ".prettierignore"
+      - ".github/workflows/ci.yml"
+  pull_request:
+    paths:
+      - "apps/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".npmrc"
+      - "eslint.config.ts"
+      - ".prettierrc"
+      - ".prettierignore"
+      - ".github/workflows/ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  lint:
+    # fork 守卫：仅在主仓库运行
+    if: github.repository == 'CompPsyUnion/Words2Site'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check formatting (Prettier)
+        run: pnpm exec prettier --check .
+
+      - name: Lint (ESLint)
+        run: pnpm exec eslint .
+
+      - name: Build (typecheck + bundle)
+        run: pnpm build

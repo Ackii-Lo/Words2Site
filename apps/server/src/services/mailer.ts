@@ -14,7 +14,9 @@ function getPoster(): EmailPoster | null {
     postUrl: config.mail.webhookUrl,
     preset: config.mail.preset as "smtogo" | "generic" | "custom_example",
     fromAddress: config.mail.from || undefined, // 流程侧发件人固定，from 留空即可
-    headers: config.mail.token ? { Authorization: `Bearer ${config.mail.token}` } : {},
+    headers: config.mail.token
+      ? { Authorization: `Bearer ${config.mail.token}` }
+      : {},
   });
   return poster;
 }
@@ -30,7 +32,10 @@ export async function sendCompletionMail(p: {
 }): Promise<void> {
   const mail = getPoster();
   if (!mail) {
-    taskLog(p.taskId, `邮件未配置（MAIL_WEBHOOK_URL 为空），跳过发送 → ${p.to}`);
+    taskLog(
+      p.taskId,
+      `邮件未配置（MAIL_WEBHOOK_URL 为空），跳过发送 → ${p.to}`,
+    );
     return;
   }
   const body = `
@@ -57,8 +62,14 @@ export async function sendCompletionMail(p: {
       body,
       type: "html",
     });
-    taskLog(p.taskId, `完成邮件已发送 → ${p.to}(messageId=${res.messageId ?? "-"}, status=${res.status})`);
+    taskLog(
+      p.taskId,
+      `完成邮件已发送 → ${p.to}(messageId=${res.messageId ?? "-"}, status=${res.status})`,
+    );
   } catch (err) {
-    taskLog(p.taskId, `邮件发送失败（不影响发布）: ${err instanceof Error ? err.message : String(err)}`);
+    taskLog(
+      p.taskId,
+      `邮件发送失败（不影响发布）: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 }

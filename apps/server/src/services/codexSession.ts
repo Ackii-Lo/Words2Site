@@ -58,12 +58,16 @@ export const sessionManager = {
     return [...live.values()].sort((a, b) => b.startedAt - a.startedAt);
   },
   activeCount(): number {
-    return [...live.values()].filter((s) => s.state === "spawning" || s.state === "generating").length;
+    return [...live.values()].filter(
+      (s) => s.state === "spawning" || s.state === "generating",
+    ).length;
   },
   /** 会话池占用快照（admin SessionBoard 用） */
   stats() {
     const all = this.list();
-    const active = all.filter((s) => s.state === "spawning" || s.state === "generating");
+    const active = all.filter(
+      (s) => s.state === "spawning" || s.state === "generating",
+    );
     return {
       slots: config.generation.maxConcurrent,
       active: active.length,
@@ -82,21 +86,33 @@ export async function probeCodex(): Promise<{ ok: boolean; detail: string }> {
   const env = { ...process.env } as NodeJS.ProcessEnv;
   if (g.baseUrl && g.apiKey) {
     args.push(
-      `-c`, `model_provider=${g.modelProvider}`,
-      `-c`, `model_providers.${g.modelProvider}.name=${g.modelProvider}`,
-      `-c`, `model_providers.${g.modelProvider}.base_url=${g.baseUrl}`,
-      `-c`, `model_providers.${g.modelProvider}.env_key=W2S_CODEX_API_KEY`,
-      `-c`, `model_providers.${g.modelProvider}.wire_api=responses`,
+      `-c`,
+      `model_provider=${g.modelProvider}`,
+      `-c`,
+      `model_providers.${g.modelProvider}.name=${g.modelProvider}`,
+      `-c`,
+      `model_providers.${g.modelProvider}.base_url=${g.baseUrl}`,
+      `-c`,
+      `model_providers.${g.modelProvider}.env_key=W2S_CODEX_API_KEY`,
+      `-c`,
+      `model_providers.${g.modelProvider}.wire_api=responses`,
     );
     if (g.model) args.push(`-c`, `model=${g.model}`);
     env.W2S_CODEX_API_KEY = g.apiKey;
   }
   args.push("say ok");
   return new Promise((resolve) => {
-    const child = spawn(g.codexBin, args, { env, stdio: ["ignore", "pipe", "pipe"] });
+    const child = spawn(g.codexBin, args, {
+      env,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
     let out = "";
     const timer = setTimeout(() => {
-      try { child.pid && process.kill(child.pid, "SIGKILL"); } catch { /* noop */ }
+      try {
+        if (child.pid) process.kill(child.pid, "SIGKILL");
+      } catch {
+        /* noop */
+      }
       resolve({ ok: false, detail: "探活超时（60s）" });
     }, 60_000);
     child.stdout.on("data", (d) => (out += d));
@@ -108,7 +124,10 @@ export async function probeCodex(): Promise<{ ok: boolean; detail: string }> {
     child.on("close", (code) => {
       clearTimeout(timer);
       const ok = code === 0;
-      taskLog("probe", `探活 ${ok ? "通过" : `失败 code=${code}: ${out.slice(-200)}`}`);
+      taskLog(
+        "probe",
+        `探活 ${ok ? "通过" : `失败 code=${code}: ${out.slice(-200)}`}`,
+      );
       resolve({ ok, detail: ok ? "ok" : out.slice(-300).replace(/\n/g, " ") });
     });
   });

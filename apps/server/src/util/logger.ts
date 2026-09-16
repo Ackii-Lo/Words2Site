@@ -11,7 +11,8 @@ export function log(scope: string, msg: string): void {
 }
 
 export function logError(scope: string, msg: string, err?: unknown): void {
-  const detail = err instanceof Error ? `${err.message}` : err ? String(err) : "";
+  const detail =
+    err instanceof Error ? `${err.message}` : err ? String(err) : "";
   console.error(`[${ts()}] [${scope}] ${msg} ${detail}`);
 }
 

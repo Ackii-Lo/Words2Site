@@ -15,26 +15,130 @@ interface DemoSpec {
 }
 
 const SPECS: DemoSpec[] = [
-  { title: "猫咪图鉴", subtitle: "三花 · 布偶 · 橘猫档案", tags: ["宠物", "日常"], bg: "linear-gradient(160deg,#FF9EC4,#FF6E9C)", ink: "#FFFFFF", accent: "#FFE3EE", layout: "cards" },
-  { title: "深空观测站", subtitle: "今晚的星象与观测计划", tags: ["天文", "夜观"], bg: "radial-gradient(120% 100% at 20% 0%,#1B2A6B 0%,#0A1030 70%)", ink: "#E7ECFF", accent: "#8FA6FF", layout: "hero" },
-  { title: "手冲咖啡笔记", subtitle: "耶加雪菲 · 水温 92°C", tags: ["咖啡", "冲煮"], bg: "linear-gradient(180deg,#4A2F1D,#2B1A0F)", ink: "#F3E7D8", accent: "#D8A25E", layout: "stripes" },
-  { title: "水墨江南", subtitle: "小桥 流水 人家", tags: ["旅行", "风景"], bg: "linear-gradient(180deg,#F5F2EA,#E4DECE)", ink: "#2B2B26", accent: "#8C3B2E", layout: "split" },
-  { title: "节奏实验室", subtitle: "校园乐队排练实录", tags: ["音乐", "现场"], bg: "linear-gradient(135deg,#12002E,#4B0A6B)", ink: "#F4E9FF", accent: "#FF5ED2", layout: "stripes" },
-  { title: "火锅研究所", subtitle: "麻辣锅底风味曲线", tags: ["美食", "研究"], bg: "linear-gradient(160deg,#C43A1C,#7A1B08)", ink: "#FFF2E8", accent: "#FFC53D", layout: "cards" },
-  { title: "绿茵战报", subtitle: "赛季数据与赛程速览", tags: ["足球", "数据"], bg: "linear-gradient(180deg,#0B3D2C,#06281C)", ink: "#E6F5EC", accent: "#57D9A3", layout: "split" },
-  { title: "生日快乐", subtitle: "给九月的小寿星", tags: ["祝福", "派对"], bg: "linear-gradient(135deg,#FFD98E,#FF9E7A)", ink: "#5A2A1A", accent: "#FFFFFF", layout: "hero" },
-  { title: "海边邮局", subtitle: "慢递一封明信片", tags: ["文创", "海岸"], bg: "linear-gradient(180deg,#9FE2E8,#2E7DA8)", ink: "#FFFFFF", accent: "#FFE9B8", layout: "cards" },
-  { title: "旧书地下室", subtitle: "绝版书交换计划", tags: ["读书", "交换"], bg: "linear-gradient(160deg,#3E3A33,#211E19)", ink: "#EFE9DC", accent: "#C9B458", layout: "stripes" },
-  { title: "水族馆夜场", subtitle: "发光水母与深海走廊", tags: ["海洋", "夜场"], bg: "radial-gradient(110% 90% at 50% 10%,#0E4B66,#041E2E)", ink: "#DFF6FF", accent: "#4FD8EB", layout: "hero" },
-  { title: "拉面地图", subtitle: "豚骨 酱油 味噌 三大流派", tags: ["探店", "地图"], bg: "linear-gradient(180deg,#F28C3D,#C2511F)", ink: "#FFF6EC", accent: "#3B2415", layout: "split" },
+  {
+    title: "猫咪图鉴",
+    subtitle: "三花 · 布偶 · 橘猫档案",
+    tags: ["宠物", "日常"],
+    bg: "linear-gradient(160deg,#FF9EC4,#FF6E9C)",
+    ink: "#FFFFFF",
+    accent: "#FFE3EE",
+    layout: "cards",
+  },
+  {
+    title: "深空观测站",
+    subtitle: "今晚的星象与观测计划",
+    tags: ["天文", "夜观"],
+    bg: "radial-gradient(120% 100% at 20% 0%,#1B2A6B 0%,#0A1030 70%)",
+    ink: "#E7ECFF",
+    accent: "#8FA6FF",
+    layout: "hero",
+  },
+  {
+    title: "手冲咖啡笔记",
+    subtitle: "耶加雪菲 · 水温 92°C",
+    tags: ["咖啡", "冲煮"],
+    bg: "linear-gradient(180deg,#4A2F1D,#2B1A0F)",
+    ink: "#F3E7D8",
+    accent: "#D8A25E",
+    layout: "stripes",
+  },
+  {
+    title: "水墨江南",
+    subtitle: "小桥 流水 人家",
+    tags: ["旅行", "风景"],
+    bg: "linear-gradient(180deg,#F5F2EA,#E4DECE)",
+    ink: "#2B2B26",
+    accent: "#8C3B2E",
+    layout: "split",
+  },
+  {
+    title: "节奏实验室",
+    subtitle: "校园乐队排练实录",
+    tags: ["音乐", "现场"],
+    bg: "linear-gradient(135deg,#12002E,#4B0A6B)",
+    ink: "#F4E9FF",
+    accent: "#FF5ED2",
+    layout: "stripes",
+  },
+  {
+    title: "火锅研究所",
+    subtitle: "麻辣锅底风味曲线",
+    tags: ["美食", "研究"],
+    bg: "linear-gradient(160deg,#C43A1C,#7A1B08)",
+    ink: "#FFF2E8",
+    accent: "#FFC53D",
+    layout: "cards",
+  },
+  {
+    title: "绿茵战报",
+    subtitle: "赛季数据与赛程速览",
+    tags: ["足球", "数据"],
+    bg: "linear-gradient(180deg,#0B3D2C,#06281C)",
+    ink: "#E6F5EC",
+    accent: "#57D9A3",
+    layout: "split",
+  },
+  {
+    title: "生日快乐",
+    subtitle: "给九月的小寿星",
+    tags: ["祝福", "派对"],
+    bg: "linear-gradient(135deg,#FFD98E,#FF9E7A)",
+    ink: "#5A2A1A",
+    accent: "#FFFFFF",
+    layout: "hero",
+  },
+  {
+    title: "海边邮局",
+    subtitle: "慢递一封明信片",
+    tags: ["文创", "海岸"],
+    bg: "linear-gradient(180deg,#9FE2E8,#2E7DA8)",
+    ink: "#FFFFFF",
+    accent: "#FFE9B8",
+    layout: "cards",
+  },
+  {
+    title: "旧书地下室",
+    subtitle: "绝版书交换计划",
+    tags: ["读书", "交换"],
+    bg: "linear-gradient(160deg,#3E3A33,#211E19)",
+    ink: "#EFE9DC",
+    accent: "#C9B458",
+    layout: "stripes",
+  },
+  {
+    title: "水族馆夜场",
+    subtitle: "发光水母与深海走廊",
+    tags: ["海洋", "夜场"],
+    bg: "radial-gradient(110% 90% at 50% 10%,#0E4B66,#041E2E)",
+    ink: "#DFF6FF",
+    accent: "#4FD8EB",
+    layout: "hero",
+  },
+  {
+    title: "拉面地图",
+    subtitle: "豚骨 酱油 味噌 三大流派",
+    tags: ["探店", "地图"],
+    bg: "linear-gradient(180deg,#F28C3D,#C2511F)",
+    ink: "#FFF6EC",
+    accent: "#3B2415",
+    layout: "split",
+  },
 ];
 
 function esc(s: string): string {
-  return s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
+  return s.replace(
+    /[&<>"]/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!,
+  );
 }
 
 function body(spec: DemoSpec): string {
-  const tags = spec.tags.map((t) => `<span style="border:1px solid ${spec.accent};color:${spec.accent};border-radius:999px;padding:2px 10px;font-size:11px">${esc(t)}</span>`).join(" ");
+  const tags = spec.tags
+    .map(
+      (t) =>
+        `<span style="border:1px solid ${spec.accent};color:${spec.accent};border-radius:999px;padding:2px 10px;font-size:11px">${esc(t)}</span>`,
+    )
+    .join(" ");
   switch (spec.layout) {
     case "hero":
       return `
@@ -53,11 +157,14 @@ function body(spec: DemoSpec): string {
           <div style="font-size:24px;font-weight:800">${esc(spec.title)}</div>
           <div style="margin-top:4px;font-size:12px;opacity:.85">${esc(spec.subtitle)}</div>
           <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            ${Array.from({ length: 4 }, (_, i) => `
+            ${Array.from(
+              { length: 4 },
+              (_, i) => `
               <div style="border-radius:12px;background:${spec.accent}26;padding:12px">
                 <div style="height:52px;border-radius:8px;background:${spec.accent};opacity:${0.9 - i * 0.15}"></div>
                 <div style="margin-top:8px;font-size:12px;font-weight:600">栏目 ${i + 1}</div>
-              </div>`).join("")}
+              </div>`,
+            ).join("")}
           </div>
           <div style="margin-top:14px;display:flex;gap:8px">${tags}</div>
         </div>`;
@@ -79,11 +186,14 @@ function body(spec: DemoSpec): string {
         <div style="padding:22px">
           <div style="display:flex;align-items:baseline;gap:10px"><div style="font-size:26px;font-weight:900">${esc(spec.title)}</div><div style="font-size:11px;letter-spacing:3px;color:${spec.accent}">LIVE</div></div>
           <div style="margin-top:6px;font-size:12px;opacity:.85">${esc(spec.subtitle)}</div>
-          ${Array.from({ length: 3 }, (_, i) => `
+          ${Array.from(
+            { length: 3 },
+            (_, i) => `
             <div style="margin-top:14px;border-left:4px solid ${spec.accent};padding:8px 12px;background:${spec.ink}0D">
               <div style="font-size:13px;font-weight:700">记录 0${i + 1}</div>
               <div style="margin-top:4px;font-size:11px;opacity:.7">———————— ————</div>
-            </div>`).join("")}
+            </div>`,
+          ).join("")}
           <div style="margin-top:14px;display:flex;gap:8px">${tags}</div>
         </div>`;
   }
@@ -115,7 +225,20 @@ export function demoItems(count: number): Array<{
   createdAt: number;
   demoIndex: number;
 }> {
-  const names = ["cat", "space", "coffee", "ink", "beat", "hotpot", "pitch", "bday", "seamail", "books", "aqua", "ramen"];
+  const names = [
+    "cat",
+    "space",
+    "coffee",
+    "ink",
+    "beat",
+    "hotpot",
+    "pitch",
+    "bday",
+    "seamail",
+    "books",
+    "aqua",
+    "ramen",
+  ];
   return Array.from({ length: count }, (_, i) => {
     const k = i % SPECS.length;
     return {

@@ -8,7 +8,10 @@ import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import { EmailPoster } from "email-poster";
 
-const rootEnv = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../.env");
+const rootEnv = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../../../.env",
+);
 const dotenv = await import("dotenv");
 if (fs.existsSync(rootEnv)) dotenv.config({ path: rootEnv });
 
@@ -17,7 +20,10 @@ if (!url) {
   console.error("MAIL_WEBHOOK_URL 未配置");
   process.exit(1);
 }
-const to = (process.env.MAIL_TEST_TO ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+const to = (process.env.MAIL_TEST_TO ?? "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 if (to.length === 0) {
   console.error("MAIL_TEST_TO 未配置（逗号分隔收件人）");
   process.exit(1);
@@ -28,7 +34,9 @@ const mail = new EmailPoster({
   postUrl: url,
   preset: (process.env.MAIL_PRESET ?? "smtogo") as "smtogo",
   fromAddress: process.env.MAIL_FROM || undefined,
-  headers: process.env.MAIL_TOKEN ? { Authorization: `Bearer ${process.env.MAIL_TOKEN}` } : {},
+  headers: process.env.MAIL_TOKEN
+    ? { Authorization: `Bearer ${process.env.MAIL_TOKEN}` }
+    : {},
 });
 
 const body = `
@@ -57,7 +65,9 @@ for (const addr of to) {
       body,
       type: "html",
     });
-    console.log(`✓ ${addr} → status=${res.status} messageId=${res.messageId ?? "-"}`);
+    console.log(
+      `✓ ${addr} → status=${res.status} messageId=${res.messageId ?? "-"}`,
+    );
   } catch (e) {
     console.error(`✗ ${addr} → ${e instanceof Error ? e.message : String(e)}`);
     process.exitCode = 1;

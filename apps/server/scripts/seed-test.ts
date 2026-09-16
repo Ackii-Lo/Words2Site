@@ -2,9 +2,6 @@
  * 造 10 个假任务（mock provider 直接真实跑队列），压测队列/管理页。
  * 用法：pnpm seed
  */
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 // 直接复用 server 模块
 const src = await import("../src/index.js").catch(() => null);
@@ -32,7 +29,13 @@ const prompts = [
 
 for (const p of prompts) {
   const id = newTaskId();
-  tasks.create({ id, prompt: p, transcript: null, ip: "127.0.0.1", deviceId: "seed-script" });
+  tasks.create({
+    id,
+    prompt: p,
+    transcript: null,
+    ip: "127.0.0.1",
+    deviceId: "seed-script",
+  });
   queue.enqueueGen(id);
 }
 console.log(`已入队 ${prompts.length} 个测试任务`);

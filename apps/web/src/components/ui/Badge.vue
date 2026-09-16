@@ -24,7 +24,9 @@ const props = defineProps<{
   variant?: VariantProps<typeof badgeVariants>["variant"];
   class?: string;
 }>();
-const classes = computed(() => cn(badgeVariants({ variant: props.variant }), props.class));
+const classes = computed(() =>
+  cn(badgeVariants({ variant: props.variant }), props.class),
+);
 </script>
 
 <template>

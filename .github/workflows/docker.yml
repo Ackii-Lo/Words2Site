@@ -1,7 +1,8 @@
 name: Build and publish Docker image
 
-# GHCR 构建推送：push main → latest + main-<sha>；push v* tag → 语义化版本；
-# PR 只构建不推送；文档-only 改动不触发（tag 与手动触发不受 path filter 限制，属预期）。
+# GHCR 构建推送：push main → latest + main-<sha>；push v* tag → 语义化版本。
+# 不在 PR 上运行（PR 的检查由 ci.yml 承担）；文档-only 改动不触发
+# （tag 与手动触发不受 path filter 限制，属预期）；fork 上不运行（守卫在 job 级）。
 
 on:
   push:
@@ -14,15 +15,7 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
-      - "Dockerfile"
-      - ".dockerignore"
-      - ".github/workflows/docker.yml"
-  pull_request:
-    paths:
-      - "apps/server/**"
-      - "package.json"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
+      - ".npmrc"
       - "Dockerfile"
       - ".dockerignore"
       - ".github/workflows/docker.yml"
@@ -42,6 +35,8 @@ env:
 
 jobs:
   build-and-push:
+    # fork 守卫：仅在主仓库运行
+    if: github.repository == 'CompPsyUnion/Words2Site'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -75,7 +70,7 @@ jobs:
           provenance: false # Disable provenance to avoid unknown/unknown
           sbom: false # Disable sbom to avoid unknown/unknown
           context: .
-          push: ${{ github.event_name != 'pull_request' }}
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha

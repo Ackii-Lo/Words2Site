@@ -14,7 +14,8 @@ function num(key: string, def: number): number {
   const v = process.env[key];
   if (!v) return def;
   const n = Number(v);
-  if (Number.isNaN(n) || n <= 0) throw new Error(`环境变量 ${key} 不是合法正数： ${v}`);
+  if (Number.isNaN(n) || n <= 0)
+    throw new Error(`环境变量 ${key} 不是合法正数： ${v}`);
   return n;
 }
 
@@ -34,7 +35,9 @@ if (provider !== "codex" && provider !== "mock") {
 
 const whisperProvider = str("WHISPER_PROVIDER", "mock");
 if (!["openai-api", "local", "mock"].includes(whisperProvider)) {
-  fail(`WHISPER_PROVIDER 只能是 openai-api / local / mock，当前： ${whisperProvider}`);
+  fail(
+    `WHISPER_PROVIDER 只能是 openai-api / local / mock，当前： ${whisperProvider}`,
+  );
 }
 if (whisperProvider === "openai-api" && !str("OPENAI_API_KEY")) {
   fail("WHISPER_PROVIDER=openai-api 需要配置 OPENAI_API_KEY");
@@ -45,14 +48,19 @@ if (provider === "codex") {
   try {
     execFileSync("which", [bin], { stdio: "ignore" });
   } catch {
-    fail(`CODEX_BIN=${bin} 不存在，请安装 codex 或改用 GENERATION_PROVIDER=mock`);
+    fail(
+      `CODEX_BIN=${bin} 不存在，请安装 codex 或改用 GENERATION_PROVIDER=mock`,
+    );
   }
 }
 
 // DATA_DIR 相对路径一律相对仓库根解析（避免 tsx/dev/cwd 差异）
 const repoRoot = path.resolve(import.meta.dirname, "../../..");
 const dataDir = path.resolve(repoRoot, str("DATA_DIR", "data"));
-if (!process.env.DEPLOY_DOMAIN_TEMPLATE?.includes("{label}") && process.env.DEPLOY_DOMAIN_TEMPLATE) {
+if (
+  !process.env.DEPLOY_DOMAIN_TEMPLATE?.includes("{label}") &&
+  process.env.DEPLOY_DOMAIN_TEMPLATE
+) {
   fail("DEPLOY_DOMAIN_TEMPLATE 必须包含 {label} 占位符");
 }
 fs.mkdirSync(path.join(dataDir, "tasks"), { recursive: true });
@@ -62,7 +70,10 @@ fs.mkdirSync(path.join(dataDir, "audio-tmp"), { recursive: true });
 export const config = {
   port: num("PORT", 3000),
   dataDir,
-  publicBaseUrl: str("PUBLIC_BASE_URL", "http://localhost:5173").replace(/\/$/, ""),
+  publicBaseUrl: str("PUBLIC_BASE_URL", "http://localhost:5173").replace(
+    /\/$/,
+    "",
+  ),
 
   generation: {
     provider: provider as "codex" | "mock",
@@ -80,7 +91,10 @@ export const config = {
     provider: whisperProvider as "openai-api" | "local" | "mock",
     apiKey: str("OPENAI_API_KEY"),
     // 自建 OpenAI 兼容转写服务(如 Speaches)时指向 http://<host>:8000/v1
-    baseUrl: str("OPENAI_BASE_URL", "https://api.openai.com/v1").replace(/\/+$/, ""),
+    baseUrl: str("OPENAI_BASE_URL", "https://api.openai.com/v1").replace(
+      /\/+$/,
+      "",
+    ),
     model: str("OPENAI_TRANSCRIBE_MODEL", "whisper-1"),
     localCmd: str("LOCAL_WHISPER_CMD", "whisper"),
   },
@@ -93,7 +107,10 @@ export const config = {
 
   // sslly-nginx 网关静态部署（DeployService，两步认证）
   deploy: {
-    apiBase: str("SSLLY_API_BASE", "https://sslly-nas.hnrobert.space/api/v1").replace(/\/$/, ""),
+    apiBase: str(
+      "SSLLY_API_BASE",
+      "https://sslly-nas.hnrobert.space/api/v1",
+    ).replace(/\/$/, ""),
     user: str("SSLLY_API_USER", "admin"),
     token: str("SSLLY_API_TOKEN", "admin"),
     group: str("DEPLOY_GROUP", "hf"),

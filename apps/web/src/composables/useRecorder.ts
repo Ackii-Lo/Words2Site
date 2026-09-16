@@ -1,6 +1,7 @@
 import { ref, onUnmounted } from "vue";
 
-export type RecorderState = "idle" | "requesting" | "recording" | "uploading" | "denied" | "error";
+export type RecorderState =
+  "idle" | "requesting" | "recording" | "uploading" | "denied" | "error";
 
 const MAX_MS = 90_000;
 
@@ -30,10 +31,13 @@ export function useRecorder(onDone: (audio: Blob) => void) {
           : undefined,
       });
       chunks = [];
-      mediaRecorder.ondataavailable = (e) => e.data.size > 0 && chunks.push(e.data);
+      mediaRecorder.ondataavailable = (e) =>
+        e.data.size > 0 && chunks.push(e.data);
       mediaRecorder.onstop = () => {
         stream.getTracks().forEach((t) => t.stop());
-        const blob = new Blob(chunks, { type: mediaRecorder?.mimeType || "audio/webm" });
+        const blob = new Blob(chunks, {
+          type: mediaRecorder?.mimeType || "audio/webm",
+        });
         if (blob.size > 0) onDone(blob);
       };
       mediaRecorder.start(1000);

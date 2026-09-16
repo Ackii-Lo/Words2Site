@@ -8,10 +8,14 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow hover:bg-primary/90",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        outline: "border border-input bg-card hover:bg-accent hover:text-accent-foreground",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        default:
+          "bg-primary text-primary-foreground shadow hover:bg-primary/90",
+        secondary:
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        outline:
+          "border border-input bg-card hover:bg-accent hover:text-accent-foreground",
+        destructive:
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         ghost: "hover:bg-accent hover:text-accent-foreground",
       },
       size: {
@@ -32,7 +36,9 @@ const props = defineProps<{
   class?: string;
 }>();
 
-const classes = computed(() => cn(buttonVariants({ variant: props.variant, size: props.size }), props.class));
+const classes = computed(() =>
+  cn(buttonVariants({ variant: props.variant, size: props.size }), props.class),
+);
 </script>
 
 <template>

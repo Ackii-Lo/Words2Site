@@ -52,7 +52,11 @@ for (const col of [
   "ALTER TABLE tasks ADD COLUMN removed_at INTEGER",
   "ALTER TABLE tasks ADD COLUMN screenshot INTEGER DEFAULT 0",
 ]) {
-  try { db.prepare(col).run(); } catch { /* 已存在 */ }
+  try {
+    db.prepare(col).run();
+  } catch {
+    /* 已存在 */
+  }
 }
 // 依赖新列的唯一索引（须在迁移之后创建）
 db.exec(
@@ -119,7 +123,9 @@ const stmts = {
       finished_at = COALESCE(@finished_at, finished_at)
     WHERE id = @id
   `),
-  listByStatus: db.prepare("SELECT * FROM tasks WHERE status = ? ORDER BY created_at"),
+  listByStatus: db.prepare(
+    "SELECT * FROM tasks WHERE status = ? ORDER BY created_at",
+  ),
   listQueueAhead: db.prepare(
     "SELECT COUNT(*) AS n FROM tasks WHERE status = 'queued' AND created_at < ?",
   ),
@@ -157,7 +163,9 @@ const stmts = {
     UPDATE codex_sessions SET state = @state, ended_at = COALESCE(@ended_at, ended_at)
     WHERE session_id = @session_id
   `),
-  listSessions: db.prepare("SELECT * FROM codex_sessions ORDER BY started_at DESC LIMIT 100"),
+  listSessions: db.prepare(
+    "SELECT * FROM codex_sessions ORDER BY started_at DESC LIMIT 100",
+  ),
   getSession: db.prepare("SELECT * FROM codex_sessions WHERE session_id = ?"),
 };
 
@@ -187,7 +195,15 @@ export const tasks = {
   domainTaken(domain: string): boolean {
     return (stmts.domainTaken.get(domain) as { n: number }).n > 0;
   },
-  listScreen(): Array<{ id: string; code: string | null; domain: string | null; prompt: string; publish_url: string | null; screenshot: number; created_at: number }> {
+  listScreen(): Array<{
+    id: string;
+    code: string | null;
+    domain: string | null;
+    prompt: string;
+    publish_url: string | null;
+    screenshot: number;
+    created_at: number;
+  }> {
     return stmts.listScreen.all() as never;
   },
   get(id: string): TaskRow | undefined {
@@ -237,7 +253,13 @@ export const tasks = {
 };
 
 export const sessions = {
-  upsert(p: { sessionId: string; taskId: string | null; pid: number | null; state: string; workdir: string | null }) {
+  upsert(p: {
+    sessionId: string;
+    taskId: string | null;
+    pid: number | null;
+    state: string;
+    workdir: string | null;
+  }) {
     stmts.upsertSession.run({
       session_id: p.sessionId,
       task_id: p.taskId,

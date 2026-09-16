@@ -12,7 +12,8 @@ export const transcribeRouter = Router();
 const upload = multer({
   storage: multer.diskStorage({
     destination: path.join(config.dataDir, "audio-tmp"),
-    filename: (_req, _file, cb) => cb(null, `${Date.now()}-${newTaskId(6)}.webm`),
+    filename: (_req, _file, cb) =>
+      cb(null, `${Date.now()}-${newTaskId(6)}.webm`),
   }),
   limits: { fileSize: 10 * 1024 * 1024 },
 });

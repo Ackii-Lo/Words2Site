@@ -13,17 +13,24 @@ const MAX_SIZE = 512 * 1024; // 500KB
  * 1. 存在且非空  2. 大小区间  3. 基本结构  4. 无外部资源引用  5. 无外链 script
  */
 export function validateHtmlFile(filePath: string): ValidationResult {
-  if (!fs.existsSync(filePath)) return { ok: false, reason: "index.html 未生成" };
+  if (!fs.existsSync(filePath))
+    return { ok: false, reason: "index.html 未生成" };
   const size = fs.statSync(filePath).size;
-  if (size < MIN_SIZE) return { ok: false, reason: `文件过小（${size}B），疑似生成不完整` };
-  if (size > MAX_SIZE) return { ok: false, reason: `文件超限（${(size / 1024).toFixed(0)}KB > 500KB）` };
+  if (size < MIN_SIZE)
+    return { ok: false, reason: `文件过小（${size}B），疑似生成不完整` };
+  if (size > MAX_SIZE)
+    return {
+      ok: false,
+      reason: `文件超限（${(size / 1024).toFixed(0)}KB > 500KB）`,
+    };
 
   const html = fs.readFileSync(filePath, "utf-8");
   const lower = html.toLowerCase();
   if (!lower.includes("<!doctype html") && !lower.includes("<html")) {
     return { ok: false, reason: "缺少 HTML 文档结构" };
   }
-  if (!lower.includes("</html>")) return { ok: false, reason: "HTML 未闭合，疑似被截断" };
+  if (!lower.includes("</html>"))
+    return { ok: false, reason: "HTML 未闭合，疑似被截断" };
   if (!lower.includes("<head>") || !lower.includes("<body")) {
     return { ok: false, reason: "缺少 head/body 结构" };
   }

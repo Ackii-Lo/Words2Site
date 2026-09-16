@@ -6,7 +6,7 @@ import { ref, onMounted, onUnmounted } from "vue";
  * 让滚动墙可以承载任意数量的页面而内存有界。
  * 真实页面传 src；演示页传 srcdoc。
  */
-const props = defineProps<{
+defineProps<{
   src?: string;
   srcdoc?: string;
   title?: string;
@@ -37,7 +37,9 @@ onUnmounted(() => io?.disconnect());
       v-if="!live"
       class="absolute inset-0 grid place-items-center bg-[linear-gradient(rgba(214,236,248,.05)_1px,transparent_1px),linear-gradient(90deg,rgba(214,236,248,.05)_1px,transparent_1px)] bg-[size:14px_14px]"
     >
-      <span class="font-mono text-[10px] tracking-widest text-[#4E7A9B]">LOADING…</span>
+      <span class="font-mono text-[10px] tracking-widest text-[#4E7A9B]"
+        >LOADING…</span
+      >
     </div>
     <iframe
       v-if="live && (src || srcdoc)"

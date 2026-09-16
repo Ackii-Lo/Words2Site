@@ -26,14 +26,15 @@ export function fullDomain(label: string): string {
 
 /** 创建生成任务（prompt + 邮箱 + 自定义域名 + 是否公开） */
 tasksRouter.post("/", (req: Request, res: Response) => {
-  const { text, deviceId, transcript, email, domainLabel, isPublic } = (req.body ?? {}) as {
-    text?: string;
-    deviceId?: string;
-    transcript?: string;
-    email?: string;
-    domainLabel?: string;
-    isPublic?: boolean;
-  };
+  const { text, deviceId, transcript, email, domainLabel, isPublic } =
+    (req.body ?? {}) as {
+      text?: string;
+      deviceId?: string;
+      transcript?: string;
+      email?: string;
+      domainLabel?: string;
+      isPublic?: boolean;
+    };
   const trimmed = (text ?? "").trim();
   if (trimmed.length < 10 || trimmed.length > config.maxTextLen) {
     res.status(400).json({
@@ -48,7 +49,9 @@ tasksRouter.post("/", (req: Request, res: Response) => {
   }
   const label = (domainLabel ?? "").trim().toLowerCase();
   if (!DOMAIN_LABEL_RE.test(label)) {
-    res.status(400).json({ error: "域名只能用小写字母、数字和连字符，3–31 位，以字母或数字开头" });
+    res.status(400).json({
+      error: "域名只能用小写字母、数字和连字符，3–31 位，以字母或数字开头",
+    });
     return;
   }
   const domain = fullDomain(label);
@@ -58,7 +61,10 @@ tasksRouter.post("/", (req: Request, res: Response) => {
   }
   const device = isValidDeviceId(deviceId) ? deviceId : "anon";
   const ip = clientIp(req);
-  if (!allow(`g:${ip}`, config.rate.tasksPerHour) || !allow(`d:${device}`, config.rate.tasksPerHour)) {
+  if (
+    !allow(`g:${ip}`, config.rate.tasksPerHour) ||
+    !allow(`d:${device}`, config.rate.tasksPerHour)
+  ) {
     res.status(429).json({ error: "生成次数已达上限，找工作人员帮忙吧" });
     return;
   }
@@ -166,7 +172,12 @@ tasksRouter.post("/:id/refine", (req: Request, res: Response) => {
     res.status(400).json({ error: "修改意见需要 2–200 个字符" });
     return;
   }
-  tasks.update({ id: t.id, status: "queued", stage: "修改意见排队中", error: null });
+  tasks.update({
+    id: t.id,
+    status: "queued",
+    stage: "修改意见排队中",
+    error: null,
+  });
   queue.enqueueRefine(t.id, instruction);
   res.json({ ok: true, refinements: t.refinements + 1 });
 });
@@ -190,7 +201,9 @@ tasksRouter.post("/:id/publish", async (req: Request, res: Response) => {
   const domain = t.domain ?? fullDomain(t.id);
   const result = await publish(t.id, file, domain);
   if (!result.ok || !result.url) {
-    res.status(502).json({ error: `${result.error ?? "发布失败"}，稍后重试或找工作人员` });
+    res
+      .status(502)
+      .json({ error: `${result.error ?? "发布失败"}，稍后重试或找工作人员` });
     return;
   }
   const url = result.url;

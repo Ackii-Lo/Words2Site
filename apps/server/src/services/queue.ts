@@ -26,7 +26,12 @@ function dispatch() {
     const job = pending.shift()!;
     activeCount++;
     runJob(job)
-      .catch((err) => taskLog(job.taskId, `runJob 异常： ${err instanceof Error ? err.message : String(err)}`))
+      .catch((err) =>
+        taskLog(
+          job.taskId,
+          `runJob 异常： ${err instanceof Error ? err.message : String(err)}`,
+        ),
+      )
       .finally(() => {
         activeCount--;
         dispatch();
@@ -39,7 +44,12 @@ async function runJob(job: Job) {
   const t = tasks.get(taskId);
   if (!t) return;
   const workdir = t.workdir ?? workdirOf(taskId);
-  tasks.update({ id: taskId, workdir, status: "generating", stage: job.kind === "refine" ? "按修改意见调整中" : "AI 生成中" });
+  tasks.update({
+    id: taskId,
+    workdir,
+    status: "generating",
+    stage: job.kind === "refine" ? "按修改意见调整中" : "AI 生成中",
+  });
 
   if (job.kind === "gen" && !fs.existsSync(path.join(workdir, "prompt.txt"))) {
     fs.mkdirSync(workdir, { recursive: true });
@@ -60,7 +70,11 @@ async function runJob(job: Job) {
     taskId,
     workdir,
     refine:
-      job.kind === "refine" && t.codex_session_id && !t.codex_session_id.startsWith("mock-") && !t.codex_session_id.startsWith("pending-") && !t.codex_session_id.startsWith("local-")
+      job.kind === "refine" &&
+      t.codex_session_id &&
+      !t.codex_session_id.startsWith("mock-") &&
+      !t.codex_session_id.startsWith("pending-") &&
+      !t.codex_session_id.startsWith("local-")
         ? { instruction: job.instruction!, sessionId: t.codex_session_id }
         : job.kind === "refine"
           ? { instruction: job.instruction!, sessionId: "" } // mock/local：重新完整生成
@@ -121,7 +135,13 @@ async function handleFailure(taskId: string, job: Job, error: string) {
   const attempts = (t.attempts ?? 0) + 1;
   if (attempts < 2) {
     taskLog(taskId, `第 ${attempts} 次失败，自动重试： ${error}`);
-    tasks.update({ id: taskId, status: "queued", stage: "自动重试排队中", attempts, error });
+    tasks.update({
+      id: taskId,
+      status: "queued",
+      stage: "自动重试排队中",
+      attempts,
+      error,
+    });
     enqueue({ taskId, kind: job.kind, instruction: job.instruction });
   } else {
     tasks.update({
@@ -148,7 +168,11 @@ export const queue = {
     return idx < 0 ? 0 : idx;
   },
   stats() {
-    return { pending: pending.length, active: activeCount, slots: config.generation.maxConcurrent };
+    return {
+      pending: pending.length,
+      active: activeCount,
+      slots: config.generation.maxConcurrent,
+    };
   },
 };
 

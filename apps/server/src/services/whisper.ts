@@ -23,7 +23,11 @@ export async function transcribe(audioPath: string): Promise<string> {
 async function transcribeViaApi(audioPath: string): Promise<string> {
   const fs = await import("node:fs");
   const form = new FormData();
-  form.append("file", new Blob([fs.readFileSync(audioPath)], { type: "audio/webm" }), "audio.webm");
+  form.append(
+    "file",
+    new Blob([fs.readFileSync(audioPath)], { type: "audio/webm" }),
+    "audio.webm",
+  );
   form.append("model", config.whisper.model);
   form.append("language", "zh");
   form.append("response_format", "json");
@@ -48,7 +52,16 @@ async function transcribeLocal(audioPath: string): Promise<string> {
   const path = await import("node:path");
   // webm → 16kHz mono wav
   const wavPath = audioPath.replace(/\.\w+$/, "") + ".wav";
-  await run("ffmpeg", ["-y", "-i", audioPath, "-ar", "16000", "-ac", "1", wavPath]);
+  await run("ffmpeg", [
+    "-y",
+    "-i",
+    audioPath,
+    "-ar",
+    "16000",
+    "-ac",
+    "1",
+    wavPath,
+  ]);
   const { stdout } = await run(config.whisper.localCmd, [
     wavPath,
     "--model",

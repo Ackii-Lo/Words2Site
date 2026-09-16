@@ -9,7 +9,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const PORT = Number(process.env.MOCK_PUBLISH_PORT || 9090);
-const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../../data/published-mock");
+const dir = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../../../data/published-mock",
+);
 
 const app = express();
 app.use(express.json({ limit: "2mb" }));
@@ -26,7 +29,9 @@ app.post("/publish", (req, res) => {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, html);
   const publicUrl = `http://localhost:${PORT}/p/${slug}/${path.basename(file)}`;
-  console.log(`[mock-publish] ${slug} ← ${(html.length / 1024).toFixed(1)}KB → ${publicUrl}`);
+  console.log(
+    `[mock-publish] ${slug} ← ${(html.length / 1024).toFixed(1)}KB → ${publicUrl}`,
+  );
   res.json({ url: publicUrl });
 });
 
