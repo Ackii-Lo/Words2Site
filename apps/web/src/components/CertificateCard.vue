@@ -1,9 +1,6 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import QRCode from "qrcode";
-import Card from "@/components/ui/Card.vue";
-import Button from "@/components/ui/Button.vue";
-import { PartyPopper, Rocket } from "lucide-vue-next";
 
 const props = defineProps<{
   code: string;
@@ -19,60 +16,101 @@ onMounted(async () => {
   qrDataUrl.value = await QRCode.toDataURL(props.verifyUrl, {
     width: 480,
     margin: 1,
-    color: { dark: "#1f2937", light: "#ffffff" },
+    color: { dark: "#1C1917", light: "#FFFFFF" },
   });
 });
 
-function isRelative(u: string | null): boolean {
-  return !!u && u.startsWith("/");
-}
+const displayUrl = computed(() => {
+  if (props.publishUrl) return props.publishUrl;
+  return props.domain ? `https://${props.domain}/` : "";
+});
+const isRelative = computed(
+  () => !!props.publishUrl && props.publishUrl.startsWith("/"),
+);
 </script>
 
 <template>
-  <Card class="mx-auto max-w-sm overflow-hidden text-center">
-    <div
-      class="bg-gradient-to-r from-violet-600 to-fuchsia-500 px-6 py-4 text-white"
+  <section class="voucher">
+    <p class="v-label">你的网页地址</p>
+    <a
+      v-if="displayUrl"
+      class="v-url"
+      :href="publishUrl || undefined"
+      :target="isRelative ? undefined : '_blank'"
+      rel="noreferrer"
+      >{{ displayUrl }}</a
     >
-      <div class="flex items-center justify-center gap-2 text-2xl font-bold">
-        <PartyPopper class="h-7 w-7" /> 网页发布成功！
-      </div>
-      <div class="mt-1 text-sm opacity-90">凭此页面找工作人员集章</div>
+
+    <div class="v-divider"></div>
+
+    <p class="v-stamp">凭此页面找工作人员集章</p>
+    <p class="v-code">{{ code }}</p>
+
+    <div v-if="qrDataUrl" class="v-qr">
+      <img class="v-qr-img" :src="qrDataUrl" alt="核验二维码" />
     </div>
 
-    <div class="space-y-4 px-6 py-6">
-      <div>
-        <div class="text-xs text-muted-foreground">凭证编号</div>
-        <div class="font-mono text-3xl font-bold tracking-widest text-primary">
-          {{ code }}
-        </div>
-      </div>
-
-      <img
-        v-if="qrDataUrl"
-        :src="qrDataUrl"
-        alt="核验二维码"
-        class="mx-auto h-48 w-48 rounded-lg border p-1"
-      />
-      <p class="text-xs text-muted-foreground">工作人员扫此二维码核验</p>
-
-      <a
-        v-if="publishUrl"
-        :href="publishUrl"
-        :target="isRelative(publishUrl) ? undefined : '_blank'"
-      >
-        <Button size="xl" class="w-full"
-          ><Rocket class="h-5 w-5" /> 打开我的网站</Button
-        >
-      </a>
-      <p v-if="domain" class="font-mono text-xs text-muted-foreground">
-        {{ domain }}
-      </p>
-      <p
-        v-if="email"
-        class="rounded-lg bg-muted/60 p-2 text-xs text-muted-foreground"
-      >
-        链接和凭证编号已发送到 {{ email }}，记得查收（含垃圾邮件箱）
-      </p>
-    </div>
-  </Card>
+    <p class="v-no">凭证编号 · {{ code }}</p>
+  </section>
 </template>
+
+<style scoped>
+.voucher {
+  margin-top: 25px;
+  padding: 24px;
+  border: 2px solid #f7d447;
+  border-radius: 16px;
+  background: #fff;
+  text-align: center;
+}
+.v-label {
+  font-size: 11.5px;
+  color: #78716c;
+}
+.v-url {
+  display: block;
+  margin-top: 5px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1c1917;
+  word-break: break-all;
+}
+.v-divider {
+  height: 1px;
+  margin: 20px 0;
+  background: #eeede9;
+}
+.v-stamp {
+  font-size: 12px;
+  color: #78716c;
+}
+.v-code {
+  margin-top: 8px;
+  font-family: ui-monospace, "IBM Plex Mono", monospace;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: #1c1917;
+}
+.v-qr {
+  width: 125px;
+  height: 125px;
+  margin: 27px auto 0;
+  padding: 10px;
+  border-radius: 12px;
+  background: #1c1917;
+  box-sizing: border-box;
+}
+.v-qr-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 3px;
+  background: #fff;
+}
+.v-no {
+  margin-top: 17px;
+  font-size: 11px;
+  color: #78716c;
+}
+</style>
