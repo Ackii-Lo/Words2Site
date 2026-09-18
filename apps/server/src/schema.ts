@@ -5,8 +5,8 @@ import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
  * 保证存量库在 push 自动同步时零变更。改表 = 改这里，启动时自动同步。
  * 注意：不声明 partial unique index（旧库的 idx_tasks_domain）——drizzle-kit
  * 对 partial index 的 diff 无法收敛（连自身生成的文本都判差异，每轮 DROP+CREATE），
- * 首次同步会把它 DROP 掉；域名占用唯一性由应用层 domainTaken 查询保证
- * （且语义更准：失败任务不占坑是查询条件，索引表达不了）。
+ * 首次同步会把它 DROP 掉；域名占用唯一性由 domain_reservations 表保证
+ * （原子预约 + 失败释放，见 db.ts reservations 仓库）。
  */
 export const tasksTable = sqliteTable(
   "tasks",
@@ -15,7 +15,7 @@ export const tasksTable = sqliteTable(
     code: text("code").unique(),
     prompt: text("prompt").notNull(),
     transcript: text("transcript"),
-    /** queued/generating/validating/done/published/failed */
+    /** queued/generating/validating/publishing/published/failed（done 仅存量兼容） */
     status: text("status").notNull(),
     /** 人类可读的当前阶段说明 */
     stage: text("stage"),
@@ -53,6 +53,17 @@ export const tasksTable = sqliteTable(
   ],
 );
 
+/**
+ * 域名预约表：domain 全局唯一的唯一真相源。
+ * 旧方案是 tasks 表上的 check-then-insert（domainTaken → create），并发下有竞态；
+ * 现改为 insert ... onConflictDoNothing 原子预约（PK 冲突即占用），失败任务释放后可再约。
+ */
+export const domainReservationsTable = sqliteTable("domain_reservations", {
+  domain: text("domain").primaryKey().notNull(),
+  task_id: text("task_id").notNull(),
+  created_at: integer("created_at"),
+});
+
 export const sessionsTable = sqliteTable("codex_sessions", {
   // notNull 显式声明：drizzle-kit 生成 PK 必带 NOT NULL，schema 不标会陷入
   //「每轮重建却不收敛」的自相矛盾（生成补 NOT NULL，快照对比又判有差）
@@ -64,4 +75,8 @@ export const sessionsTable = sqliteTable("codex_sessions", {
   workdir: text("workdir"),
   started_at: integer("started_at"),
   ended_at: integer("ended_at"),
+  /** 累计 token 消耗（codex 结束行解析）；可空无 default → 简单 ADD COLUMN */
+  tokens_used: integer("tokens_used"),
+  /** 最近一次 stdout 输出时间（卡点观测） */
+  last_output_at: integer("last_output_at"),
 });

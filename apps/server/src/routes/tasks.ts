@@ -2,17 +2,17 @@ import { Router, type Request, type Response } from "express";
 import fs from "node:fs";
 import path from "node:path";
 import { config } from "../config.js";
-import { tasks } from "../db.js";
+import { tasks, reservations } from "../db.js";
 import { allow } from "../services/ratelimit.js";
 import { queue } from "../services/queue.js";
-import { publish } from "../services/publisher.js";
-import { sendCompletionMail } from "../services/mailer.js";
-import { captureScreenshot, shotPath } from "../services/screenshot.js";
+import { shotPath } from "../services/screenshot.js";
 import { pickStyle } from "../services/styleHint.js";
-import { newTaskId, newCertCode, isValidDeviceId } from "../util/ids.js";
+import { fullDomain } from "../util/domain.js";
+import { newTaskId, isValidDeviceId } from "../util/ids.js";
 
 export const tasksRouter = Router();
 
+/** 终态：done 仅存量兼容（旧库行 /:id/html 仍可访问） */
 const TERMINAL = new Set(["done", "published", "failed"]);
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const DOMAIN_LABEL_RE = /^[a-z0-9][a-z0-9-]{2,30}$/;
@@ -21,21 +21,15 @@ function clientIp(req: Request): string {
   return req.ip ?? "unknown";
 }
 
-export function fullDomain(label: string): string {
-  return config.deploy.domainTemplate.replace("{label}", label);
-}
-
-/** 创建生成任务（prompt + 邮箱 + 自定义域名 + 是否公开） */
+/** 创建生成任务（prompt + 邮箱 + 自定义域名 + 是否公开），队列走完自动发布 */
 tasksRouter.post("/", (req: Request, res: Response) => {
-  const { text, deviceId, transcript, email, domainLabel, isPublic } =
-    (req.body ?? {}) as {
-      text?: string;
-      deviceId?: string;
-      transcript?: string;
-      email?: string;
-      domainLabel?: string;
-      isPublic?: boolean;
-    };
+  const { text, deviceId, email, domainLabel, isPublic } = (req.body ?? {}) as {
+    text?: string;
+    deviceId?: string;
+    email?: string;
+    domainLabel?: string;
+    isPublic?: boolean;
+  };
   const trimmed = (text ?? "").trim();
   if (trimmed.length < 10 || trimmed.length > config.maxTextLen) {
     res.status(400).json({
@@ -56,7 +50,9 @@ tasksRouter.post("/", (req: Request, res: Response) => {
     return;
   }
   const domain = fullDomain(label);
-  if (tasks.domainTaken(domain)) {
+  const id = newTaskId();
+  // 原子预约（PK 冲突即占用），消灭 check-then-insert 竞态
+  if (!reservations.tryReserve(domain, id)) {
     res.status(409).json({ error: `「${label}」已被别人用了，换一个试试` });
     return;
   }
@@ -66,22 +62,26 @@ tasksRouter.post("/", (req: Request, res: Response) => {
     !allow(`g:${ip}`, config.rate.tasksPerHour) ||
     !allow(`d:${device}`, config.rate.tasksPerHour)
   ) {
+    reservations.release(domain, id);
     res.status(429).json({ error: "生成次数已达上限，找工作人员帮忙吧" });
     return;
   }
 
-  const id = newTaskId();
-  tasks.create({
-    id,
-    prompt: trimmed,
-    transcript: transcript ?? null,
-    ip,
-    deviceId: device,
-    email: mail,
-    domain,
-    isPublic: isPublic !== false,
-    styleHint: pickStyle(trimmed),
-  });
+  try {
+    tasks.create({
+      id,
+      prompt: trimmed,
+      ip,
+      deviceId: device,
+      email: mail,
+      domain,
+      isPublic: isPublic !== false,
+      styleHint: pickStyle(trimmed),
+    });
+  } catch (e) {
+    reservations.release(domain, id); // 落库失败回滚预约
+    throw e;
+  }
   queue.enqueueGen(id);
   res.json({ taskId: id, queuePosition: queue.positionOf(id), domain });
 });
@@ -100,8 +100,6 @@ tasksRouter.get("/:id", (req: Request, res: Response) => {
     queueDepth: queue.stats().pending,
     error: t.error,
     attempts: t.attempts,
-    refinements: t.refinements,
-    maxRefine: config.generation.maxRefine,
     prompt: t.prompt,
     createdAt: t.created_at,
     publishUrl: t.publish_url,
@@ -130,7 +128,7 @@ screenRouter.get("/all", (_req: Request, res: Response) => {
   );
 });
 
-/** 获取产物 HTML(iframe 预览) */
+/** 获取产物 HTML(iframe 预览；done 存量行保留兼容) */
 tasksRouter.get("/:id/html", (req: Request, res: Response) => {
   const t = tasks.get(req.params.id);
   if (!t || !TERMINAL.has(t.status) || !t.html_size) {
@@ -153,89 +151,6 @@ tasksRouter.get("/:id/screenshot", (req: Request, res: Response) => {
     return;
   }
   res.type("png").send(fs.readFileSync(file));
-});
-
-/** refine：按修改意见改写（resume codex 会话） */
-tasksRouter.post("/:id/refine", (req: Request, res: Response) => {
-  const t = tasks.get(req.params.id);
-  if (!t) {
-    res.status(404).json({ error: "任务不存在" });
-    return;
-  }
-  if (t.status !== "done") {
-    res.status(409).json({ error: "当前状态不能修改（仅生成完成可修改）" });
-    return;
-  }
-  if (t.refinements >= config.generation.maxRefine) {
-    res.status(429).json({ error: "修改次数已用完，直接发布或重新生成吧" });
-    return;
-  }
-  const instruction = ((req.body?.text as string) ?? "").trim();
-  if (instruction.length < 2 || instruction.length > 200) {
-    res.status(400).json({ error: "修改意见需要 2–200 个字符" });
-    return;
-  }
-  tasks.update({
-    id: t.id,
-    status: "queued",
-    stage: "修改意见排队中",
-    error: null,
-  });
-  queue.enqueueRefine(t.id, instruction);
-  res.json({ ok: true, refinements: t.refinements + 1 });
-});
-
-/** 发布 */
-tasksRouter.post("/:id/publish", async (req: Request, res: Response) => {
-  const t = tasks.get(req.params.id);
-  if (!t) {
-    res.status(404).json({ error: "任务不存在" });
-    return;
-  }
-  if (t.status === "published" && t.publish_url) {
-    res.json({ publishUrl: t.publish_url, code: t.code }); // 幂等
-    return;
-  }
-  if (t.status !== "done") {
-    res.status(409).json({ error: "页面还没生成完成" });
-    return;
-  }
-  const file = path.join(config.dataDir, "tasks", t.id, "index.html");
-  const domain = t.domain ?? fullDomain(t.id);
-  const result = await publish(t.id, file, domain);
-  if (!result.ok || !result.url) {
-    res
-      .status(502)
-      .json({ error: `${result.error ?? "发布失败"}，稍后重试或找工作人员` });
-    return;
-  }
-  const url = result.url;
-  const code = t.code ?? newCertCode();
-  tasks.update({
-    id: t.id,
-    status: "published",
-    stage: "已发布",
-    publish_url: url,
-    code,
-    finished_at: Date.now(),
-  });
-  res.json({ publishUrl: url, code });
-
-  // 异步收尾：完成邮件 + 大屏截图（失败不影响发布结果）
-  if (t.email) {
-    void sendCompletionMail({
-      taskId: t.id,
-      to: t.email,
-      code,
-      domain,
-      url,
-      verifyUrl: `${config.publicBaseUrl}/verify/${code}`,
-      prompt: t.prompt,
-    });
-  }
-  if (url.startsWith("https://")) {
-    void captureScreenshot(t.id, url);
-  }
 });
 
 /** 凭证数据 */
