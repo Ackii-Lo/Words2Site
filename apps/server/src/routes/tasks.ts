@@ -6,7 +6,7 @@ import { tasks, reservations } from "../db.js";
 import { allow } from "../services/ratelimit.js";
 import { queue } from "../services/queue.js";
 import { shotPath } from "../services/screenshot.js";
-import { pickStyle } from "../services/styleHint.js";
+import { pickStyle } from "../services/styleHint/index.js";
 import { fullDomain } from "../util/domain.js";
 import { newTaskId, isValidDeviceId } from "../util/ids.js";
 
