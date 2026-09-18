@@ -58,6 +58,16 @@ app.use(
 const webDist = path.resolve(import.meta.dirname, "../../web/dist");
 if (fs.existsSync(webDist)) {
   app.use(express.static(webDist));
+  // 静态资源 404 不走 SPA fallback：旧缓存页面请求已失效的 hash chunk 时，
+  // 若回退返回 index.html 会被当 JS 解析 → "Unexpected token '<'" 整页崩；
+  // 明确 404 让浏览器走「加载失败 → 刷新」的干净路径
+  app.get(/^\/(?!api|preview).*/, (_req, res, next) => {
+    if (/^\/assets\//.test(_req.path)) {
+      res.status(404).send("asset not found");
+      return;
+    }
+    next();
+  });
   app.get(/^\/(?!api|preview).*/, (_req, res) => {
     res.sendFile(path.join(webDist, "index.html"));
   });
