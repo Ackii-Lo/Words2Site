@@ -1,15 +1,16 @@
 import fs from "node:fs";
 import path from "node:path";
 import { config } from "../config.js";
-import { tasks } from "../db.js";
+import { tasks, reservations } from "../db.js";
 import { generate } from "./generator.js";
-import { validateHtmlFile } from "./validator.js";
+import { validateHtmlFile, ensureAttribution } from "./validator.js";
 import { sessionManager } from "./codexSession.js";
+import { sessionLog } from "./sessionLog.js";
+import { finalizeTask } from "./finalize.js";
 import { taskLog, log } from "../util/logger.js";
 
-type Job = { taskId: string; kind: "gen" | "refine"; instruction?: string };
+type Job = { taskId: string; kind: "gen" | "publish" };
 
-/** FIFO(refine 优先插队：参与者正盯着屏幕等第二版) */
 const pending: Job[] = [];
 let activeCount = 0;
 
@@ -40,7 +41,47 @@ function dispatch() {
 }
 
 async function runJob(job: Job) {
-  const { taskId } = job;
+  if (job.kind === "publish") {
+    await runPublish(job.taskId);
+    return;
+  }
+  await runGen(job.taskId);
+}
+
+/**
+ * 发布重试：退避 10s × 3 次。失败不重跑生成（产物已就绪，重跑白烧 token），
+ * 由调用方标 failed + 释放域名预约，admin 可走补发路径重试。
+ */
+async function finalizeWithRetry(taskId: string): Promise<boolean> {
+  for (let i = 1; i <= 3; i++) {
+    if (i > 1) await new Promise((r) => setTimeout(r, 10_000));
+    if (await finalizeTask(taskId)) return true;
+    taskLog(
+      taskId,
+      `发布第 ${i}/3 次失败${i < 3 ? "，10s 后重试" : "，停止重试"}`,
+    );
+  }
+  return false;
+}
+
+/** 补发：产物在而未发布（admin retry 分流 / 重启恢复的 done 存量） */
+async function runPublish(taskId: string) {
+  const t = tasks.get(taskId);
+  if (!t) return;
+  if (t.status === "published" && t.publish_url) return; // 幂等
+  tasks.update({
+    id: taskId,
+    status: "publishing",
+    stage: "自动发布中",
+    error: null,
+  });
+  taskLog(taskId, "补发开始（产物已就绪，跳过生成）");
+  if (!(await finalizeWithRetry(taskId))) {
+    await failFinal(taskId, "自动发布失败（重试 3 次未成功）");
+  }
+}
+
+async function runGen(taskId: string) {
   const t = tasks.get(taskId);
   if (!t) return;
   const workdir = t.workdir ?? workdirOf(taskId);
@@ -48,11 +89,11 @@ async function runJob(job: Job) {
     id: taskId,
     workdir,
     status: "generating",
-    stage: job.kind === "refine" ? "按修改意见调整中" : "AI 生成中",
+    stage: "AI 生成中",
     error: null, // 重入生成，清掉上一轮错误
   });
 
-  if (job.kind === "gen" && !fs.existsSync(path.join(workdir, "prompt.txt"))) {
+  if (!fs.existsSync(path.join(workdir, "prompt.txt"))) {
     fs.mkdirSync(workdir, { recursive: true });
     fs.writeFileSync(path.join(workdir, "prompt.txt"), t.prompt, "utf-8");
   }
@@ -65,37 +106,43 @@ async function runJob(job: Job) {
     state: "spawning",
     workdir,
     startedAt: Date.now(),
+    lastOutputAt: null,
+    tokensUsed: null,
   });
 
   const result = await generate({
     taskId,
     workdir,
-    refine:
-      job.kind === "refine" &&
-      t.codex_session_id &&
-      !t.codex_session_id.startsWith("mock-") &&
-      !t.codex_session_id.startsWith("pending-") &&
-      !t.codex_session_id.startsWith("local-")
-        ? { instruction: job.instruction!, sessionId: t.codex_session_id }
-        : job.kind === "refine"
-          ? { instruction: job.instruction!, sessionId: "" } // mock/local：重新完整生成
-          : undefined,
+    // spawn 即回填 pid：占位会话阶段就能 kill 进程组（修 pid 恒 null 的旧 bug）
+    onSpawn: (pid) => sessionManager.updatePid(tempSession, pid),
+    onStdout: (chunk) => sessionLog.write(taskId, chunk),
   });
 
-  // 会话登记：用真实 sessionId 替换占位
+  // 会话登记：用真实 sessionId 替换占位，pid 从占位会话继承（spawn 后才拿得到）
+  const livePid = sessionManager.get(tempSession)?.pid ?? null;
   if (result.sessionId && result.sessionId !== tempSession) {
     sessionManager.remove(tempSession);
     sessionManager.register({
       sessionId: result.sessionId,
       taskId,
-      pid: null,
+      pid: livePid,
       state: "generating",
       workdir,
       startedAt: Date.now(),
+      lastOutputAt: sessionLog.lastOutputAt(taskId),
+      tokensUsed: result.tokensUsed ?? null,
     });
   } else if (result.sessionId === tempSession) {
     sessionManager.remove(tempSession);
   }
+  const sid = result.sessionId ?? tempSession;
+  // 结束回填：pid / token 消耗 / 最后输出时间（SessionBoard 与总览指标用）
+  sessionManager.updateMeta(sid, {
+    pid: result.pid ?? undefined,
+    tokensUsed: result.tokensUsed,
+    lastOutputAt: sessionLog.lastOutputAt(taskId) ?? undefined,
+  });
+
   tasks.update({
     id: taskId,
     codex_session_id: result.sessionId ?? null,
@@ -105,34 +152,43 @@ async function runJob(job: Job) {
   });
 
   if (!result.ok || !result.htmlPath) {
-    sessionManager.finish(result.sessionId ?? tempSession, "failed");
-    await handleFailure(taskId, job, result.error ?? "未知错误");
+    sessionManager.finish(sid, "failed");
+    await handleFailure(taskId, `生成失败： ${result.error ?? "未知错误"}`);
     return;
   }
 
   const v = validateHtmlFile(result.htmlPath);
   if (!v.ok) {
-    sessionManager.finish(result.sessionId ?? tempSession, "failed");
+    sessionManager.finish(sid, "failed");
     taskLog(taskId, `校验失败： ${v.reason}`);
-    await handleFailure(taskId, job, `产物校验失败： ${v.reason}`);
+    await handleFailure(taskId, `产物校验失败： ${v.reason}`);
     return;
+  }
+
+  // 署名保障：整页无 "Presented via CPU by Words2Site" 则注入普通文档流页脚
+  if (ensureAttribution(result.htmlPath)) {
+    taskLog(taskId, "产物缺少署名，已注入兜底页脚");
   }
 
   fs.copyFileSync(result.htmlPath, artifactPath(taskId));
   const size = fs.statSync(artifactPath(taskId)).size;
-  sessionManager.finish(result.sessionId ?? tempSession, "done");
+  sessionManager.finish(sid, "done");
   tasks.update({
     id: taskId,
-    status: "done",
-    stage: "生成完成",
+    status: "publishing",
+    stage: "自动发布中",
     html_size: size,
-    refinements: job.kind === "refine" ? t.refinements + 1 : t.refinements,
     error: null,
   });
-  taskLog(taskId, `完成（${job.kind}）,${(size / 1024).toFixed(1)}KB`);
+  taskLog(taskId, `生成完成，${(size / 1024).toFixed(1)}KB，进入自动发布`);
+
+  if (!(await finalizeWithRetry(taskId))) {
+    await failFinal(taskId, "自动发布失败（重试 3 次未成功）");
+  }
 }
 
-async function handleFailure(taskId: string, job: Job, error: string) {
+/** 生成失败：attempts<2 自动重排（预约保留，域名仍归本任务）；否则终态失败并释放预约 */
+async function handleFailure(taskId: string, error: string) {
   const t = tasks.get(taskId)!;
   const attempts = (t.attempts ?? 0) + 1;
   if (attempts < 2) {
@@ -144,26 +200,32 @@ async function handleFailure(taskId: string, job: Job, error: string) {
       attempts,
       error,
     });
-    enqueue({ taskId, kind: job.kind, instruction: job.instruction });
+    enqueue({ taskId, kind: "gen" });
   } else {
-    tasks.update({
-      id: taskId,
-      status: "failed",
-      stage: "失败",
-      attempts,
-      error,
-      finished_at: Date.now(),
-    });
-    taskLog(taskId, `最终失败： ${error}`);
+    await failFinal(taskId, error);
   }
+}
+
+/** 终态失败：标 failed + 释放域名预约（域名可被再预约，admin retry 会重新抢） */
+async function failFinal(taskId: string, error: string) {
+  tasks.update({
+    id: taskId,
+    status: "failed",
+    stage: "失败",
+    error,
+    finished_at: Date.now(),
+  });
+  reservations.releaseByTask(taskId);
+  taskLog(taskId, `最终失败（域名预约已释放）： ${error}`);
 }
 
 export const queue = {
   enqueueGen(taskId: string) {
     enqueue({ taskId, kind: "gen" });
   },
-  enqueueRefine(taskId: string, instruction: string) {
-    enqueue({ taskId, kind: "refine", instruction });
+  /** 产物在而未发布的补发（admin retry 分流 / 重启恢复的 done 存量） */
+  enqueuePublish(taskId: string) {
+    enqueue({ taskId, kind: "publish" });
   },
   positionOf(taskId: string): number {
     const idx = pending.findIndex((j) => j.taskId === taskId);
@@ -179,8 +241,7 @@ export const queue = {
 };
 
 function enqueue(job: Job) {
-  if (job.kind === "refine") pending.unshift(job);
-  else pending.push(job);
+  pending.push(job);
   log("queue", `入队 ${job.kind}:${job.taskId}，待处理 ${pending.length}`);
   dispatch();
 }
