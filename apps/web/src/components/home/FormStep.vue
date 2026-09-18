@@ -38,10 +38,6 @@ const emailValid = computed(() =>
 const domainValid = computed(() =>
   /^[a-z0-9][a-z0-9-]{2,30}$/.test(domainLabel.value.trim()),
 );
-/** 邮箱提示行：前缀 + 固定域名（与网址列的预览行对称） */
-const emailHint = computed(
-  () => emailPrefix.value.trim().toLowerCase() + EMAIL_SUFFIX,
-);
 
 /* ---------- 网址占用即时校验：输入停顿 400ms 即查（非破坏性，提交仍以原子预约为准） ---------- */
 const domainStatus = ref<"idle" | "checking" | "free" | "taken">("idle");
@@ -90,15 +86,19 @@ function submit() {
 </script>
 
 <template>
-  <!-- 描述：全宽 -->
+  <!-- 描述：全宽（字数计数内嵌右下角） -->
   <div class="fgroup">
     <div class="flabel">{{ t("form.descLabel") }}</div>
-    <textarea
-      v-model="draft"
-      class="edit-area"
-      :placeholder="t('form.descPlaceholder')"
-    ></textarea>
-    <p class="edit-count">{{ draft.length }} / 300</p>
+    <div class="edit-wrap">
+      <textarea
+        v-model="draft"
+        class="edit-area"
+        :placeholder="t('form.descPlaceholder')"
+      ></textarea>
+      <span class="edit-count" :class="{ over: draft.length > 300 }"
+        >{{ draft.length }} / 300</span
+      >
+    </div>
   </div>
 
   <!-- 邮箱 / 网址：两列对称（label + 输入框 + 提示行） -->
@@ -117,7 +117,6 @@ function submit() {
         />
         <span class="email-addon">{{ EMAIL_SUFFIX }}</span>
       </div>
-      <p class="hint">{{ emailHint }}</p>
     </div>
     <div class="fgroup">
       <div class="flabel">{{ t("form.domainLabel") }}</div>
@@ -223,12 +222,16 @@ function submit() {
 .fgroup:first-child > .flabel:first-child {
   margin-top: 0;
 }
+/* 描述框：计数器内嵌右下角 */
+.edit-wrap {
+  position: relative;
+  margin-top: 7px;
+}
 .edit-area {
   display: block;
   width: 100%;
   min-height: 76px;
-  margin-top: 7px;
-  padding: 10px 12px;
+  padding: 10px 12px 22px;
   border: 2px solid #1c1917;
   border-radius: 4px;
   background: #ffffff;
@@ -248,11 +251,19 @@ function submit() {
   box-shadow: 3px 3px 0 #1c1917;
 }
 .edit-count {
-  margin-top: 4px;
+  position: absolute;
+  right: 7px;
+  bottom: 6px;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: rgba(255, 253, 249, 0.88); /* 垫底，长文滚动到此处仍可读 */
   font-family: Consolas, Menlo, ui-monospace, monospace;
   font-size: 9.5px;
-  text-align: right;
-  color: rgba(28, 25, 23, 0.45);
+  color: rgba(28, 25, 23, 0.5);
+  pointer-events: none;
+}
+.edit-count.over {
+  color: #b42318;
 }
 .field-input {
   width: 100%;
@@ -472,6 +483,8 @@ function submit() {
   .fgroups {
     display: flex;
     gap: 32px;
+    margin-top: 10px;
+    margin-bottom: 10px;
   }
   .fgroup {
     flex: 1;
@@ -490,15 +503,18 @@ function submit() {
     width: 10px;
     height: 10px;
   }
+  .edit-wrap {
+    margin-top: 10px;
+  }
   .edit-area {
     min-height: 96px;
-    margin-top: 10px;
-    padding: 14px 16px;
+    padding: 14px 16px 28px;
     font-size: 17px;
   }
   .edit-count {
-    margin-top: 12px;
-    font-size: 12.5px;
+    right: 10px;
+    bottom: 8px;
+    font-size: 12px;
     color: #78716c;
   }
   .field-input {

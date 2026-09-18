@@ -35,7 +35,7 @@ const dict = {
   "form.publicLabel": "Visibility",
   "form.publicOn": "Scroll on the live wall",
   "form.publicOff": "Private link only",
-  "form.publicDesc": "Toggle to show your page on the venue projector.",
+  "form.publicDesc": "Toggle to show your page to all.",
   "form.submit": "Let AI build it!",
   "form.submitting": "Submitting…",
 
