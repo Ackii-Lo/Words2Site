@@ -4,7 +4,10 @@ import { api } from "@/composables/useApi";
 import Card from "@/components/ui/Card.vue";
 import Badge from "@/components/ui/Badge.vue";
 import Button from "@/components/ui/Button.vue";
-import SessionBoard, { type LiveSession } from "@/components/SessionBoard.vue";
+import SessionBoard, {
+  type LiveSession,
+  type SessionLogTail,
+} from "@/components/SessionBoard.vue";
 import {
   Lock,
   Wrench,
@@ -47,6 +50,7 @@ const overview = ref<{
     avg_ms: number | null;
   };
   queue: { pending: number; active: number; slots: number };
+  tokens: number;
 } | null>(null);
 const taskList = ref<TaskRow[]>([]);
 const sessions = ref<{
@@ -116,6 +120,12 @@ async function kill(sid: string) {
   }).catch(() => {});
   void refresh();
 }
+/** SessionBoard 注入的日志拉取器（带管理凭证） */
+function fetchSessionLog(taskId: string): Promise<SessionLogTail> {
+  return api(`/api/admin/tasks/${taskId}/session-log`, {
+    headers: authHeader(),
+  });
+}
 async function removeTask(id: string) {
   if (!confirm("下线该网页？将删除网关上的部署，直接链接随即失效。")) return;
   try {
@@ -158,6 +168,7 @@ const statusVariant: Record<
   failed: "destructive",
   generating: "warning",
   validating: "warning",
+  publishing: "warning",
   queued: "secondary",
 };
 </script>
@@ -235,7 +246,7 @@ const statusVariant: Record<
       </Card>
 
       <!-- 指标 -->
-      <div v-if="overview" class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
+      <div v-if="overview" class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-6">
         <Card class="p-4 text-center">
           <div class="text-2xl font-bold">{{ overview.queue.pending }}</div>
           <div class="text-xs text-muted-foreground">排队中</div>
@@ -268,6 +279,12 @@ const statusVariant: Record<
           </div>
           <div class="text-xs text-muted-foreground">平均耗时</div>
         </Card>
+        <Card class="p-4 text-center">
+          <div class="text-2xl font-bold">
+            {{ (overview.tokens ?? 0).toLocaleString() }}
+          </div>
+          <div class="text-xs text-muted-foreground">累计 tokens</div>
+        </Card>
       </div>
 
       <!-- 会话池 -->
@@ -277,6 +294,7 @@ const statusVariant: Record<
           :slots="sessions.slots"
           :active="sessions.active"
           :sessions="sessions.sessions"
+          :fetch-log="fetchSessionLog"
           @kill="kill"
         />
       </Card>

@@ -13,7 +13,7 @@ export function useTaskPolling() {
       status.value = await api<TaskStatus>(`/api/tasks/${taskId}`);
       error.value = null;
       const s = status.value.status;
-      if (s === "done" || s === "failed" || s === "published") return; // 终态停
+      if (s === "done" || s === "failed" || s === "published") return; // 终态停（done 仅存量兼容）
     } catch (e) {
       error.value = e instanceof Error ? e.message : String(e);
     }

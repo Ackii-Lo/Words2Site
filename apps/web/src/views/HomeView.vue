@@ -3,35 +3,28 @@ import { computed, onUnmounted, ref, watch } from "vue";
 import { api } from "@/composables/useApi";
 import { useTaskPolling } from "@/composables/useTaskPolling";
 import { deviceId } from "@/lib/utils";
-import RecorderPanel from "@/components/RecorderPanel.vue";
-import PreviewFrame from "@/components/PreviewFrame.vue";
 import CertificateCard from "@/components/CertificateCard.vue";
 import CpuLogo from "@/components/CpuLogo.vue";
 import { Check } from "lucide-vue-next";
 
-type Step = "intro" | "record" | "info" | "waiting" | "done";
+type Step = "intro" | "form" | "waiting" | "done";
 
 const STEPS: { key: Step; label: string }[] = [
   { key: "intro", label: "欢迎" },
-  { key: "record", label: "描述网页" },
-  { key: "info", label: "填写信息" },
+  { key: "form", label: "填写信息" },
   { key: "waiting", label: "生成中" },
   { key: "done", label: "完成" },
 ];
 
 const step = ref<Step>("intro");
-const transcript = ref("");
 const draft = ref("");
-const recordedSeconds = ref(0);
 const email = ref("");
 const domainLabel = ref("");
 const isPublic = ref(true);
 const domainSuffix = ref(".unnc.space"); // 与服务端 DEPLOY_DOMAIN_TEMPLATE 对应
-const inputMode = ref<"voice" | "typing">("voice");
 const submitting = ref(false);
 const submitError = ref("");
 const taskId = ref("");
-const htmlVersion = ref(0);
 const cert = ref<{
   code: string;
   publishUrl: string | null;
@@ -39,7 +32,6 @@ const cert = ref<{
   domain: string | null;
   email: string | null;
 } | null>(null);
-const publishing = ref(false);
 
 const { status, start: startPolling } = useTaskPolling();
 
@@ -50,18 +42,28 @@ const stepLabel = computed(() => STEPS[stepIndex.value - 1]?.label ?? "");
 const stepNum = computed(() => String(stepIndex.value).padStart(2, "0"));
 const progressPct = computed(() => (stepIndex.value / STEPS.length) * 100);
 
-const onTranscribed = (payload: { text: string; seconds: number }) => {
-  transcript.value = payload.text;
-  draft.value = payload.text;
-  recordedSeconds.value = payload.seconds;
-};
+const emailValid = computed(() =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.value.trim()),
+);
+const domainValid = computed(() =>
+  /^[a-z0-9][a-z0-9-]{2,30}$/.test(domainLabel.value.trim()),
+);
 
 watch(
   () => status.value?.status,
   (s) => {
-    if (s === "done") {
+    if (s === "published") {
+      const st = status.value!;
       waitProgress.value = 100;
-      htmlVersion.value++;
+      cert.value = {
+        code: st.code ?? "",
+        publishUrl: st.publishUrl,
+        verifyUrl: `${location.origin}/verify/${st.code}`,
+        domain: st.publishUrl
+          ? st.publishUrl.replace(/^https?:\/\//, "").replace(/\/$/, "")
+          : null,
+        email: email.value.trim() || null,
+      };
       step.value = "done";
     }
   },
@@ -71,7 +73,6 @@ async function submitTask() {
   const text = draft.value.trim();
   if (text.length < 10) {
     submitError.value = "描述太短啦，至少 10 个字";
-    step.value = "record";
     return;
   }
   submitting.value = true;
@@ -82,7 +83,6 @@ async function submitTask() {
       body: JSON.stringify({
         text,
         deviceId: deviceId(),
-        transcript: transcript.value || null,
         email: email.value.trim(),
         domainLabel: domainLabel.value.trim(),
         isPublic: isPublic.value,
@@ -93,82 +93,23 @@ async function submitTask() {
     startPolling(data.taskId);
   } catch (e) {
     submitError.value = e instanceof Error ? e.message : String(e);
-    step.value = "info";
   } finally {
     submitting.value = false;
   }
 }
 
-const refineText = ref("");
-const refining = ref(false);
-const refineError = ref("");
-
-async function submitRefine() {
-  const text = refineText.value.trim();
-  if (text.length < 2) return;
-  refining.value = true;
-  refineError.value = "";
-  try {
-    await api(`/api/tasks/${taskId.value}/refine`, {
-      method: "POST",
-      body: JSON.stringify({ text }),
-    });
-    refineText.value = "";
-    step.value = "waiting";
-    startPolling(taskId.value);
-  } catch (e) {
-    refineError.value = e instanceof Error ? e.message : String(e);
-  } finally {
-    refining.value = false;
-  }
-}
-
-async function publish() {
-  publishing.value = true;
-  submitError.value = "";
-  try {
-    const data = await api<{ publishUrl: string; code: string }>(
-      `/api/tasks/${taskId.value}/publish`,
-      {
-        method: "POST",
-      },
-    );
-    cert.value = {
-      code: data.code,
-      publishUrl: data.publishUrl,
-      verifyUrl: `${location.origin}/verify/${data.code}`,
-      domain: data.publishUrl.replace(/^https?:\/\//, "").replace(/\/$/, ""),
-      email: email.value.trim() || null,
-    };
-  } catch (e) {
-    submitError.value = e instanceof Error ? e.message : String(e);
-  } finally {
-    publishing.value = false;
-  }
-}
-
 function restart() {
-  step.value = "record";
-  transcript.value = "";
+  step.value = "form";
   draft.value = "";
-  recordedSeconds.value = 0;
   email.value = "";
   domainLabel.value = "";
   isPublic.value = true;
   taskId.value = "";
   cert.value = null;
-  refineText.value = "";
   submitError.value = "";
 }
 
-function redoRecord() {
-  transcript.value = "";
-  draft.value = "";
-  recordedSeconds.value = 0;
-  submitError.value = "";
-}
-
-const waitingTitle = "正在搭建你的网页…";
+const waitingTitle = "你的网页正在搭建…";
 const failed = computed(() => status.value?.status === "failed");
 
 /* ---------- 生成中：进度条（先快后慢逼近 92%，完成瞬间 100%） ---------- */
@@ -269,15 +210,15 @@ onUnmounted(stopWaitingTimers);
         <template v-if="step === 'intro'">
           <h2 class="hero-h">一句话，生成你的网页</h2>
           <p class="hero-sub2">
-            对 AI 说说你想要的网页<br />几分钟后它才是真的了
+            填好信息交给 AI<br />几分钟后网址就会发到你的邮箱
           </p>
 
           <div class="howto">
             <div
               v-for="(r, i) in [
-                ['1', '对着麦克风描述你想要的网页'],
+                ['1', '填写邮箱、网址和网页描述'],
                 ['2', 'AI 现场为你生成网页'],
-                ['3', '发布并获得集章凭证'],
+                ['3', '自动发布，网址发送到你的邮箱'],
               ]"
               :key="i"
               class="howto-row"
@@ -287,96 +228,26 @@ onUnmounted(stopWaitingTimers);
             </div>
           </div>
 
-          <button class="btn-ink" type="button" @click="step = 'record'">
+          <button class="btn-ink" type="button" @click="step = 'form'">
             开始体验
           </button>
         </template>
 
-        <!-- ② 描述网页 -->
-        <template v-else-if="step === 'record'">
-          <div class="tabs">
-            <button
-              class="tab"
-              :class="{ 'tab-on': inputMode === 'voice' }"
-              type="button"
-              @click="inputMode = 'voice'"
-            >
-              语音
-            </button>
-            <button
-              class="tab"
-              :class="{ 'tab-on': inputMode === 'typing' }"
-              type="button"
-              @click="inputMode = 'typing'"
-            >
-              打字
-            </button>
-          </div>
-
-          <template v-if="inputMode === 'voice'">
-            <div v-if="transcript" class="mic-card">
-              <span class="mic-circle">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#1C1917"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="mic-svg"
-                >
-                  <path
-                    d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"
-                  />
-                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                  <line x1="12" x2="12" y1="19" y2="22" />
-                </svg>
-              </span>
-              <span class="mic-text">
-                <span class="mic-title">录音完成</span>
-                <span class="mic-sub">{{ recordedSeconds }}″ · 已转成文字</span>
-              </span>
-            </div>
-            <RecorderPanel v-else @transcribed="onTranscribed" />
-          </template>
-
-          <!-- 打字模式始终可编辑；语音模式下录制完成后才出现识别结果卡 -->
-          <div v-if="inputMode === 'typing' || transcript" class="edit-card">
-            <p v-if="inputMode === 'voice'" class="edit-label">
-              语音识别结果（可直接修改）：
-            </p>
+        <!-- ② 填写信息（描述 + 邮箱 + 网址 + 是否公开，一次提交） -->
+        <template v-else-if="step === 'form'">
+          <div class="fgroup">
+            <div class="flabel">描述你想要的网页</div>
             <textarea
               v-model="draft"
               class="edit-area"
-              :placeholder="
-                inputMode === 'voice'
-                  ? ''
-                  : '描述你想要的网页，比如：做一个介绍我家猫咪的网页，粉色可爱风，要有它的照片墙…'
-              "
+              placeholder="比如：做一个介绍我家猫咪的网页，粉色可爱风，要有它的照片墙…"
             ></textarea>
             <p class="edit-count">{{ draft.length }} / 300</p>
           </div>
 
-          <p v-if="submitError" class="err-text">{{ submitError }}</p>
-
-          <button
-            class="btn-ink"
-            type="button"
-            :disabled="draft.trim().length < 10 || draft.length > 300"
-            @click="step = 'info'"
-          >
-            下一步
-          </button>
-          <button class="btn-ghost" type="button" @click="redoRecord">
-            重新说
-          </button>
-        </template>
-
-        <!-- ③ 填写信息 -->
-        <template v-else-if="step === 'info'">
           <div class="fgroups">
             <div class="fgroup">
-              <div class="flabel">邮箱（接收网页链接和集章凭证）</div>
+              <div class="flabel">邮箱（接收网址和集章凭证）</div>
               <input
                 v-model="email"
                 class="field-input"
@@ -424,8 +295,10 @@ onUnmounted(stopWaitingTimers);
             type="button"
             :disabled="
               submitting ||
-              !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim()) ||
-              !/^[a-z0-9][a-z0-9-]{2,30}$/.test(domainLabel.trim())
+              draft.trim().length < 10 ||
+              draft.length > 300 ||
+              !emailValid ||
+              !domainValid
             "
             @click="submitTask"
           >
@@ -433,7 +306,7 @@ onUnmounted(stopWaitingTimers);
           </button>
         </template>
 
-        <!-- ④ 生成中 / 卡住了 -->
+        <!-- ③ 生成中 / 卡住了 -->
         <template v-else-if="step === 'waiting'">
           <div class="wait-wrap">
             <div class="logo-wrap">
@@ -445,6 +318,9 @@ onUnmounted(stopWaitingTimers);
 
             <template v-if="!failed">
               <h2 class="wait-title">{{ waitingTitle }}</h2>
+              <p class="wait-sub">
+                完成后网址会发送到你的邮箱：{{ email || "—" }}
+              </p>
               <div class="ai-bar">
                 <div
                   class="ai-bar-fill"
@@ -476,57 +352,23 @@ onUnmounted(stopWaitingTimers);
           </div>
         </template>
 
-        <!-- ⑤ 完成：先预览+发布，发布后出凭证 -->
+        <!-- ④ 完成：自动发布后直接出凭证 -->
         <template v-else-if="step === 'done'">
-          <template v-if="!cert">
-            <PreviewFrame :task-id="taskId" :version="htmlVersion" />
-
-            <p v-if="submitError" class="err-text">{{ submitError }}</p>
-            <button
-              class="btn-ink"
-              type="button"
-              :disabled="publishing"
-              @click="publish"
-            >
-              {{ publishing ? "发布中…" : "满意，发布我的网页！" }}
-            </button>
-
-            <div
-              v-if="(status?.refinements ?? 0) < (status?.maxRefine ?? 2)"
-              class="refine-card"
-            >
-              <p class="refine-label">想改改？告诉 AI 哪里不满意</p>
-              <textarea
-                v-model="refineText"
-                class="refine-area"
-                placeholder="例如：换主色调、加一个段落、改标题"
-              ></textarea>
-              <p v-if="refineError" class="err-text">{{ refineError }}</p>
-              <button
-                class="btn-ink btn-slim"
-                type="button"
-                :disabled="refining || refineText.trim().length < 2"
-                @click="submitRefine"
-              >
-                {{ refining ? "提交中…" : "提交修改" }}
-              </button>
-            </div>
-            <p v-else class="refine-used">修改次数已用完 ~</p>
-          </template>
-
-          <template v-else>
-            <h2 class="done-title">网页发布成功！</h2>
-            <CertificateCard
-              :code="cert.code"
-              :publish-url="cert.publishUrl"
-              :verify-url="cert.verifyUrl"
-              :domain="cert.domain"
-              :email="cert.email"
-            />
-            <button class="btn-ghost" type="button" @click="restart">
-              帮朋友也做一个 →
-            </button>
-          </template>
+          <h2 class="done-title">网页发布成功！</h2>
+          <CertificateCard
+            v-if="cert"
+            :code="cert.code"
+            :publish-url="cert.publishUrl"
+            :verify-url="cert.verifyUrl"
+            :domain="cert.domain"
+            :email="cert.email"
+          />
+          <p v-if="cert?.email" class="done-sub">
+            网址也已发送到你的邮箱：{{ cert.email }}
+          </p>
+          <button class="btn-ghost" type="button" @click="restart">
+            帮朋友也做一个 →
+          </button>
         </template>
       </div>
     </main>
@@ -675,10 +517,6 @@ onUnmounted(stopWaitingTimers);
 .btn-ink:disabled {
   opacity: 0.45;
 }
-.btn-slim {
-  height: 40px;
-  margin-top: 16px;
-}
 .btn-narrow {
   display: block;
   width: 200px;
@@ -763,110 +601,7 @@ onUnmounted(stopWaitingTimers);
   color: #1c1917;
 }
 
-/* ===== ② 描述网页 ===== */
-.tabs {
-  display: flex;
-  width: 140px;
-  height: 34px;
-  padding: 3px;
-  border: 2px solid #1c1917;
-  border-radius: 4px;
-  background: #f1efe8;
-}
-.tab {
-  flex: 1;
-  border: 0;
-  border-radius: 3px;
-  background: none;
-  font-size: 11.5px;
-  font-weight: 800;
-  color: rgba(28, 25, 23, 0.6);
-}
-.tab-on {
-  background: #1c1917;
-  color: #f7d447;
-}
-
-.mic-card {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  height: 62px;
-  margin-top: 14px;
-  padding: 0 12px;
-  border: 2px solid #1c1917;
-  border-radius: 4px;
-  background: #fdf4d6;
-}
-.mic-circle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: #f7d447;
-  border: 2px solid #1c1917;
-  flex: 0 0 auto;
-  box-sizing: border-box;
-}
-.mic-svg {
-  width: 17px;
-  height: 17px;
-}
-.mic-text {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-.mic-title {
-  font-size: 12px;
-  font-weight: 700;
-  color: #1c1917;
-}
-.mic-sub {
-  font-size: 10.5px;
-  color: rgba(28, 25, 23, 0.6);
-}
-
-.edit-card {
-  margin-top: 12px;
-  padding: 12px 14px 10px;
-  border: 2px solid #1c1917;
-  border-radius: 4px;
-  background: #ffffff;
-}
-.edit-label {
-  margin-bottom: 8px;
-  font-size: 10px;
-  color: rgba(28, 25, 23, 0.55);
-}
-.edit-area {
-  display: block;
-  width: 100%;
-  min-height: 76px;
-  border: 0;
-  outline: none;
-  resize: none;
-  background: transparent;
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.6;
-  color: #1c1917;
-}
-.edit-area::placeholder {
-  font-weight: 400;
-  color: rgba(28, 25, 23, 0.4);
-}
-.edit-count {
-  margin-top: 4px;
-  font-family: Consolas, Menlo, ui-monospace, monospace;
-  font-size: 9.5px;
-  text-align: right;
-  color: rgba(28, 25, 23, 0.45);
-}
-
-/* ===== ③ 填写信息 ===== */
+/* ===== ② 填写信息 ===== */
 .flabel {
   display: flex;
   align-items: center;
@@ -888,6 +623,37 @@ onUnmounted(stopWaitingTimers);
 .sheet-body > .flabel:first-child,
 .sheet-body > .fgroup:first-child > .flabel:first-child {
   margin-top: 0;
+}
+.edit-area {
+  display: block;
+  width: 100%;
+  min-height: 76px;
+  margin-top: 7px;
+  padding: 10px 12px;
+  border: 2px solid #1c1917;
+  border-radius: 4px;
+  background: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.6;
+  color: #1c1917;
+  outline: none;
+  resize: none;
+  box-sizing: border-box;
+}
+.edit-area::placeholder {
+  font-weight: 400;
+  color: rgba(28, 25, 23, 0.4);
+}
+.edit-area:focus {
+  box-shadow: 3px 3px 0 #1c1917;
+}
+.edit-count {
+  margin-top: 4px;
+  font-family: Consolas, Menlo, ui-monospace, monospace;
+  font-size: 9.5px;
+  text-align: right;
+  color: rgba(28, 25, 23, 0.45);
 }
 .field-input {
   width: 100%;
@@ -970,7 +736,7 @@ onUnmounted(stopWaitingTimers);
   color: rgba(250, 247, 232, 0.75);
 }
 
-/* ===== ④ 生成中 / 卡住了 ===== */
+/* ===== ③ 生成中 / 卡住 ===== */
 .wait-wrap {
   display: flex;
   flex-direction: column;
@@ -1054,6 +820,14 @@ onUnmounted(stopWaitingTimers);
   text-align: center;
   color: #1c1917;
 }
+.wait-sub {
+  margin-top: 8px;
+  font-size: 11px;
+  line-height: 1.6;
+  text-align: center;
+  color: rgba(28, 25, 23, 0.68);
+  word-break: break-all;
+}
 .ai-bar {
   width: 200px;
   height: 6px;
@@ -1098,49 +872,20 @@ onUnmounted(stopWaitingTimers);
   color: rgba(28, 25, 23, 0.5);
 }
 
-/* ===== ⑤ 完成 ===== */
+/* ===== ④ 完成 ===== */
 .done-title {
   font-size: 18px;
   font-weight: 900;
   text-align: center;
   color: #1c1917;
 }
-.refine-card {
-  margin-top: 20px;
-  padding: 14px;
-  border: 2px solid #1c1917;
-  border-radius: 4px;
-  background: #ffffff;
-}
-.refine-label {
-  font-size: 12px;
-  font-weight: 700;
-  color: #1c1917;
-}
-.refine-area {
-  display: block;
-  width: 100%;
-  height: 72px;
-  margin-top: 10px;
-  padding: 10px 12px;
-  border: 1.5px solid rgba(28, 25, 23, 0.35);
-  border-radius: 3px;
-  background: #fdf4d6;
-  font-size: 12px;
-  line-height: 1.6;
-  color: #1c1917;
-  outline: none;
-  resize: none;
-  box-sizing: border-box;
-}
-.refine-area::placeholder {
-  color: rgba(28, 25, 23, 0.4);
-}
-.refine-used {
-  margin-top: 18px;
+.done-sub {
+  margin-top: 12px;
   font-size: 11px;
+  line-height: 1.6;
   text-align: center;
-  color: rgba(28, 25, 23, 0.5);
+  color: rgba(28, 25, 23, 0.68);
+  word-break: break-all;
 }
 
 /* ===== 页脚厂牌 ===== */
@@ -1251,9 +996,6 @@ onUnmounted(stopWaitingTimers);
     right: 26px;
     font-size: 18px;
   }
-  .btn-slim {
-    height: 56px;
-  }
   .btn-narrow {
     width: 420px;
   }
@@ -1312,60 +1054,7 @@ onUnmounted(stopWaitingTimers);
     line-height: 1.5;
   }
 
-  /* ② 描述网页 */
-  .tabs {
-    width: fit-content;
-    height: auto;
-    gap: 4px;
-    padding: 4px;
-  }
-  .tab {
-    padding: 10px 34px;
-    font-size: 15.5px;
-    border-radius: 2px;
-  }
-  .mic-card {
-    gap: 16px;
-    height: auto;
-    margin-top: 20px;
-    padding: 16px 22px;
-  }
-  .mic-circle {
-    width: 52px;
-    height: 52px;
-  }
-  .mic-svg {
-    width: 26px;
-    height: 26px;
-  }
-  .mic-title {
-    font-size: 16.5px;
-  }
-  .mic-sub {
-    font-size: 13px;
-    color: rgba(28, 25, 23, 0.62);
-  }
-  .edit-card {
-    margin-top: 16px;
-    padding: 20px 24px 16px;
-  }
-  .edit-label {
-    margin-bottom: 12px;
-    font-size: 13.5px;
-    font-weight: 900;
-    color: rgba(28, 25, 23, 0.66);
-  }
-  .edit-area {
-    min-height: 84px;
-    font-size: 17px;
-  }
-  .edit-count {
-    margin-top: 12px;
-    font-size: 12.5px;
-    color: #78716c;
-  }
-
-  /* ③ 填写信息：两栏 */
+  /* ② 填写信息 */
   .fgroups {
     display: flex;
     gap: 32px;
@@ -1386,6 +1075,17 @@ onUnmounted(stopWaitingTimers);
   .flabel::before {
     width: 10px;
     height: 10px;
+  }
+  .edit-area {
+    min-height: 96px;
+    margin-top: 10px;
+    padding: 14px 16px;
+    font-size: 17px;
+  }
+  .edit-count {
+    margin-top: 12px;
+    font-size: 12.5px;
+    color: #78716c;
   }
   .field-input {
     height: 64px;
@@ -1428,7 +1128,7 @@ onUnmounted(stopWaitingTimers);
     color: rgba(250, 247, 232, 0.72);
   }
 
-  /* ④ 生成中 / 卡住 */
+  /* ③ 生成中 / 卡住 */
   .wait-wrap {
     padding-top: 64px;
   }
@@ -1449,6 +1149,11 @@ onUnmounted(stopWaitingTimers);
     margin-top: 26px;
     font-size: 34px;
     letter-spacing: -0.5px;
+  }
+  .wait-sub {
+    margin-top: 12px;
+    font-size: 15.5px;
+    font-weight: 700;
   }
   .ai-bar {
     width: 360px;
@@ -1472,24 +1177,13 @@ onUnmounted(stopWaitingTimers);
     color: #78716c;
   }
 
-  /* ⑤ 完成 */
+  /* ④ 完成 */
   .done-title {
     font-size: 34px;
     letter-spacing: -0.5px;
   }
-  .refine-card {
-    margin-top: 28px;
-    padding: 20px 24px;
-  }
-  .refine-label {
-    font-size: 15.5px;
-  }
-  .refine-area {
-    height: 88px;
-    margin-top: 12px;
-    font-size: 15px;
-  }
-  .refine-used {
+  .done-sub {
+    margin-top: 14px;
     font-size: 13px;
   }
 

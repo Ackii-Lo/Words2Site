@@ -16,14 +16,18 @@ export async function api<T = unknown>(
 
 export interface TaskStatus {
   status:
-    "queued" | "generating" | "validating" | "done" | "published" | "failed";
+    | "queued"
+    | "generating"
+    | "validating"
+    | "publishing"
+    | "done"
+    | "published"
+    | "failed";
   stage: string | null;
   queuePosition: number;
   queueDepth: number;
   error: string | null;
   attempts: number;
-  refinements: number;
-  maxRefine: number;
   prompt: string;
   createdAt: number;
   publishUrl: string | null;

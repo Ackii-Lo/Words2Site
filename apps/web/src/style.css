@@ -63,12 +63,10 @@
   body {
     background: var(--background);
     color: var(--foreground);
+    /* -apple-system 必须在 system-ui 之前：macOS Chromium 的 system-ui
+       在 font-weight 900 下会把 B 等字形渲染成错误轮廓 */
     font-family:
-      system-ui,
-      -apple-system,
-      "PingFang SC",
-      "Microsoft YaHei",
-      sans-serif;
+      -apple-system, system-ui, "PingFang SC", "Microsoft YaHei", sans-serif;
     -webkit-font-smoothing: antialiased;
     min-height: 100dvh;
   }
