@@ -10,10 +10,23 @@ export interface LiveSession {
   state: "spawning" | "generating" | "done" | "killed" | "failed";
   workdir: string | null;
   startedAt: number;
+  /** 最近一次 stdout 输出时间；null = 尚无输出 */
+  lastOutputAt: number | null;
+  /** 结束行解析的累计 token 消耗 */
+  tokensUsed: number | null;
 }
+
+/** 活跃且无输出超过该毫秒数视为卡住（SessionBoard 红标） */
+const STUCK_AFTER_MS = 90_000;
 
 /** 内存注册表：当前/最近的 codex 进程（DB 存历史，内存管活跃态） */
 const live = new Map<string, LiveSession>();
+
+function withDerived(s: LiveSession) {
+  const idleMs = Date.now() - (s.lastOutputAt ?? s.startedAt);
+  const active = s.state === "spawning" || s.state === "generating";
+  return { ...s, idleMs, stuck: active && idleMs > STUCK_AFTER_MS };
+}
 
 export const sessionManager = {
   register(s: LiveSession) {
@@ -25,6 +38,28 @@ export const sessionManager = {
       state: s.state,
       workdir: s.workdir,
     });
+  },
+  get(sessionId: string): LiveSession | undefined {
+    return live.get(sessionId);
+  },
+  /** spawn 后立即回填 pid（admin kill 依赖进程组 id，此前恒 null 导致 kill 无效） */
+  updatePid(sessionId: string, pid: number) {
+    const s = live.get(sessionId);
+    if (s) s.pid = pid;
+    sessions.updateMeta(sessionId, { pid });
+  },
+  /** 结束时回填 pid / token 消耗 / 最后输出时间 */
+  updateMeta(
+    sessionId: string,
+    p: { pid?: number; tokensUsed?: number; lastOutputAt?: number },
+  ) {
+    const s = live.get(sessionId);
+    if (s) {
+      if (p.pid !== undefined) s.pid = p.pid;
+      if (p.tokensUsed !== undefined) s.tokensUsed = p.tokensUsed;
+      if (p.lastOutputAt !== undefined) s.lastOutputAt = p.lastOutputAt;
+    }
+    sessions.updateMeta(sessionId, p);
   },
   markGenerating(sessionId: string) {
     const s = live.get(sessionId);
@@ -62,7 +97,7 @@ export const sessionManager = {
       (s) => s.state === "spawning" || s.state === "generating",
     ).length;
   },
-  /** 会话池占用快照（admin SessionBoard 用） */
+  /** 会话池占用快照（admin SessionBoard 用；附 idleMs/stuck 卡点观测） */
   stats() {
     const all = this.list();
     const active = all.filter(
@@ -71,7 +106,7 @@ export const sessionManager = {
     return {
       slots: config.generation.maxConcurrent,
       active: active.length,
-      sessions: all.slice(0, 20),
+      sessions: all.slice(0, 20).map(withDerived),
     };
   },
 };
