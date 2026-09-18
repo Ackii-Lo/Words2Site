@@ -1,67 +1,60 @@
 import Database from "better-sqlite3";
 import path from "node:path";
+import { and, desc, eq, isNotNull, isNull, lt, ne, sql } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import { pushSQLiteSchema } from "drizzle-kit/api";
 import { config } from "./config.js";
+import { sessionsTable, tasksTable } from "./schema.js";
 
-export const db = new Database(path.join(config.dataDir, "words2site.db"));
-db.pragma("journal_mode = WAL");
-
-db.exec(`
-CREATE TABLE IF NOT EXISTS tasks (
-  id TEXT PRIMARY KEY,
-  code TEXT UNIQUE,
-  prompt TEXT NOT NULL,
-  transcript TEXT,
-  status TEXT NOT NULL,           -- queued/generating/validating/done/published/failed
-  stage TEXT,                     -- 人类可读的当前阶段说明
-  codex_session_id TEXT,
-  workdir TEXT,
-  error TEXT,
-  attempts INTEGER DEFAULT 0,
-  refinements INTEGER DEFAULT 0,
-  ip TEXT,
-  device_id TEXT,
-  html_size INTEGER,
-  publish_url TEXT,
-  email TEXT,
-  domain TEXT,
-  is_public INTEGER DEFAULT 1,
-  removed_at INTEGER,
-  screenshot INTEGER DEFAULT 0,     -- 0 无 1 有（data/tasks/<id>/shot.png）
-  created_at INTEGER,
-  finished_at INTEGER
+export const db = drizzle(
+  new Database(path.join(config.dataDir, "words2site.db")),
+  { schema: { tasksTable, sessionsTable } },
 );
-CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
-CREATE INDEX IF NOT EXISTS idx_tasks_ip ON tasks(ip);
+db.$client.pragma("journal_mode = WAL");
 
-CREATE TABLE IF NOT EXISTS codex_sessions (
-  session_id TEXT PRIMARY KEY,
-  task_id TEXT,
-  pid INTEGER,
-  state TEXT NOT NULL,            -- spawning/generating/done/killed/failed
-  workdir TEXT,
-  started_at INTEGER,
-  ended_at INTEGER
-);
-`);
-
-// 旧库迁移：补齐新增列（SQLite 无 ADD COLUMN IF NOT EXISTS，逐个尝试）
-for (const col of [
-  "ALTER TABLE tasks ADD COLUMN email TEXT",
-  "ALTER TABLE tasks ADD COLUMN domain TEXT",
-  "ALTER TABLE tasks ADD COLUMN is_public INTEGER DEFAULT 1",
-  "ALTER TABLE tasks ADD COLUMN removed_at INTEGER",
-  "ALTER TABLE tasks ADD COLUMN screenshot INTEGER DEFAULT 0",
-]) {
-  try {
-    db.prepare(col).run();
-  } catch {
-    /* 已存在 */
+// 自动同步模式：schema 定义即真相，启动时 push 到库（等价 drizzle-kit push）。
+// 存量库与定义一致时零语句；改表只需改 schema.ts，下次启动自动生效。
+// 注意：不走 result.apply()——drizzle-kit 内部用 all() 执行 DDL，
+// better-sqlite3 驱动对无返回语句会抛错，改用底层 exec 逐条执行。
+{
+  const result = await pushSQLiteSchema(
+    { tasksTable, sessionsTable },
+    db as never,
+  );
+  if (result.statementsToExecute.length) {
+    console.log(
+      `[db] schema 自动同步 ${result.statementsToExecute.length} 条语句`,
+    );
+    if (result.hasDataLoss) {
+      console.warn("[db] 警告：本次同步包含数据丢失语句", result.warnings);
+    }
+    // 变更前备份（SQLite backup API，WAL 安全；固定名，保留最近一次）
+    await db.$client.backup(path.join(config.dataDir, "words2site.db.bak"));
+    for (const stmt of result.statementsToExecute) {
+      try {
+        db.$client.exec(stmt);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        // 重建序列的幂等边界：目标对象已存在，跳过即可
+        if (/already exists/i.test(msg)) {
+          console.warn(`[db] 跳过(已存在): ${stmt.slice(0, 60)}…`);
+          continue;
+        }
+        throw e;
+      }
+    }
+    // 同步一次到位：跳过语句可能让库仍与定义有差，递归再推一轮直至零语句
+    const again = await pushSQLiteSchema(
+      { tasksTable, sessionsTable },
+      db as never,
+    );
+    if (again.statementsToExecute.length) {
+      console.warn(
+        `[db] 同步后仍余 ${again.statementsToExecute.length} 条未收敛，下次启动继续`,
+      );
+    }
   }
 }
-// 依赖新列的唯一索引（须在迁移之后创建）
-db.exec(
-  "CREATE UNIQUE INDEX IF NOT EXISTS idx_tasks_domain ON tasks(domain) WHERE domain IS NOT NULL AND removed_at IS NULL",
-);
 
 export interface TaskRow {
   id: string;
@@ -98,81 +91,6 @@ export interface SessionRow {
   ended_at: number | null;
 }
 
-const stmts = {
-  insertTask: db.prepare(`
-    INSERT INTO tasks (id, prompt, transcript, status, ip, device_id, email, domain, is_public, created_at)
-    VALUES (@id, @prompt, @transcript, 'queued', @ip, @device_id, @email, @domain, @is_public, @created_at)
-  `),
-  getTask: db.prepare("SELECT * FROM tasks WHERE id = ?"),
-  getTaskByCode: db.prepare("SELECT * FROM tasks WHERE code = ?"),
-  updateTask: db.prepare(`
-    UPDATE tasks SET
-      status = COALESCE(@status, status),
-      stage = COALESCE(@stage, stage),
-      codex_session_id = COALESCE(@codex_session_id, codex_session_id),
-      workdir = COALESCE(@workdir, workdir),
-      error = @error,
-      attempts = COALESCE(@attempts, attempts),
-      refinements = COALESCE(@refinements, refinements),
-      html_size = COALESCE(@html_size, html_size),
-      publish_url = COALESCE(@publish_url, publish_url),
-      code = COALESCE(@code, code),
-      is_public = COALESCE(@is_public, is_public),
-      removed_at = COALESCE(@removed_at, removed_at),
-      screenshot = COALESCE(@screenshot, screenshot),
-      finished_at = COALESCE(@finished_at, finished_at)
-    WHERE id = @id
-  `),
-  listByStatus: db.prepare(
-    "SELECT * FROM tasks WHERE status = ? ORDER BY created_at",
-  ),
-  listQueueAhead: db.prepare(
-    "SELECT COUNT(*) AS n FROM tasks WHERE status = 'queued' AND created_at < ?",
-  ),
-  // 域名占用：失败任务即释放（部署成功前炸了不占坑），进行中/已发布仍占用防并发撞名
-  domainTaken: db.prepare(
-    "SELECT COUNT(*) AS n FROM tasks WHERE domain = ? COLLATE NOCASE AND removed_at IS NULL AND status != 'failed'",
-  ),
-  domainTakenByOther: db.prepare(
-    "SELECT COUNT(*) AS n FROM tasks WHERE domain = ? COLLATE NOCASE AND removed_at IS NULL AND status != 'failed' AND id != ?",
-  ),
-  listScreen: db.prepare(`
-    SELECT id, code, domain, prompt, publish_url, screenshot, created_at
-    FROM tasks
-    WHERE status = 'published' AND is_public = 1 AND removed_at IS NULL AND publish_url IS NOT NULL
-    ORDER BY created_at DESC LIMIT 50
-  `),
-  listTasksPage: db.prepare(`
-    SELECT * FROM tasks ORDER BY created_at DESC LIMIT @limit OFFSET @offset
-  `),
-  stats: db.prepare(`
-    SELECT
-      COUNT(*) FILTER (WHERE status IN ('queued','generating','validating')) AS active,
-      COUNT(*) FILTER (WHERE status = 'done') AS done,
-      COUNT(*) FILTER (WHERE status = 'published') AS published,
-      COUNT(*) FILTER (WHERE status = 'failed') AS failed,
-      AVG(finished_at - created_at) FILTER (WHERE finished_at IS NOT NULL) AS avg_ms
-    FROM tasks
-  `),
-  upsertSession: db.prepare(`
-    INSERT INTO codex_sessions (session_id, task_id, pid, state, workdir, started_at)
-    VALUES (@session_id, @task_id, @pid, @state, @workdir, @started_at)
-    ON CONFLICT(session_id) DO UPDATE SET
-      task_id = COALESCE(@task_id, task_id),
-      pid = COALESCE(@pid, pid),
-      state = @state,
-      workdir = COALESCE(@workdir, workdir)
-  `),
-  updateSessionState: db.prepare(`
-    UPDATE codex_sessions SET state = @state, ended_at = COALESCE(@ended_at, ended_at)
-    WHERE session_id = @session_id
-  `),
-  listSessions: db.prepare(
-    "SELECT * FROM codex_sessions ORDER BY started_at DESC LIMIT 100",
-  ),
-  getSession: db.prepare("SELECT * FROM codex_sessions WHERE session_id = ?"),
-};
-
 export const tasks = {
   create(p: {
     id: string;
@@ -184,23 +102,51 @@ export const tasks = {
     domain: string;
     isPublic: boolean;
   }) {
-    stmts.insertTask.run({
-      id: p.id,
-      prompt: p.prompt,
-      transcript: p.transcript,
-      ip: p.ip,
-      device_id: p.deviceId,
-      email: p.email,
-      domain: p.domain,
-      is_public: p.isPublic ? 1 : 0,
-      created_at: Date.now(),
-    });
+    db.insert(tasksTable)
+      .values({
+        id: p.id,
+        prompt: p.prompt,
+        transcript: p.transcript,
+        status: "queued",
+        ip: p.ip,
+        device_id: p.deviceId,
+        email: p.email,
+        domain: p.domain,
+        is_public: p.isPublic ? 1 : 0,
+        created_at: Date.now(),
+      })
+      .run();
   },
   domainTaken(domain: string): boolean {
-    return (stmts.domainTaken.get(domain) as { n: number }).n > 0;
+    return (
+      db
+        .select({ n: sql<number>`count(*)` })
+        .from(tasksTable)
+        .where(
+          and(
+            eq(tasksTable.domain, domain),
+            isNull(tasksTable.removed_at),
+            ne(tasksTable.status, "failed"),
+          ),
+        )
+        .get()!.n > 0
+    );
   },
   domainTakenByOther(domain: string, id: string): boolean {
-    return (stmts.domainTakenByOther.get(domain, id) as { n: number }).n > 0;
+    return (
+      db
+        .select({ n: sql<number>`count(*)` })
+        .from(tasksTable)
+        .where(
+          and(
+            eq(tasksTable.domain, domain),
+            isNull(tasksTable.removed_at),
+            ne(tasksTable.status, "failed"),
+            ne(tasksTable.id, id),
+          ),
+        )
+        .get()!.n > 0
+    );
   },
   listScreen(): Array<{
     id: string;
@@ -211,51 +157,82 @@ export const tasks = {
     screenshot: number;
     created_at: number;
   }> {
-    return stmts.listScreen.all() as never;
+    return db
+      .select({
+        id: tasksTable.id,
+        code: tasksTable.code,
+        domain: tasksTable.domain,
+        prompt: tasksTable.prompt,
+        publish_url: tasksTable.publish_url,
+        screenshot: tasksTable.screenshot,
+        created_at: tasksTable.created_at,
+      })
+      .from(tasksTable)
+      .where(
+        and(
+          eq(tasksTable.status, "published"),
+          eq(tasksTable.is_public, 1),
+          isNull(tasksTable.removed_at),
+          isNotNull(tasksTable.publish_url),
+        ),
+      )
+      .orderBy(desc(tasksTable.created_at))
+      .limit(50)
+      .all() as never;
   },
   get(id: string): TaskRow | undefined {
-    return stmts.getTask.get(id) as TaskRow | undefined;
+    return db.select().from(tasksTable).where(eq(tasksTable.id, id)).get() as
+      TaskRow | undefined;
   },
   getByCode(code: string): TaskRow | undefined {
-    return stmts.getTaskByCode.get(code) as TaskRow | undefined;
+    return db
+      .select()
+      .from(tasksTable)
+      .where(eq(tasksTable.code, code))
+      .get() as TaskRow | undefined;
   },
+  /** 局部更新：只写传入字段（error 传 null 显式清空，不传则保留） */
   update(p: Partial<TaskRow> & { id: string }) {
-    const base: Record<string, unknown> = {
-      status: null,
-      stage: null,
-      codex_session_id: null,
-      workdir: null,
-      attempts: null,
-      refinements: null,
-      html_size: null,
-      publish_url: null,
-      code: null,
-      is_public: null,
-      removed_at: null,
-      screenshot: null,
-      finished_at: null,
-      ...p,
-    };
-    base.error = p.error ?? null; // error 显式允许清空
-    stmts.updateTask.run(base);
+    const { id, ...rest } = p;
+    const set: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(rest)) if (v !== undefined) set[k] = v;
+    if (Object.keys(set).length === 0) return;
+    db.update(tasksTable).set(set).where(eq(tasksTable.id, id)).run();
   },
   queuePosition(createdAt: number): number {
-    return (stmts.listQueueAhead.get(createdAt) as { n: number }).n;
+    return db
+      .select({ n: sql<number>`count(*)` })
+      .from(tasksTable)
+      .where(
+        and(
+          eq(tasksTable.status, "queued"),
+          lt(tasksTable.created_at, createdAt),
+        ),
+      )
+      .get()!.n;
   },
   page(pageNo: number, pageSize = 50): TaskRow[] {
-    return stmts.listTasksPage.all({
-      limit: pageSize,
-      offset: (pageNo - 1) * pageSize,
-    }) as TaskRow[];
+    return db
+      .select()
+      .from(tasksTable)
+      .orderBy(desc(tasksTable.created_at))
+      .limit(pageSize)
+      .offset((pageNo - 1) * pageSize)
+      .all() as unknown as TaskRow[];
   },
   stats() {
-    return stmts.stats.get() as {
-      active: number;
-      done: number;
-      published: number;
-      failed: number;
-      avg_ms: number | null;
-    };
+    return db
+      .select({
+        active: sql<number>`count(*) filter (where ${tasksTable.status} in ('queued','generating','validating'))`,
+        done: sql<number>`count(*) filter (where ${tasksTable.status} = 'done')`,
+        published: sql<number>`count(*) filter (where ${tasksTable.status} = 'published')`,
+        failed: sql<number>`count(*) filter (where ${tasksTable.status} = 'failed')`,
+        avg_ms: sql<
+          number | null
+        >`avg(${tasksTable.finished_at} - ${tasksTable.created_at}) filter (where ${tasksTable.finished_at} is not null)`,
+      })
+      .from(tasksTable)
+      .get()!;
   },
 };
 
@@ -267,26 +244,48 @@ export const sessions = {
     state: string;
     workdir: string | null;
   }) {
-    stmts.upsertSession.run({
-      session_id: p.sessionId,
-      task_id: p.taskId,
-      pid: p.pid,
-      state: p.state,
-      workdir: p.workdir,
-      started_at: Date.now(),
-    });
+    db.insert(sessionsTable)
+      .values({
+        session_id: p.sessionId,
+        task_id: p.taskId,
+        pid: p.pid,
+        state: p.state,
+        workdir: p.workdir,
+        started_at: Date.now(),
+      })
+      // 旧语义：state 总是覆盖；task_id/pid/workdir 空则保留原值
+      .onConflictDoUpdate({
+        target: sessionsTable.session_id,
+        set: {
+          state: p.state,
+          task_id: sql`coalesce(excluded.task_id, codex_sessions.task_id)`,
+          pid: sql`coalesce(excluded.pid, codex_sessions.pid)`,
+          workdir: sql`coalesce(excluded.workdir, codex_sessions.workdir)`,
+        },
+      })
+      .run();
   },
   setState(sessionId: string, state: string, ended = false) {
-    stmts.updateSessionState.run({
-      session_id: sessionId,
-      state,
-      ended_at: ended ? Date.now() : null,
-    });
+    const set: Record<string, unknown> = { state };
+    if (ended) set.ended_at = Date.now();
+    db.update(sessionsTable)
+      .set(set)
+      .where(eq(sessionsTable.session_id, sessionId))
+      .run();
   },
   list(): SessionRow[] {
-    return stmts.listSessions.all() as SessionRow[];
+    return db
+      .select()
+      .from(sessionsTable)
+      .orderBy(desc(sessionsTable.started_at))
+      .limit(100)
+      .all() as unknown as SessionRow[];
   },
   get(sessionId: string): SessionRow | undefined {
-    return stmts.getSession.get(sessionId) as SessionRow | undefined;
+    return db
+      .select()
+      .from(sessionsTable)
+      .where(eq(sessionsTable.session_id, sessionId))
+      .get() as SessionRow | undefined;
   },
 };

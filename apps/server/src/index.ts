@@ -1,8 +1,10 @@
 import express from "express";
 import fs from "node:fs";
 import path from "node:path";
+import { inArray } from "drizzle-orm";
 import { config } from "./config.js";
 import { db, tasks } from "./db.js";
+import { tasksTable } from "./schema.js";
 import { transcribeRouter } from "./routes/transcribe.js";
 import { tasksRouter, verifyRouter, screenRouter } from "./routes/tasks.js";
 import { adminRouter } from "./routes/admin.js";
@@ -68,16 +70,11 @@ if (fs.existsSync(webDist)) {
 
 // 启动恢复：上次运行中断的任务标记失败（admin 可重试）
 {
-  const interrupted = [
-    ...(db.prepare("SELECT id FROM tasks WHERE status = 'queued'").all() as {
-      id: string;
-    }[]),
-    ...(db
-      .prepare(
-        "SELECT id FROM tasks WHERE status IN ('generating','validating')",
-      )
-      .all() as { id: string }[]),
-  ];
+  const interrupted = db
+    .select({ id: tasksTable.id })
+    .from(tasksTable)
+    .where(inArray(tasksTable.status, ["queued", "generating", "validating"]))
+    .all();
   for (const { id } of interrupted) {
     tasks.update({
       id,

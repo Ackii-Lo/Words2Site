@@ -49,6 +49,7 @@ async function runJob(job: Job) {
     workdir,
     status: "generating",
     stage: job.kind === "refine" ? "按修改意见调整中" : "AI 生成中",
+    error: null, // 重入生成，清掉上一轮错误
   });
 
   if (job.kind === "gen" && !fs.existsSync(path.join(workdir, "prompt.txt"))) {
@@ -100,6 +101,7 @@ async function runJob(job: Job) {
     codex_session_id: result.sessionId ?? null,
     status: "validating",
     stage: "校验产物",
+    error: null, // 生成已结束，清掉残留错误
   });
 
   if (!result.ok || !result.htmlPath) {
