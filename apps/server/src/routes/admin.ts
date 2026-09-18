@@ -54,6 +54,13 @@ adminRouter.post("/tasks/:id/retry", (req, res) => {
     res.status(409).json({ error: "仅失败任务可重试" });
     return;
   }
+  // 失败任务已释放域名；若期间被别的任务占走，重试会与它撞名
+  if (t.domain && tasks.domainTakenByOther(t.domain, t.id)) {
+    res
+      .status(409)
+      .json({ error: `域名 ${t.domain} 已被其他任务占用，无法重试` });
+    return;
+  }
   tasks.update({
     id: t.id,
     status: "queued",

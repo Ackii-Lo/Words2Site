@@ -28,9 +28,10 @@ RUN pnpm --filter @words2site/server build
 # ---- Stage 3: runtime（生产依赖 + 构建产物 + codex CLI） ----
 FROM node:22-slim AS runtime
 ENV NODE_ENV=production DATA_DIR=/data
-# codex CLI（npm 包自带平台二进制；认证走 CODEX_BASE_URL/CODEX_API_KEY 环境变量）
+# codex CLI（npm 包自带平台二进制；认证走 CODEX_BASE_URL/CODEX_API_KEY 环境变量）。
+# 钉 0.92.0：更高版本移除了 wire_api=chat（智谱 Coding Plan 等 chat-only 端点必需）
 RUN corepack enable \
-    && npm install -g @openai/codex \
+    && npm install -g @openai/codex@0.92.0 \
     && mkdir -p /data && chown node:node /data
 WORKDIR /app
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./

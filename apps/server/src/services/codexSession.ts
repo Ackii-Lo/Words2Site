@@ -81,8 +81,8 @@ export async function probeCodex(): Promise<{ ok: boolean; detail: string }> {
   if (config.generation.provider === "mock") {
     return { ok: true, detail: "mock 模式，无需探活" };
   }
-  const args = ["exec", "--sandbox", "read-only", "--skip-git-repo-check"];
   const g = config.generation;
+  const args = ["exec", "--sandbox", g.sandbox, "--skip-git-repo-check"];
   const env = { ...process.env } as NodeJS.ProcessEnv;
   if (g.baseUrl && g.apiKey) {
     args.push(
@@ -95,7 +95,7 @@ export async function probeCodex(): Promise<{ ok: boolean; detail: string }> {
       `-c`,
       `model_providers.${g.modelProvider}.env_key=W2S_CODEX_API_KEY`,
       `-c`,
-      `model_providers.${g.modelProvider}.wire_api=responses`,
+      `model_providers.${g.modelProvider}.wire_api=${g.wireApi}`,
     );
     if (g.model) args.push(`-c`, `model=${g.model}`);
     env.W2S_CODEX_API_KEY = g.apiKey;
