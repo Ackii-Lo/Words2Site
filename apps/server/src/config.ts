@@ -90,6 +90,9 @@ export const config = {
     // chat-only 端点（如智谱 Coding Plan）需 chat + codex CLI ≤0.92（更高版本已移除 chat）
     wireApi,
     sandbox,
+    // 自定义 provider 的模型名 codex 不认识，fallback 窗口过小会直接报
+    // "ran out of room in the model's context window"——显式注入窗口大小
+    contextWindow: num("CODEX_CONTEXT_WINDOW", 131072),
   },
 
   /** 本地 LLM 反代（llmProxy.ts）：未配置不启动。CODEX_BASE_URL 指向 127.0.0.1:<port>/v1 */

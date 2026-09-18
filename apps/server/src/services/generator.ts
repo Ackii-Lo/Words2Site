@@ -78,6 +78,8 @@ function codexArgs(prompt: string, workdir: string): string[] {
       `model_providers.${g.modelProvider}.env_key=W2S_CODEX_API_KEY`,
       `-c`,
       `model_providers.${g.modelProvider}.wire_api=${g.wireApi}`,
+      `-c`,
+      `model_context_window=${g.contextWindow}`,
     );
     if (g.model) args.push(`-c`, `model=${g.model}`);
   } else if (g.model) {
