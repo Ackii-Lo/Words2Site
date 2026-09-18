@@ -115,7 +115,13 @@ function restart() {
 
 <template>
   <div class="shell">
-    <!-- 顶部：左上角标（点回现场大屏）+ 右对齐空心标题 -->
+    <!-- 三等分虚线网格：横竖各两条，落在页面 1/3 与 2/3 处（百分比坐标，垫在内容之下） -->
+    <svg class="grid" aria-hidden="true">
+      <line x1="33.3333%" y1="0" x2="33.3333%" y2="100%" />
+      <line x1="66.6667%" y1="0" x2="66.6667%" y2="100%" />
+      <line x1="0" y1="33.3333%" x2="100%" y2="33.3333%" />
+      <line x1="0" y1="66.6667%" x2="100%" y2="66.6667%" />
+    </svg>
     <!-- 顶部：一行排布——logo 居左、空心标题居右，与页面左/上沿留边距 -->
     <header class="hero">
       <div class="hero-row">
@@ -174,9 +180,10 @@ function restart() {
 </template>
 
 <style scoped>
-/* ===== 画布：CPU 黄底 + 极淡虚线网格 ===== */
+/* ===== 画布：CPU 黄底 + 三等分虚线网格（SVG 覆盖层） ===== */
 .shell {
   position: relative;
+  z-index: 0; /* 建立层叠上下文，让 .grid 的 z-index:-1 垫在内容与黄底之间 */
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -184,9 +191,18 @@ function restart() {
   min-height: 100dvh;
   margin: 0 auto;
   background-color: #f7d447;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='375' height='104'%3E%3Cg stroke='rgba(28,25,23,0.12)' stroke-width='1.5' stroke-dasharray='6.5 6.5' fill='none'%3E%3Cline x1='125' y1='0' x2='125' y2='104'/%3E%3Cline x1='250' y1='0' x2='250' y2='104'/%3E%3Cline x1='0' y1='0' x2='375' y2='0'/%3E%3C/g%3E%3C/svg%3E");
-  background-size: 375px 104px;
-  background-repeat: repeat-y;
+}
+.grid {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  fill: none;
+  stroke: rgba(28, 25, 23, 0.12);
+  stroke-width: 1.5;
+  stroke-dasharray: 6.5 6.5;
+  pointer-events: none;
 }
 
 /* ===== 顶部：一行排布（logo 左 · 标题右） ===== */
@@ -318,9 +334,10 @@ function restart() {
   .shell {
     max-width: none;
     min-height: 100vh;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='240'%3E%3Cpath d='M0 0V240M0 0H360' fill='none' stroke='rgba(28,25,23,0.12)' stroke-width='3' stroke-dasharray='9 12'/%3E%3C/svg%3E");
-    background-size: 360px 240px;
-    background-repeat: repeat;
+  }
+  .grid {
+    stroke-width: 3;
+    stroke-dasharray: 9 12;
   }
 
   /* 顶部：一行排布，logo 与标题垂直居中，四周留边距 */
