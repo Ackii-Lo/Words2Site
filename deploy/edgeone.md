@@ -115,6 +115,31 @@ Node 版本：     22
 
 推送即自动部署，Pages 会分配默认域名，也可绑定自定义域名。
 
+### SPA 路由回退（必配，仓库已带）
+
+前端是 vue-router **history 模式**，直接访问或刷新子路径（工作人员扫码核验 `/verify/W2S-XXXX`、管理台 `/admin`、大屏 `/screen`）时，静态托管找不到对应文件会返回平台 404。`apps/web/public/edgeone.json` 已配置回退：
+
+```json
+{
+  "rewrites": [{ "source": "/*", "destination": "/index.html" }]
+}
+```
+
+文件放在 `apps/web/public/` 下，经 Vite 构建原样复制进**输出目录** `apps/web/dist/`——EdgeOne Pages 从部署产物读取该配置，因此无论控制台的「根目录」设为仓库根还是 `apps/web`，只要输出目录是 `apps/web/dist` 就会生效（CLI 直传 `dist` 目录部署同样带上）。
+
+EdgeOne Pages 把它识别为 SPA fallback：请求先匹配静态资源与函数，未命中时返回 `index.html`，浏览器 URL 保持不变、由前端路由接管。
+
+验证（应返回 200 与 `text/html`）：
+
+```bash
+curl -i https://<pages 域名>/screen | head -3
+```
+
+注意事项：
+
+- 切勿在产物根目录放 `404.html`——会抢占回退、破坏客户端路由；
+- 方案 B 下前端 API 走 `VITE_API_BASE` 跨域直连后端域名，不经 Pages 域名，`/*` 回退不影响接口请求。
+
 ### 连接远程后端（B-2，完整流程）
 
 1. 后端必须已可公网 HTTPS 访问（即方案 A 已接好，或源站保留 Caddy 自有证书；后端也可以是 Docker 容器——`ghcr.io/comppsyunion/words2site`，`docker compose up -d` 连 Speaches 转写一起编排）。Pages 是 HTTPS 站点，浏览器禁止其向 `http://` 地址发请求（混合内容限制），因此 `VITE_API_BASE` 必须是 `https://`；
@@ -133,4 +158,5 @@ Node 版本：     22
 - **上传音频 413**：先查 EdgeOne「最大上传大小」，再查源站（若保留 Caddy，`max_request_body` 仍需 ≥ 20MB）。
 - **管理台数据不动 / 任务状态不更新**：`/api/` 被缓存了，回步骤 4 修正并清缓存。
 - **大陆访问慢或被拒**：加速区域含中国大陆但域名未备案时无法开启，改用「全球（不含中国大陆）」或先完成备案。
+- **刷新 `/verify/...`、`/admin` 等子路径 404**：SPA 回退未生效——确认构建产物里有 `edgeone.json`（本地 `pnpm --filter @words2site/web build` 后看 `apps/web/dist/`，见「SPA 路由回退」一节），且产物根目录没有 `404.html`。
 - **`/preview` 页面 404**：该路径由源站 `data/published` 目录动态提供，确认走的是方案 A 且回源正常，Pages 形态下无此路径。
