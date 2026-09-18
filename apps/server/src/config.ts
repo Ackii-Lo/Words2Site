@@ -33,15 +33,6 @@ if (provider !== "codex" && provider !== "mock") {
   fail(`GENERATION_PROVIDER 只能是 codex 或 mock，当前： ${provider}`);
 }
 
-const whisperProvider = str("WHISPER_PROVIDER", "mock");
-if (!["openai-api", "local", "mock"].includes(whisperProvider)) {
-  fail(
-    `WHISPER_PROVIDER 只能是 openai-api / local / mock，当前： ${whisperProvider}`,
-  );
-}
-if (whisperProvider === "openai-api" && !str("OPENAI_API_KEY")) {
-  fail("WHISPER_PROVIDER=openai-api 需要配置 OPENAI_API_KEY");
-}
 if (provider === "codex") {
   // 提前暴露常见问题：codex 不存在
   const bin = str("CODEX_BIN", "codex");
@@ -78,7 +69,6 @@ if (
 }
 fs.mkdirSync(path.join(dataDir, "tasks"), { recursive: true });
 fs.mkdirSync(path.join(dataDir, "logs"), { recursive: true });
-fs.mkdirSync(path.join(dataDir, "audio-tmp"), { recursive: true });
 
 export const config = {
   port: num("PORT", 3000),
@@ -97,22 +87,9 @@ export const config = {
     model: str("CODEX_MODEL"),
     maxConcurrent: num("MAX_CONCURRENT", 3),
     timeoutMs: num("GEN_TIMEOUT_MS", 240_000),
-    maxRefine: num("MAX_REFINE", 2),
     // chat-only 端点（如智谱 Coding Plan）需 chat + codex CLI ≤0.92（更高版本已移除 chat）
     wireApi,
     sandbox,
-  },
-
-  whisper: {
-    provider: whisperProvider as "openai-api" | "local" | "mock",
-    apiKey: str("OPENAI_API_KEY"),
-    // 自建 OpenAI 兼容转写服务(如 Speaches)时指向 http://<host>:8000/v1
-    baseUrl: str("OPENAI_BASE_URL", "https://api.openai.com/v1").replace(
-      /\/+$/,
-      "",
-    ),
-    model: str("OPENAI_TRANSCRIBE_MODEL", "whisper-1"),
-    localCmd: str("LOCAL_WHISPER_CMD", "whisper"),
   },
 
   publish: {
@@ -150,7 +127,6 @@ export const config = {
     .filter(Boolean),
   rate: {
     tasksPerHour: num("RATE_MAX_PER_HOUR", 3),
-    transcribePerHour: num("RATE_TRANSCRIBE_PER_HOUR", 10),
   },
   maxTextLen: num("MAX_TEXT_LEN", 300),
 } as const;

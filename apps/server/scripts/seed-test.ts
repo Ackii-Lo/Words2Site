@@ -32,7 +32,6 @@ for (const p of prompts) {
   tasks.create({
     id,
     prompt: p,
-    transcript: null,
     ip: "127.0.0.1",
     deviceId: "seed-script",
   });

@@ -1,13 +1,13 @@
 import express from "express";
 import fs from "node:fs";
 import path from "node:path";
-import { inArray } from "drizzle-orm";
+import { and, eq, inArray, isNotNull } from "drizzle-orm";
 import { config } from "./config.js";
-import { db, tasks } from "./db.js";
+import { db, tasks, reservations } from "./db.js";
 import { tasksTable } from "./schema.js";
-import { transcribeRouter } from "./routes/transcribe.js";
 import { tasksRouter, verifyRouter, screenRouter } from "./routes/tasks.js";
 import { adminRouter } from "./routes/admin.js";
+import { queue } from "./services/queue.js";
 import { log } from "./util/logger.js";
 
 const app = express();
@@ -39,18 +39,13 @@ if (config.allowOrigins.length) {
   });
 }
 
-app.use("/api/transcribe", transcribeRouter);
 app.use("/api/tasks", tasksRouter);
 app.use("/api/verify", verifyRouter);
 app.use("/api/screen", screenRouter);
 app.use("/api/admin", adminRouter);
 
 app.get("/api/health", (_req, res) => {
-  res.json({
-    ok: true,
-    provider: config.generation.provider,
-    whisper: config.whisper.provider,
-  });
+  res.json({ ok: true, provider: config.generation.provider });
 });
 
 /** mock 发布产物预览 */
@@ -68,12 +63,23 @@ if (fs.existsSync(webDist)) {
   });
 }
 
-// 启动恢复：上次运行中断的任务标记失败（admin 可重试）
+// 启动恢复：
+// 1) 存量 tasks 回填域名预约表（幂等）
+reservations.backfill();
+
+// 2) 上次运行中断的任务标记失败 + 释放预约（admin 可重试，重试时会重抢预约）
 {
   const interrupted = db
     .select({ id: tasksTable.id })
     .from(tasksTable)
-    .where(inArray(tasksTable.status, ["queued", "generating", "validating"]))
+    .where(
+      inArray(tasksTable.status, [
+        "queued",
+        "generating",
+        "validating",
+        "publishing",
+      ]),
+    )
     .all();
   for (const { id } of interrupted) {
     tasks.update({
@@ -83,14 +89,34 @@ if (fs.existsSync(webDist)) {
       error: "server restarted",
       finished_at: Date.now(),
     });
+    reservations.releaseByTask(id);
     log("boot", `任务 ${id} 标记为失败（服务重启）`);
+  }
+}
+
+// 3) done 存量（旧流程停在「生成完成待手动发布」）：产物在则补发
+{
+  const leftovers = db
+    .select({ id: tasksTable.id })
+    .from(tasksTable)
+    .where(
+      and(
+        eq(tasksTable.status, "done"),
+        isNotNull(tasksTable.html_size),
+        // 已发布/已下线的不动（removed_at 判下线）
+      ),
+    )
+    .all();
+  for (const { id } of leftovers) {
+    queue.enqueuePublish(id);
+    log("boot", `任务 ${id} 为 done 存量，排队补发`);
   }
 }
 
 const server = app.listen(config.port, () => {
   log(
     "boot",
-    `Words2Site server 启动 :${config.port}(生成：${config.generation.provider} / 转写：${config.whisper.provider})`,
+    `Words2Site server 启动 :${config.port}（生成：${config.generation.provider}）`,
   );
 });
 

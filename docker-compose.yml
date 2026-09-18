@@ -1,4 +1,4 @@
-# 后端 + 自托管转写一键编排。
+# 后端一键编排。
 # 用法：仓库根配好 .env（参考 .env.example），docker compose up -d
 # server 默认拉 GHCR 镜像；本地改代码后想现场构建：docker compose up -d --build
 services:
@@ -12,26 +12,9 @@ services:
       - .env
     environment:
       DATA_DIR: /data
-      # 转写走 compose 网络内的 speaches（OpenAI 兼容）
-      WHISPER_PROVIDER: openai-api
-      OPENAI_BASE_URL: http://whisper:8000/v1
-      OPENAI_TRANSCRIBE_MODEL: Systran/faster-whisper-small
-      OPENAI_API_KEY: unused-speaches-has-no-auth # 占位：Speaches 不校验，客户端必须带
     volumes:
       - server-data:/data
-    depends_on:
-      - whisper
-    restart: unless-stopped
-
-  whisper:
-    image: ghcr.io/speaches-ai/speaches:latest-cpu
-    # 动态加载：请求里的 model 字段决定模型（此处 Systran/faster-whisper-small），
-    # 首次调用自动从 HuggingFace 下载（约几百 MB）并缓存进卷
-    volumes:
-      - hf-hub-cache:/home/ubuntu/.cache/huggingface/hub
-    # 不对外暴露端口，仅 compose 网络内可见；调试可加 ports: ["8000:8000"]
     restart: unless-stopped
 
 volumes:
   server-data:
-  hf-hub-cache:

@@ -2,12 +2,11 @@
 
 ## A. 本地 mock 全链路（零外部依赖）
 
-- [ ] `.env`:`GENERATION_PROVIDER=mock`、`WHISPER_PROVIDER=mock`、`PUBLISH_ENDPOINT=`(空，走内置 mock)
+- [ ] `.env`:`GENERATION_PROVIDER=mock`、`PUBLISH_ENDPOINT=`(空，走内置 mock)
 - [ ] `pnpm mock:publish` 另开终端（若要演练真实 POST 发布链路，把 `PUBLISH_ENDPOINT=http://localhost:9090/publish` 填进 .env）
 - [ ] `pnpm dev`，手机/浏览器打开 http://localhost:5173
-- [ ] 录音 → 转写回显（mock 文案）→ 编辑 → 提交 → 排队 → 预览（mock 页面）
-- [ ] refine「换个蓝色主题」→ 预览刷新
-- [ ] 发布 → 凭证页（编号 + 二维码）
+- [ ] 填写描述 + 邮箱 + 网址 → 提交 → 排队 → 自动发布（mock 页面）→ 凭证页（编号 + 二维码）
+- [ ] mock 产物无署名 → 任务日志出现「已注入兜底页脚」
 - [ ] 扫码/打开 /verify/W2S-XXXX → 核验页信息正确
 
 ## B. 异常注入
