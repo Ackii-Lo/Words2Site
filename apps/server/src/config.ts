@@ -92,6 +92,12 @@ export const config = {
     sandbox,
   },
 
+  /** 本地 LLM 反代（llmProxy.ts）：未配置不启动。CODEX_BASE_URL 指向 127.0.0.1:<port>/v1 */
+  llmProxy: {
+    upstream: str("LLM_PROXY_UPSTREAM").replace(/\/+$/, ""),
+    port: num("LLM_PROXY_PORT", 3456),
+  },
+
   publish: {
     endpoint: str("PUBLISH_ENDPOINT"),
     token: str("PUBLISH_TOKEN"),

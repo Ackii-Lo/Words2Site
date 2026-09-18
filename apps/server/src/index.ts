@@ -8,6 +8,7 @@ import { tasksTable } from "./schema.js";
 import { tasksRouter, verifyRouter, screenRouter } from "./routes/tasks.js";
 import { adminRouter } from "./routes/admin.js";
 import { queue } from "./services/queue.js";
+import { startLlmProxy } from "./services/llmProxy.js";
 import { log } from "./util/logger.js";
 
 const app = express();
@@ -129,6 +130,9 @@ const server = app.listen(config.port, () => {
     `Words2Site server 启动 :${config.port}（生成：${config.generation.provider}）`,
   );
 });
+
+// 本地 LLM 反代（配置了 LLM_PROXY_UPSTREAM 才启动；见 llmProxy.ts 头注）
+startLlmProxy();
 
 function shutdown() {
   log("boot", "收到退出信号，关闭服务…");
