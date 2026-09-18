@@ -1,3 +1,5 @@
+import type { CardStyle } from "./styleHint";
+
 /** 大屏滚动墙的条目（真实任务或演示卡） */
 export interface WallItem {
   taskId: string;
@@ -8,4 +10,6 @@ export interface WallItem {
   hasScreenshot: boolean;
   createdAt: number;
   demoIndex?: number; // 演示卡片：用 srcdoc
+  /** 大屏卡片外壳（七式之一）。未传 → FilmCard 走 archive 默认。 */
+  styleHint?: CardStyle | null;
 }

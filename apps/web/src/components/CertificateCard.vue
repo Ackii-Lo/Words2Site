@@ -55,49 +55,53 @@ const isRelative = computed(
 </template>
 
 <style scoped>
+/* 方案二凭证卡：白底黄描边 + 硬投影 */
 .voucher {
-  margin-top: 25px;
-  padding: 24px;
-  border: 2px solid #f7d447;
-  border-radius: 16px;
-  background: #fff;
+  position: relative;
+  width: 251px;
+  margin: 20px auto 0;
+  padding: 24px 16px 22px;
+  border: 3px solid #f7d447;
+  border-radius: 4px;
+  background: #ffffff;
+  box-shadow: 6px 6px 0 #1c1917;
   text-align: center;
 }
 .v-label {
-  font-size: 11.5px;
-  color: #78716c;
+  font-size: 10px;
+  color: rgba(28, 25, 23, 0.55);
 }
 .v-url {
   display: block;
   margin-top: 5px;
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 12.5px;
+  font-weight: 900;
   color: #1c1917;
   word-break: break-all;
 }
 .v-divider {
   height: 1px;
-  margin: 20px 0;
-  background: #eeede9;
+  margin: 14px 0;
+  background: rgba(28, 25, 23, 0.15);
 }
 .v-stamp {
-  font-size: 12px;
-  color: #78716c;
+  font-size: 10px;
+  color: rgba(28, 25, 23, 0.55);
 }
 .v-code {
   margin-top: 8px;
-  font-family: ui-monospace, "IBM Plex Mono", monospace;
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: 1.5px;
+  font-family: Consolas, Menlo, ui-monospace, monospace;
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: 2px;
   color: #1c1917;
 }
 .v-qr {
-  width: 125px;
-  height: 125px;
-  margin: 27px auto 0;
-  padding: 10px;
-  border-radius: 12px;
+  width: 60px;
+  height: 60px;
+  margin: 16px auto 0;
+  padding: 8px;
+  border-radius: 10px;
   background: #1c1917;
   box-sizing: border-box;
 }
@@ -105,12 +109,56 @@ const isRelative = computed(
   display: block;
   width: 100%;
   height: 100%;
-  border-radius: 3px;
+  border-radius: 2px;
   background: #fff;
 }
 .v-no {
-  margin-top: 17px;
-  font-size: 11px;
-  color: #78716c;
+  margin-top: 14px;
+  font-size: 9px;
+  color: rgba(28, 25, 23, 0.5);
+}
+
+/* 桌面端（电脑版方案二定稿：520px 宽凭证卡） */
+@media (min-width: 900px) {
+  .voucher {
+    width: 520px;
+    margin: 14px auto 0;
+    padding: 16px 24px;
+    border-radius: 6px;
+  }
+  .v-label {
+    font-size: 12.5px;
+    color: #78716c;
+  }
+  .v-url {
+    margin-top: 6px;
+    font-size: 18px;
+  }
+  .v-divider {
+    height: 1px;
+    margin: 16px 0;
+    background: #e7e5e0;
+  }
+  .v-stamp {
+    font-size: 13px;
+    color: #78716c;
+  }
+  .v-code {
+    margin-top: 8px;
+    font-size: 26px;
+    letter-spacing: 2px;
+  }
+  .v-qr {
+    width: 128px;
+    height: 128px;
+    margin: 14px auto 0;
+    padding: 10px;
+    border-radius: 12px;
+  }
+  .v-no {
+    margin-top: 15px;
+    font-size: 12px;
+    color: #78716c;
+  }
 }
 </style>

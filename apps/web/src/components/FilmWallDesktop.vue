@@ -81,10 +81,13 @@ const cardAt = (n: number): WallItem => itemAt(n) as WallItem;
 
 const empty = () => props.items.length === 0;
 const liveCount = () => props.items.length - props.demoCount;
-const topSvg = () => headDesk(liveCount(), props.demoCount) + footDesk();
+const topSvg = () =>
+  headDesk(liveCount(), props.demoCount) + footDesk(props.items.length);
 const emptySvg =
-  `<circle cx="960" cy="540" r="64" fill="none" stroke="rgba(247,212,71,.5)" stroke-width="2.5" stroke-dasharray="10 10"/>` +
-  `<text x="960" y="648" text-anchor="middle" font-family="Consolas,Menlo,monospace" font-size="15" letter-spacing="4" fill="rgba(247,212,71,.6)">WAITING FOR THE FIRST PAGE…</text>`;
+  // 承托面板：空态提示会落在胶片轨上，加一层近黑底 + 黄虚线框把提示托出来
+  `<rect x="650" y="418" width="620" height="238" rx="8" fill="#17140F" fill-opacity=".94" stroke="rgba(247,212,71,.32)" stroke-width="1.5" stroke-dasharray="9 9"/>` +
+  `<circle cx="960" cy="510" r="56" fill="none" stroke="rgba(247,212,71,.55)" stroke-width="2.5" stroke-dasharray="11 11"/>` +
+  `<text x="960" y="618" text-anchor="middle" font-family="Consolas,Menlo,monospace" font-size="16" letter-spacing="4.5" fill="rgba(247,212,71,.78)">WAITING FOR THE FIRST PAGE…</text>`;
 
 // ---------- 动画 ----------
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -244,6 +247,14 @@ onUnmounted(() => {
         :viewBox="`0 0 ${W} ${H}`"
         v-html="emptySvg"
       />
+      <!-- 去做网页的入口：右下角厂牌 logo（画布 1470,972 起 84px）做成热区 -->
+      <RouterLink
+        to="/start"
+        class="start-link"
+        aria-label="开始制作你的网页"
+        title="开始制作你的网页"
+        :style="{ left: '1470px', top: '972px', width: '84px', height: '84px' }"
+      />
     </div>
   </div>
 </template>
@@ -260,5 +271,14 @@ onUnmounted(() => {
   visibility: hidden; /* 首帧定位后再显示，避免新卡在左上角闪现 */
   transform-origin: 0 0;
   will-change: transform;
+}
+.start-link {
+  position: absolute;
+  z-index: 30;
+  border-radius: 10px;
+}
+.start-link:hover {
+  outline: 1.5px dashed rgba(247, 212, 71, 0.75);
+  outline-offset: 5px;
 }
 </style>

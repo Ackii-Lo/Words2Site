@@ -117,7 +117,7 @@ Node 版本：     22
 
 ### SPA 路由回退（必配，仓库已带）
 
-前端是 vue-router **history 模式**，直接访问或刷新子路径（工作人员扫码核验 `/verify/W2S-XXXX`、管理台 `/admin`、大屏 `/screen`）时，静态托管找不到对应文件会返回平台 404。`apps/web/public/edgeone.json` 已配置回退：
+前端是 vue-router **history 模式**，直接访问或刷新子路径（工作人员扫码核验 `/verify/W2S-XXXX`、管理台 `/admin`、制作流程 `/start`）时，静态托管找不到对应文件会返回平台 404。`apps/web/public/edgeone.json` 已配置回退：
 
 ```json
 {
@@ -149,8 +149,8 @@ curl -i https://<pages 域名>/screen | head -3
 
 ### 访问
 
-- B-1 大屏演示：`https://<pages 域名>/screen?demo=12`（后端不可达时自动用内置演示卡片填充）；
-- B-2 首页即完整参与者流程，正式活动可用。
+- B-1 大屏演示：`https://<pages 域名>/?demo=12`（后端不可达时自动用内置演示卡片填充；老地址 `/screen` 会重定向到 `/`）；
+- B-2 制作流程在 `/start`（主入口 `/` 是大屏），正式活动可用。
 
 ## 常见问题
 

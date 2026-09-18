@@ -9,15 +9,14 @@ import CertificateCard from "@/components/CertificateCard.vue";
 import CpuLogo from "@/components/CpuLogo.vue";
 import { Check } from "lucide-vue-next";
 
-type Step = "intro" | "record" | "info" | "waiting" | "preview" | "certificate";
+type Step = "intro" | "record" | "info" | "waiting" | "done";
 
 const STEPS: { key: Step; label: string }[] = [
   { key: "intro", label: "欢迎" },
   { key: "record", label: "描述网页" },
   { key: "info", label: "填写信息" },
   { key: "waiting", label: "生成中" },
-  { key: "preview", label: "预览" },
-  { key: "certificate", label: "完成" },
+  { key: "done", label: "完成" },
 ];
 
 const step = ref<Step>("intro");
@@ -48,6 +47,7 @@ const stepIndex = computed(() =>
   Math.max(1, STEPS.findIndex((s) => s.key === step.value) + 1),
 );
 const stepLabel = computed(() => STEPS[stepIndex.value - 1]?.label ?? "");
+const stepNum = computed(() => String(stepIndex.value).padStart(2, "0"));
 const progressPct = computed(() => (stepIndex.value / STEPS.length) * 100);
 
 const onTranscribed = (payload: { text: string; seconds: number }) => {
@@ -62,7 +62,7 @@ watch(
     if (s === "done") {
       waitProgress.value = 100;
       htmlVersion.value++;
-      step.value = "preview";
+      step.value = "done";
     }
   },
 );
@@ -140,7 +140,6 @@ async function publish() {
       domain: data.publishUrl.replace(/^https?:\/\//, "").replace(/\/$/, ""),
       email: email.value.trim() || null,
     };
-    step.value = "certificate";
   } catch (e) {
     submitError.value = e instanceof Error ? e.message : String(e);
   } finally {
@@ -238,497 +237,582 @@ onUnmounted(stopWaitingTimers);
 
 <template>
   <div class="shell">
-    <!-- 顶栏 + 步骤进度条 -->
-    <header class="topwrap">
-      <div class="topbar">
-        <span class="brand">CPU • Words2Site</span>
-        <span class="step"
-          >步骤 {{ stepIndex }} / {{ STEPS.length }} · {{ stepLabel }}</span
-        >
-      </div>
-      <div class="progress-top">
-        <div
-          class="progress-top-fill"
-          :style="{ width: progressPct + '%' }"
-        ></div>
-      </div>
+    <!-- 顶部：左上角标（点回现场大屏）+ 右对齐空心标题 -->
+    <header class="hero">
+      <RouterLink
+        to="/"
+        class="badge"
+        aria-label="返回现场大屏"
+        title="返回现场大屏"
+      >
+        <CpuLogo class="badge-mark" ink="#F7D447" />
+      </RouterLink>
+      <h1 class="hero-title"><span>WORDS TO</span><span>WEBSITE</span></h1>
     </header>
 
-    <!-- ① 欢迎 -->
-    <main v-if="step === 'intro'" class="screen">
-      <h1 class="hero-title">一句话，生成你的网页</h1>
-      <p class="hero-sub">对 AI 说说你想要的网页<br />几分钟后它才是真的了</p>
-
-      <div class="card steps-card">
-        <div class="step-row">
-          <span class="step-num">1</span>对着麦克风描述你想要的网页
-        </div>
-        <div class="step-row">
-          <span class="step-num">2</span>AI 现场为你生成网页
-        </div>
-        <div class="step-row">
-          <span class="step-num">3</span>发布并获得集章凭证
-        </div>
-      </div>
-
-      <button class="btn-primary" type="button" @click="step = 'record'">
-        开始体验
-      </button>
-    </main>
-
-    <!-- ② 描述网页 -->
-    <main v-else-if="step === 'record'" class="screen">
-      <div class="tabs">
-        <button
-          class="tab"
-          :class="inputMode === 'voice' ? 'tab-active' : 'tab-idle'"
-          type="button"
-          @click="inputMode = 'voice'"
+    <!-- 主卡：黑带卡头（编号/名称/步骤）+ 进度条 + 卡身 -->
+    <main class="sheet">
+      <div class="sheet-head">
+        <span class="sheet-num">{{ stepNum }}</span>
+        <span class="sheet-div"></span>
+        <span class="sheet-name">{{ stepLabel }}</span>
+        <span class="sheet-step"
+          >步骤 {{ stepIndex }} / {{ STEPS.length }}</span
         >
-          语音
-        </button>
-        <button
-          class="tab"
-          :class="inputMode === 'typing' ? 'tab-active' : 'tab-idle'"
-          type="button"
-          @click="inputMode = 'typing'"
-        >
-          打字
-        </button>
+      </div>
+      <div class="sheet-track">
+        <div class="sheet-fill" :style="{ width: progressPct + '%' }"></div>
       </div>
 
-      <template v-if="inputMode === 'voice'">
-        <div v-if="transcript" class="mic-card">
-          <span class="mic-circle">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#1C1917"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="mic-svg"
-            >
-              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-              <line x1="12" x2="12" y1="19" y2="22" />
-            </svg>
-          </span>
-          <span class="mic-text">
-            <span class="mic-title">录音完成</span>
-            <span class="mic-sub">{{ recordedSeconds }}″ · 已转成文字</span>
-          </span>
-        </div>
-        <RecorderPanel v-else @transcribed="onTranscribed" />
-      </template>
-
-      <!-- 打字模式始终可编辑；语音模式下录制完成后才出现识别结果卡 -->
-      <div v-if="inputMode === 'typing' || transcript" class="card edit-card">
-        <p v-if="inputMode === 'voice'" class="edit-label">
-          语音识别结果（可直接修改）：
-        </p>
-        <textarea
-          v-model="draft"
-          class="edit-area"
-          :placeholder="
-            inputMode === 'voice'
-              ? ''
-              : '描述你想要的网页，比如：做一个介绍我家猫咪的网页，粉色可爱风，要有它的照片墙…'
-          "
-        ></textarea>
-        <p class="edit-count">{{ draft.length }} / 300</p>
-      </div>
-
-      <p v-if="submitError" class="err-text">{{ submitError }}</p>
-
-      <button
-        class="btn-primary"
-        type="button"
-        :disabled="draft.trim().length < 10 || draft.length > 300"
-        @click="step = 'info'"
-      >
-        下一步 →
-      </button>
-      <button class="btn-outline" type="button" @click="redoRecord">
-        重新说
-      </button>
-    </main>
-
-    <!-- ③ 填写信息 -->
-    <main v-else-if="step === 'info'" class="screen screen-info">
-      <h2 class="page-title">填写信息</h2>
-      <p class="page-sub">邮箱用于接收网页链接和集章凭证</p>
-
-      <label class="field-label" for="w2s-email"
-        >邮箱（接收网页链接和集章凭证）</label
-      >
-      <input
-        id="w2s-email"
-        v-model="email"
-        class="field-input"
-        type="email"
-        inputmode="email"
-        autocapitalize="off"
-        autocorrect="off"
-        placeholder="name@example.com"
-      />
-
-      <label class="field-label" for="w2s-domain">为你的网页选个网址</label>
-      <input
-        id="w2s-domain"
-        v-model="domainLabel"
-        class="field-input"
-        type="text"
-        autocapitalize="off"
-        autocorrect="off"
-        spellcheck="false"
-        placeholder="my-cat"
-      />
-      <p v-if="domainLabel" class="url-preview">
-        你的网址：https://{{ domainLabel }}{{ domainSuffix }}/
-      </p>
-
-      <label class="cb-card">
-        <input v-model="isPublic" class="cb-native" type="checkbox" />
-        <span class="cb-row">
-          <span class="cb-box" :class="{ 'cb-box-on': isPublic }">
-            <Check v-if="isPublic" class="cb-check" :stroke-width="3.5" />
-          </span>
-          <span class="cb-title">上大屏展示</span>
-        </span>
-        <span class="cb-desc"
-          >勾选后你的网页会出现在现场大屏上滚动展示；不勾选仅自己通过链接访问</span
-        >
-      </label>
-
-      <div class="bottom-bar">
-        <p v-if="submitError" class="err-text">{{ submitError }}</p>
-        <button
-          class="btn-primary"
-          type="button"
-          :disabled="
-            submitting ||
-            !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim()) ||
-            !/^[a-z0-9][a-z0-9-]{2,30}$/.test(domainLabel.trim())
-          "
-          @click="submitTask"
-        >
-          {{ submitting ? "提交中…" : "让 AI 生成！" }}
-        </button>
-      </div>
-    </main>
-
-    <!-- ④ 生成中 / ⑤ 卡住了 -->
-    <main v-else-if="step === 'waiting'" class="screen screen-waiting">
-      <div class="logo-wrap">
-        <span class="logo-halo"></span>
-        <span class="logo-circle"><CpuLogo class="logo-mark" /></span>
-      </div>
-
-      <template v-if="!failed">
-        <h2 class="wait-title">{{ waitingTitle }}</h2>
-        <div class="ai-bar">
-          <div class="ai-bar-fill" :style="{ width: waitProgress + '%' }"></div>
-        </div>
-        <div class="msg-zone">
-          <p class="msg" :class="{ 'msg-show': msgVisible }">
-            {{ messages[msgIndex] }}
+      <div class="sheet-body">
+        <!-- ① 欢迎 -->
+        <template v-if="step === 'intro'">
+          <h2 class="hero-h">一句话，生成你的网页</h2>
+          <p class="hero-sub2">
+            对 AI 说说你想要的网页<br />几分钟后它才是真的了
           </p>
-        </div>
-      </template>
 
-      <template v-else>
-        <h2 class="wait-title fail-title">啊哦，卡住了</h2>
-        <button
-          class="btn-primary"
-          type="button"
-          :disabled="submitting"
-          @click="submitTask"
-        >
-          点击刷新
-        </button>
-        <button class="btn-dashed" type="button">找工作人员帮忙</button>
-        <p class="err-code">
-          错误码 · {{ status?.error || "W2S-GEN-TIMEOUT" }}
-        </p>
-      </template>
-    </main>
+          <div class="howto">
+            <div
+              v-for="(r, i) in [
+                ['1', '对着麦克风描述你想要的网页'],
+                ['2', 'AI 现场为你生成网页'],
+                ['3', '发布并获得集章凭证'],
+              ]"
+              :key="i"
+              class="howto-row"
+            >
+              <span class="howto-num">{{ r[0] }}</span>
+              <span class="howto-txt">{{ r[1] }}</span>
+            </div>
+          </div>
 
-    <!-- ⑥ 预览 -->
-    <main v-else-if="step === 'preview'" class="screen">
-      <h2 class="section-title">你的网页已经准备好啦</h2>
-      <PreviewFrame :task-id="taskId" :version="htmlVersion" />
+          <button class="btn-ink" type="button" @click="step = 'record'">
+            开始体验
+          </button>
+        </template>
 
-      <p v-if="submitError" class="err-text">{{ submitError }}</p>
-      <button
-        class="btn-primary gap-top"
-        type="button"
-        :disabled="publishing"
-        @click="publish"
-      >
-        {{ publishing ? "发布中…" : "满意，发布我的网页！" }}
-      </button>
+        <!-- ② 描述网页 -->
+        <template v-else-if="step === 'record'">
+          <div class="tabs">
+            <button
+              class="tab"
+              :class="{ 'tab-on': inputMode === 'voice' }"
+              type="button"
+              @click="inputMode = 'voice'"
+            >
+              语音
+            </button>
+            <button
+              class="tab"
+              :class="{ 'tab-on': inputMode === 'typing' }"
+              type="button"
+              @click="inputMode = 'typing'"
+            >
+              打字
+            </button>
+          </div>
 
-      <div
-        v-if="(status?.refinements ?? 0) < (status?.maxRefine ?? 2)"
-        class="card refine-card"
-      >
-        <p class="refine-label">想改改？告诉 AI 哪里不满意</p>
-        <textarea
-          v-model="refineText"
-          class="refine-area"
-          placeholder="例如：换主色调、加一个段落、改标题"
-        ></textarea>
-        <p v-if="refineError" class="err-text">{{ refineError }}</p>
-        <button
-          class="btn-dark"
-          type="button"
-          :disabled="refining || refineText.trim().length < 2"
-          @click="submitRefine"
-        >
-          {{ refining ? "提交中…" : "提交修改" }}
-        </button>
+          <template v-if="inputMode === 'voice'">
+            <div v-if="transcript" class="mic-card">
+              <span class="mic-circle">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#1C1917"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="mic-svg"
+                >
+                  <path
+                    d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"
+                  />
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                  <line x1="12" x2="12" y1="19" y2="22" />
+                </svg>
+              </span>
+              <span class="mic-text">
+                <span class="mic-title">录音完成</span>
+                <span class="mic-sub">{{ recordedSeconds }}″ · 已转成文字</span>
+              </span>
+            </div>
+            <RecorderPanel v-else @transcribed="onTranscribed" />
+          </template>
+
+          <!-- 打字模式始终可编辑；语音模式下录制完成后才出现识别结果卡 -->
+          <div v-if="inputMode === 'typing' || transcript" class="edit-card">
+            <p v-if="inputMode === 'voice'" class="edit-label">
+              语音识别结果（可直接修改）：
+            </p>
+            <textarea
+              v-model="draft"
+              class="edit-area"
+              :placeholder="
+                inputMode === 'voice'
+                  ? ''
+                  : '描述你想要的网页，比如：做一个介绍我家猫咪的网页，粉色可爱风，要有它的照片墙…'
+              "
+            ></textarea>
+            <p class="edit-count">{{ draft.length }} / 300</p>
+          </div>
+
+          <p v-if="submitError" class="err-text">{{ submitError }}</p>
+
+          <button
+            class="btn-ink"
+            type="button"
+            :disabled="draft.trim().length < 10 || draft.length > 300"
+            @click="step = 'info'"
+          >
+            下一步
+          </button>
+          <button class="btn-ghost" type="button" @click="redoRecord">
+            重新说
+          </button>
+        </template>
+
+        <!-- ③ 填写信息 -->
+        <template v-else-if="step === 'info'">
+          <div class="fgroups">
+            <div class="fgroup">
+              <div class="flabel">邮箱（接收网页链接和集章凭证）</div>
+              <input
+                v-model="email"
+                class="field-input"
+                type="email"
+                inputmode="email"
+                autocapitalize="off"
+                autocorrect="off"
+                placeholder="name@example.com"
+              />
+            </div>
+            <div class="fgroup">
+              <div class="flabel">为你的网页选个网址</div>
+              <input
+                v-model="domainLabel"
+                class="field-input"
+                type="text"
+                autocapitalize="off"
+                autocorrect="off"
+                spellcheck="false"
+                placeholder="my-cat"
+              />
+              <p v-if="domainLabel" class="url-preview">
+                你的网址：https://<mark>{{ domainLabel }}</mark
+                >{{ domainSuffix }}/
+              </p>
+            </div>
+          </div>
+
+          <label class="pub-card">
+            <input v-model="isPublic" class="cb-native" type="checkbox" />
+            <span class="pub-row">
+              <span class="pub-box" :class="{ 'pub-box-on': isPublic }">
+                <Check v-if="isPublic" class="pub-check" :stroke-width="3" />
+              </span>
+              <span class="pub-title">上大屏展示</span>
+            </span>
+            <span class="pub-desc"
+              >勾选后你的网页会出现在现场大屏上滚动展示；<br />不勾选仅自己通过链接访问</span
+            >
+          </label>
+
+          <p v-if="submitError" class="err-text">{{ submitError }}</p>
+          <button
+            class="btn-ink"
+            type="button"
+            :disabled="
+              submitting ||
+              !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim()) ||
+              !/^[a-z0-9][a-z0-9-]{2,30}$/.test(domainLabel.trim())
+            "
+            @click="submitTask"
+          >
+            {{ submitting ? "提交中…" : "让 AI 生成！" }}
+          </button>
+        </template>
+
+        <!-- ④ 生成中 / 卡住了 -->
+        <template v-else-if="step === 'waiting'">
+          <div class="wait-wrap">
+            <div class="logo-wrap">
+              <span class="logo-halo"></span>
+              <span class="logo-circle"
+                ><CpuLogo class="logo-mark" ink="#FAF7E8"
+              /></span>
+            </div>
+
+            <template v-if="!failed">
+              <h2 class="wait-title">{{ waitingTitle }}</h2>
+              <div class="ai-bar">
+                <div
+                  class="ai-bar-fill"
+                  :style="{ width: waitProgress + '%' }"
+                ></div>
+              </div>
+              <div class="msg-zone">
+                <p class="msg" :class="{ 'msg-show': msgVisible }">
+                  {{ messages[msgIndex] }}
+                </p>
+              </div>
+            </template>
+
+            <template v-else>
+              <h2 class="wait-title">啊哦，卡住了</h2>
+              <button
+                class="btn-ink btn-narrow no-arrow"
+                type="button"
+                :disabled="submitting"
+                @click="submitTask"
+              >
+                点击刷新
+              </button>
+              <button class="btn-dashed" type="button">找工作人员帮忙</button>
+              <p class="err-code">
+                错误码 · {{ status?.error || "W2S-GEN-TIMEOUT" }}
+              </p>
+            </template>
+          </div>
+        </template>
+
+        <!-- ⑤ 完成：先预览+发布，发布后出凭证 -->
+        <template v-else-if="step === 'done'">
+          <template v-if="!cert">
+            <PreviewFrame :task-id="taskId" :version="htmlVersion" />
+
+            <p v-if="submitError" class="err-text">{{ submitError }}</p>
+            <button
+              class="btn-ink"
+              type="button"
+              :disabled="publishing"
+              @click="publish"
+            >
+              {{ publishing ? "发布中…" : "满意，发布我的网页！" }}
+            </button>
+
+            <div
+              v-if="(status?.refinements ?? 0) < (status?.maxRefine ?? 2)"
+              class="refine-card"
+            >
+              <p class="refine-label">想改改？告诉 AI 哪里不满意</p>
+              <textarea
+                v-model="refineText"
+                class="refine-area"
+                placeholder="例如：换主色调、加一个段落、改标题"
+              ></textarea>
+              <p v-if="refineError" class="err-text">{{ refineError }}</p>
+              <button
+                class="btn-ink btn-slim"
+                type="button"
+                :disabled="refining || refineText.trim().length < 2"
+                @click="submitRefine"
+              >
+                {{ refining ? "提交中…" : "提交修改" }}
+              </button>
+            </div>
+            <p v-else class="refine-used">修改次数已用完 ~</p>
+          </template>
+
+          <template v-else>
+            <h2 class="done-title">网页发布成功！</h2>
+            <CertificateCard
+              :code="cert.code"
+              :publish-url="cert.publishUrl"
+              :verify-url="cert.verifyUrl"
+              :domain="cert.domain"
+              :email="cert.email"
+            />
+            <button class="btn-ghost" type="button" @click="restart">
+              帮朋友也做一个 →
+            </button>
+          </template>
+        </template>
       </div>
-      <p v-else class="refine-used">修改次数已用完 ~</p>
     </main>
 
-    <!-- ⑦ 凭证 -->
-    <main v-else-if="step === 'certificate' && cert" class="screen">
-      <h2 class="done-title">网页发布成功！</h2>
-      <CertificateCard
-        :code="cert.code"
-        :publish-url="cert.publishUrl"
-        :verify-url="cert.verifyUrl"
-        :domain="cert.domain"
-        :email="cert.email"
-      />
-      <button class="again-link" type="button" @click="restart">
-        帮朋友也做一个 →
-      </button>
-    </main>
+    <footer class="foot">
+      <p class="foot-brand">Presented by CPU</p>
+      <p class="foot-sub">The University of Nottingham Ningbo China</p>
+    </footer>
   </div>
 </template>
 
 <style scoped>
-/* ===== 版式 ===== */
+/* ===== 画布：CPU 黄底 + 极淡虚线网格 ===== */
 .shell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   max-width: 375px;
   min-height: 100dvh;
   margin: 0 auto;
-  background: #fff;
+  background-color: #f7d447;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='375' height='104'%3E%3Cg stroke='rgba(28,25,23,0.12)' stroke-width='1.5' stroke-dasharray='6.5 6.5' fill='none'%3E%3Cline x1='125' y1='0' x2='125' y2='104'/%3E%3Cline x1='250' y1='0' x2='250' y2='104'/%3E%3Cline x1='0' y1='0' x2='375' y2='0'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 375px 104px;
+  background-repeat: repeat-y;
 }
 
-.topwrap {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  background: #fff;
-  padding-top: max(29px, env(safe-area-inset-top));
+/* ===== 顶部：角标 + 空心标题 ===== */
+.hero {
+  position: relative;
+  padding: calc(10px + env(safe-area-inset-top)) 16px 0;
 }
-
-.topbar {
+.badge {
+  position: absolute;
+  left: 16px;
+  top: calc(10px + env(safe-area-inset-top));
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  padding: 0 16px 3px;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: #1c1917;
 }
-.brand {
-  font-size: 12.5px;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  color: #1c1917;
+.badge:active {
+  transform: scale(0.94);
 }
-.step {
-  font-size: 10px;
-  color: #a8a29e;
+.badge-mark {
+  width: 30px;
+  height: 28px;
+}
+.hero-title {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  width: 100%;
+  margin: 4px 0 0;
+  font-size: 48px;
+  font-weight: 900;
+  line-height: 54px;
+  letter-spacing: 1px;
+  color: transparent;
+  -webkit-text-stroke: 2.5px #faf7e8;
+  white-space: nowrap;
 }
 
-.progress-top {
-  height: 4px;
-  background: #efefec;
+/* ===== 主卡：白卡黑描边 + 硬投影 ===== */
+.sheet {
+  position: relative;
+  width: 331px;
+  margin: 46px 0 0 16px;
+  background: #fffdf9;
+  border: 3px solid #1c1917;
+  border-radius: 5px;
+  box-shadow: 8px 8px 0 #1c1917;
+  overflow: hidden;
 }
-.progress-top-fill {
+.sheet-head {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  padding: 0 16px;
+  background: #1c1917;
+}
+.sheet-num {
+  font-size: 17px;
+  font-weight: 900;
+  color: #f7d447;
+}
+.sheet-div {
+  width: 1px;
+  height: 22px;
+  margin: 0 12px;
+  background: rgba(250, 247, 232, 0.32);
+}
+.sheet-name {
+  font-size: 16px;
+  font-weight: 900;
+  color: #faf7e8;
+}
+.sheet-step {
+  margin-left: auto;
+  font-family: Consolas, Menlo, ui-monospace, monospace;
+  font-size: 10px;
+  color: rgba(250, 247, 232, 0.72);
+}
+.sheet-track {
+  height: 3.5px;
+  background: rgba(250, 247, 232, 0.18);
+}
+.sheet-fill {
   height: 100%;
   background: #f7d447;
   transition: width 0.3s ease;
 }
-
-.screen {
-  padding: 0 16px 40px;
-}
-.screen-info {
-  padding-bottom: 120px;
+.sheet-body {
+  padding: 24px 22px 28px;
 }
 
-/* ===== 通用元素 ===== */
-.card {
-  background: #fff;
-  border: 1px solid #eeede9;
-  border-radius: 14px;
-}
-
-.btn-primary {
+/* ===== 通用按钮 ===== */
+.btn-ink {
+  position: relative;
   width: 100%;
-  height: 54px;
+  height: 46px;
+  margin-top: 22px;
   border: 0;
-  border-radius: 12px;
-  background: #f7d447;
-  color: #1c1917;
-  font-size: 16px;
-  font-weight: 700;
-  transition:
-    transform 0.12s ease,
-    background-color 0.15s ease;
-}
-.btn-primary:active:not(:disabled) {
-  transform: scale(0.985);
-}
-.btn-primary:disabled {
-  background: #efefec;
-  color: #a8a29e;
-}
-
-.btn-outline {
-  width: 100%;
-  height: 50px;
-  margin-top: 15px;
-  border: 1px solid #e7e5e0;
-  border-radius: 12px;
-  background: #fff;
-  color: #1c1917;
-  font-size: 14px;
-}
-
-.btn-dashed {
-  width: 100%;
-  height: 51px;
-  margin-top: 19px;
-  border: 1px dashed #1c1917;
-  border-radius: 12px;
-  background: #fff;
-  color: #1c1917;
-  font-size: 14px;
-}
-
-.btn-dark {
-  width: 100%;
-  height: 40px;
-  border: 0;
-  border-radius: 10px;
+  border-radius: 4px;
   background: #1c1917;
   color: #f7d447;
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 800;
+  transition: transform 0.12s ease;
+}
+.btn-ink::after {
+  content: "→";
+  position: absolute;
+  right: 16px;
+  font-size: 15px;
   font-weight: 700;
 }
-.btn-dark:disabled {
+.btn-ink.no-arrow::after {
+  content: none;
+}
+.btn-ink:active:not(:disabled) {
+  transform: scale(0.985);
+}
+.btn-ink:disabled {
   opacity: 0.45;
+}
+.btn-slim {
+  height: 40px;
+  margin-top: 16px;
+}
+.btn-narrow {
+  display: block;
+  width: 200px;
+  margin: 22px auto 0;
+}
+.btn-ghost {
+  width: 100%;
+  height: 44px;
+  margin-top: 16px;
+  border: 2px solid #1c1917;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #1c1917;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.btn-dashed {
+  display: block;
+  width: 200px;
+  height: 40px;
+  margin: 14px auto 0;
+  border: 1.5px dashed #1c1917;
+  border-radius: 4px;
+  background: none;
+  color: #1c1917;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .err-text {
   margin-top: 10px;
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.6;
-  color: #cf3a26;
-}
-.gap-top {
-  margin-top: 25px;
+  color: #b42318;
 }
 
 /* ===== ① 欢迎 ===== */
-.hero-title {
-  margin-top: 55px;
-  font-size: 24px;
-  font-weight: 800;
-  line-height: 1.25;
-  text-align: center;
+.hero-h {
+  font-size: 20px;
+  font-weight: 900;
   color: #1c1917;
 }
-.hero-sub {
+.hero-sub2 {
   margin-top: 8px;
-  font-size: 14px;
-  line-height: 20px;
-  text-align: center;
-  color: #78716c;
+  font-size: 11.5px;
+  line-height: 16px;
+  color: rgba(28, 25, 23, 0.68);
 }
-
-.steps-card {
-  height: 190px;
-  margin-top: 54px;
-  padding: 18px 20px;
+.howto {
+  margin-top: 18px;
 }
-.step-row {
+.howto-row {
   display: flex;
   align-items: center;
-  gap: 11px;
-  height: 40px;
-  font-size: 14px;
-  color: #1c1917;
+  gap: 10px;
+  height: 44px;
+  margin-bottom: 8px;
+  padding: 0 12px;
+  border: 2px solid #1c1917;
+  border-radius: 4px;
+  background: #fdf4d6;
 }
-.step-num {
+.howto-row:last-child {
+  margin-bottom: 0;
+}
+.howto-num {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: #fef3c7;
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  background: #1c1917;
   font-size: 12px;
+  font-weight: 900;
+  color: #f7d447;
+  flex: 0 0 auto;
+}
+.howto-txt {
+  font-size: 11.5px;
   font-weight: 700;
   color: #1c1917;
-}
-.steps-card + .btn-primary {
-  margin-top: 70px;
 }
 
 /* ===== ② 描述网页 ===== */
 .tabs {
   display: flex;
-  gap: 12px;
-  margin-top: 37px;
+  width: 140px;
+  height: 34px;
+  padding: 3px;
+  border: 2px solid #1c1917;
+  border-radius: 4px;
+  background: #f1efe8;
 }
 .tab {
   flex: 1;
-  height: 40px;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 600;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: rgba(28, 25, 23, 0.6);
 }
-.tab-active {
-  border: 1px solid #f7d447;
-  background: #f7d447;
-  color: #1c1917;
-}
-.tab-idle {
-  border: 1px solid #e7e5e0;
-  background: #fff;
-  color: #57534e;
+.tab-on {
+  background: #1c1917;
+  color: #f7d447;
 }
 
 .mic-card {
   display: flex;
   align-items: center;
-  gap: 14px;
-  height: 80px;
-  margin-top: 24px;
-  padding: 0 18px;
-  border: 1px solid #f9e17e;
-  border-radius: 14px;
-  background: #fef3c7;
+  gap: 13px;
+  height: 62px;
+  margin-top: 14px;
+  padding: 0 12px;
+  border: 2px solid #1c1917;
+  border-radius: 4px;
+  background: #fdf4d6;
 }
 .mic-circle {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   background: #f7d447;
+  border: 2px solid #1c1917;
   flex: 0 0 auto;
+  box-sizing: border-box;
 }
 .mic-svg {
-  width: 22px;
-  height: 22px;
+  width: 17px;
+  height: 17px;
 }
 .mic-text {
   display: flex;
@@ -736,176 +820,176 @@ onUnmounted(stopWaitingTimers);
   gap: 3px;
 }
 .mic-title {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
   color: #1c1917;
 }
 .mic-sub {
-  font-size: 11.5px;
-  color: #78716c;
+  font-size: 10.5px;
+  color: rgba(28, 25, 23, 0.6);
 }
 
 .edit-card {
-  margin-top: 19px;
-  padding: 18px;
+  margin-top: 12px;
+  padding: 12px 14px 10px;
+  border: 2px solid #1c1917;
+  border-radius: 4px;
+  background: #ffffff;
 }
 .edit-label {
-  margin-bottom: 10px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #1c1917;
+  margin-bottom: 8px;
+  font-size: 10px;
+  color: rgba(28, 25, 23, 0.55);
 }
 .edit-area {
   display: block;
   width: 100%;
-  min-height: 96px;
+  min-height: 76px;
   border: 0;
   outline: none;
   resize: none;
   background: transparent;
-  font-size: 14px;
-  line-height: 1.7;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.6;
   color: #1c1917;
 }
 .edit-area::placeholder {
-  color: #a8a29e;
+  font-weight: 400;
+  color: rgba(28, 25, 23, 0.4);
 }
 .edit-count {
-  margin-top: 6px;
-  font-size: 12px;
+  margin-top: 4px;
+  font-family: Consolas, Menlo, ui-monospace, monospace;
+  font-size: 9.5px;
   text-align: right;
-  color: #a8a29e;
-}
-.edit-card + .btn-primary,
-.edit-card + .err-text + .btn-primary {
-  margin-top: 34px;
+  color: rgba(28, 25, 23, 0.45);
 }
 
 /* ===== ③ 填写信息 ===== */
-.page-title {
-  margin-top: 65px;
-  font-size: 20px;
-  font-weight: 800;
-  color: #1c1917;
-}
-.page-sub {
-  margin-top: 6px;
-  font-size: 11.5px;
-  color: #78716c;
-}
-.field-label {
-  display: block;
-  margin-top: 44px;
-  font-size: 11.5px;
+.flabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  font-size: 11px;
   font-weight: 700;
   color: #1c1917;
 }
+.flabel::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border: 2px solid #1c1917;
+  background: #f7d447;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+}
+.sheet-body > .flabel:first-child,
+.sheet-body > .fgroup:first-child > .flabel:first-child {
+  margin-top: 0;
+}
 .field-input {
   width: 100%;
-  height: 48px;
-  margin-top: 5px;
-  padding: 0 18px;
-  border: 1px solid #eeede9;
-  border-radius: 12px;
-  background: #fff;
-  font-size: 15px;
+  height: 46px;
+  margin-top: 7px;
+  padding: 0 14px;
+  border: 2px solid #1c1917;
+  border-radius: 4px;
+  background: #ffffff;
+  font-size: 13px;
   color: #1c1917;
   outline: none;
+  box-sizing: border-box;
 }
 .field-input::placeholder {
-  color: #a8a29e;
+  color: rgba(28, 25, 23, 0.35);
 }
 .field-input:focus {
-  border-color: #f7d447;
+  box-shadow: 3px 3px 0 #1c1917;
 }
 .url-preview {
-  margin-top: 15px;
-  padding-left: 18px;
-  font-size: 11px;
-  color: #78716c;
+  margin-top: 12px;
+  font-family: Consolas, Menlo, ui-monospace, monospace;
+  font-size: 10.5px;
+  color: #1c1917;
+  word-break: break-all;
+}
+.url-preview mark {
+  padding: 0 1px;
+  background: #f7d447;
+  color: #1c1917;
 }
 
-.cb-card {
+.pub-card {
   display: block;
-  margin-top: 12px;
-  padding: 18px 16px;
-  border: 1px solid #eeede9;
-  border-radius: 12px;
-  background: #fff;
+  margin-top: 18px;
+  padding: 14px 14px 12px;
+  border-radius: 4px;
+  background: #1c1917;
   cursor: pointer;
 }
 .cb-native {
   display: none;
 }
-.cb-row {
+.pub-row {
   display: flex;
   align-items: center;
-  gap: 13px;
+  gap: 10px;
 }
-.cb-box {
+.pub-box {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 20px;
   height: 20px;
-  border: 1px solid #d6d3d1;
-  border-radius: 6px;
-  background: #fff;
+  border: 1.5px solid rgba(250, 247, 232, 0.5);
+  border-radius: 4px;
+  background: rgba(250, 247, 232, 0.08);
   flex: 0 0 auto;
 }
-.cb-box-on {
-  border-color: #1c1917;
-  background: #1c1917;
+.pub-box-on {
+  border-color: #f7d447;
+  background: #f7d447;
 }
-.cb-check {
+.pub-check {
   width: 13px;
   height: 13px;
-  color: #f7d447;
-}
-.cb-title {
-  font-size: 13px;
-  font-weight: 700;
   color: #1c1917;
 }
-.cb-desc {
+.pub-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #faf7e8;
+}
+.pub-desc {
   display: block;
   margin-top: 8px;
-  font-size: 11.5px;
-  line-height: 15px;
-  color: #78716c;
+  font-size: 9.5px;
+  line-height: 14px;
+  color: rgba(250, 247, 232, 0.75);
 }
 
-.bottom-bar {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 375px;
-  padding: 0 16px calc(24px + env(safe-area-inset-bottom));
-  background: #fff;
-}
-
-/* ===== ④ 生成中 / ⑤ 卡住了 ===== */
-.screen-waiting {
+/* ===== ④ 生成中 / 卡住了 ===== */
+.wait-wrap {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: 205px;
+  padding-top: 34px;
 }
 .logo-wrap {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 160px;
-  height: 160px;
+  width: 100px;
+  height: 100px;
   animation: breathe 2.6s ease-in-out infinite;
 }
 .logo-halo {
   position: absolute;
-  inset: -14px;
-  border: 2px solid rgba(247, 212, 71, 0.55);
+  inset: -10px;
+  border: 2px solid rgba(28, 25, 23, 0.4);
   border-radius: 50%;
   animation: halo 2.6s ease-out infinite;
 }
@@ -913,15 +997,17 @@ onUnmounted(stopWaitingTimers);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 160px;
-  height: 160px;
+  width: 100px;
+  height: 100px;
+  border: 2px solid #1c1917;
   border-radius: 50%;
   background: #f7d447;
+  box-sizing: border-box;
   animation: floaty 3.2s ease-in-out infinite;
 }
 .logo-mark {
-  width: 78px;
-  height: 74px;
+  width: 46px;
+  height: 44px;
 }
 @keyframes breathe {
   0%,
@@ -961,20 +1047,17 @@ onUnmounted(stopWaitingTimers);
 }
 
 .wait-title {
-  margin-top: 22px;
+  margin-top: 26px;
   font-size: 17px;
-  font-weight: 700;
+  font-weight: 900;
   line-height: 1.2;
   text-align: center;
   color: #1c1917;
 }
-.fail-title {
-  font-size: 19px;
-}
 .ai-bar {
   width: 200px;
   height: 6px;
-  margin-top: 18px;
+  margin-top: 14px;
   border-radius: 3px;
   background: #efe4a1;
   overflow: hidden;
@@ -989,13 +1072,13 @@ onUnmounted(stopWaitingTimers);
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  width: 300px;
-  min-height: 46px;
-  margin-top: 7px;
+  width: 265px;
+  min-height: 42px;
+  margin-top: 6px;
   text-align: center;
 }
 .msg {
-  font-size: 12.5px;
+  font-size: 11px;
   line-height: 1.6;
   color: #57534e;
   opacity: 0;
@@ -1008,82 +1091,424 @@ onUnmounted(stopWaitingTimers);
   opacity: 1;
   transform: translateY(0);
 }
-
-.screen-waiting .btn-primary {
-  width: 343px;
-  margin-top: 31px;
-}
-.screen-waiting .btn-dashed {
-  width: 343px;
-}
 .err-code {
-  margin-top: 26px;
-  font-size: 11px;
-  color: #a8a29e;
+  margin-top: 22px;
+  font-family: Consolas, Menlo, ui-monospace, monospace;
+  font-size: 9.5px;
+  color: rgba(28, 25, 23, 0.5);
 }
 
-/* ===== ⑥ 预览 ===== */
-.section-title {
-  margin-top: 28px;
-  font-size: 14px;
-  font-weight: 700;
+/* ===== ⑤ 完成 ===== */
+.done-title {
+  font-size: 18px;
+  font-weight: 900;
+  text-align: center;
   color: #1c1917;
 }
-.section-title + * {
-  margin-top: 15px;
-}
 .refine-card {
-  margin-top: 25px;
-  padding: 16px;
+  margin-top: 20px;
+  padding: 14px;
+  border: 2px solid #1c1917;
+  border-radius: 4px;
+  background: #ffffff;
 }
 .refine-label {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: #1c1917;
 }
 .refine-area {
   display: block;
   width: 100%;
-  height: 80px;
-  margin-top: 12px;
+  height: 72px;
+  margin-top: 10px;
   padding: 10px 12px;
-  border: 1px solid #e7e5e0;
-  border-radius: 10px;
-  background: #fafaf7;
-  font-size: 13px;
+  border: 1.5px solid rgba(28, 25, 23, 0.35);
+  border-radius: 3px;
+  background: #fdf4d6;
+  font-size: 12px;
   line-height: 1.6;
   color: #1c1917;
   outline: none;
   resize: none;
+  box-sizing: border-box;
 }
 .refine-area::placeholder {
-  color: #a8a29e;
-}
-.refine-card .btn-dark {
-  margin-top: 20px;
+  color: rgba(28, 25, 23, 0.4);
 }
 .refine-used {
-  margin-top: 25px;
-  font-size: 12px;
+  margin-top: 18px;
+  font-size: 11px;
   text-align: center;
-  color: #a8a29e;
+  color: rgba(28, 25, 23, 0.5);
 }
 
-/* ===== ⑦ 完成 ===== */
-.done-title {
-  margin-top: 24px;
-  font-size: 22px;
-  font-weight: 800;
-  text-align: center;
+/* ===== 页脚厂牌 ===== */
+.foot {
+  margin-top: auto;
+  padding: 26px 0 14px;
+  padding-bottom: calc(14px + env(safe-area-inset-bottom));
+  padding-left: 16px;
+}
+.foot-brand {
+  font-size: 9px;
+  font-weight: 900;
   color: #1c1917;
 }
-.again-link {
-  display: block;
-  width: 100%;
-  margin-top: 32px;
-  border: 0;
-  background: none;
-  font-size: 14px;
+.foot-sub {
+  margin-top: 3px;
+  font-size: 7.2px;
+  font-weight: 700;
   color: #1c1917;
+}
+
+/* ============================================================
+   桌面端（电脑版方案二，1440×900 定稿）
+   角标左上 88px、单行空心大标题右对齐、
+   880px 居中白卡 + 72px 黑带卡头 + 10px 硬投影
+   ============================================================ */
+@media (min-width: 900px) {
+  .shell {
+    max-width: none;
+    min-height: 100vh;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='240'%3E%3Cpath d='M0 0V240M0 0H360' fill='none' stroke='rgba(28,25,23,0.12)' stroke-width='3' stroke-dasharray='9 12'/%3E%3C/svg%3E");
+    background-size: 360px 240px;
+    background-repeat: repeat;
+  }
+
+  /* 顶部：角标贴左上角，标题单行右对齐、距右 40px */
+  .hero {
+    padding: 13px 40px 0 0;
+  }
+  .badge {
+    left: 0;
+    top: 0;
+    width: 88px;
+    height: 88px;
+  }
+  .badge-mark {
+    width: 55px;
+    height: 52px;
+  }
+  .hero-title {
+    flex-direction: row;
+    justify-content: flex-end;
+    gap: 0.28em;
+    margin: 0;
+    font-size: 110px;
+    line-height: 1;
+    letter-spacing: 2px;
+    -webkit-text-stroke: 3.5px #faf7e8;
+  }
+
+  /* 主卡：880px 居中 */
+  .sheet {
+    width: 880px;
+    margin: 45px auto 0;
+    border-radius: 6px;
+    box-shadow: 10px 10px 0 #1c1917;
+  }
+  .sheet-head {
+    height: 67px;
+    padding: 0 30px;
+  }
+  .sheet-num {
+    font-size: 26px;
+    line-height: 1;
+  }
+  .sheet-div {
+    height: 26px;
+    margin: 0 16px;
+    background: rgba(250, 247, 232, 0.28);
+  }
+  .sheet-name {
+    font-size: 26px;
+    line-height: 1;
+  }
+  .sheet-step {
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: rgba(250, 247, 232, 0.6);
+  }
+  .sheet-track {
+    height: 5px;
+  }
+  .sheet-fill {
+    height: 5px;
+  }
+  .sheet-body {
+    padding: 44px 48px 48px;
+  }
+
+  /* 按钮 */
+  .btn-ink {
+    height: 64px;
+    margin-top: 32px;
+    font-size: 17px;
+    letter-spacing: 1px;
+  }
+  .btn-ink::after {
+    right: 26px;
+    font-size: 18px;
+  }
+  .btn-slim {
+    height: 56px;
+  }
+  .btn-narrow {
+    width: 420px;
+  }
+  .btn-ghost {
+    display: block;
+    width: 300px;
+    height: 60px;
+    margin: 16px auto 0;
+    font-size: 15px;
+  }
+  .btn-dashed {
+    width: 420px;
+    height: 58px;
+    margin-top: 16px;
+    border: 2px dashed #1c1917;
+    font-size: 15px;
+  }
+  .err-text {
+    font-size: 13px;
+  }
+
+  /* ① 欢迎 */
+  .hero-h {
+    font-size: 50px;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+  }
+  .hero-sub2 {
+    margin-top: 16px;
+    font-size: 16.5px;
+    line-height: 1.7;
+  }
+  .howto {
+    display: flex;
+    gap: 18px;
+    margin-top: 32px;
+  }
+  .howto-row {
+    flex: 1;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    height: auto;
+    margin-bottom: 0;
+    padding: 22px 18px 24px;
+  }
+  .howto-num {
+    width: 36px;
+    height: 36px;
+    font-size: 17px;
+    border-radius: 4px;
+  }
+  .howto-txt {
+    font-size: 15.5px;
+    font-weight: 700;
+    line-height: 1.5;
+  }
+
+  /* ② 描述网页 */
+  .tabs {
+    width: fit-content;
+    height: auto;
+    gap: 4px;
+    padding: 4px;
+  }
+  .tab {
+    padding: 10px 34px;
+    font-size: 15.5px;
+    border-radius: 2px;
+  }
+  .mic-card {
+    gap: 16px;
+    height: auto;
+    margin-top: 20px;
+    padding: 16px 22px;
+  }
+  .mic-circle {
+    width: 52px;
+    height: 52px;
+  }
+  .mic-svg {
+    width: 26px;
+    height: 26px;
+  }
+  .mic-title {
+    font-size: 16.5px;
+  }
+  .mic-sub {
+    font-size: 13px;
+    color: rgba(28, 25, 23, 0.62);
+  }
+  .edit-card {
+    margin-top: 16px;
+    padding: 20px 24px 16px;
+  }
+  .edit-label {
+    margin-bottom: 12px;
+    font-size: 13.5px;
+    font-weight: 900;
+    color: rgba(28, 25, 23, 0.66);
+  }
+  .edit-area {
+    min-height: 84px;
+    font-size: 17px;
+  }
+  .edit-count {
+    margin-top: 12px;
+    font-size: 12.5px;
+    color: #78716c;
+  }
+
+  /* ③ 填写信息：两栏 */
+  .fgroups {
+    display: flex;
+    gap: 32px;
+  }
+  .fgroup {
+    flex: 1;
+  }
+  /* 桌面两栏：两个标签顶端对齐 */
+  .fgroup > .flabel:first-child {
+    margin-top: 0;
+  }
+  .flabel {
+    gap: 9px;
+    margin-top: 0;
+    font-size: 14px;
+    letter-spacing: 0.3px;
+  }
+  .flabel::before {
+    width: 10px;
+    height: 10px;
+  }
+  .field-input {
+    height: 64px;
+    margin-top: 10px;
+    padding: 0 16px;
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .url-preview {
+    margin-top: 12px;
+    font-size: 14.5px;
+    font-weight: 700;
+  }
+  .url-preview mark {
+    padding: 1px 2px;
+  }
+  .pub-card {
+    margin-top: 30px;
+    padding: 22px 24px;
+  }
+  .pub-row {
+    gap: 12px;
+  }
+  .pub-box {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+  }
+  .pub-check {
+    width: 17px;
+    height: 17px;
+  }
+  .pub-title {
+    font-size: 16.5px;
+  }
+  .pub-desc {
+    margin: 10px 0 0 36px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: rgba(250, 247, 232, 0.72);
+  }
+
+  /* ④ 生成中 / 卡住 */
+  .wait-wrap {
+    padding-top: 64px;
+  }
+  .logo-wrap,
+  .logo-circle {
+    width: 190px;
+    height: 190px;
+  }
+  .logo-halo {
+    inset: -18px;
+    border-width: 3px;
+  }
+  .logo-mark {
+    width: 87px;
+    height: 84px;
+  }
+  .wait-title {
+    margin-top: 26px;
+    font-size: 34px;
+    letter-spacing: -0.5px;
+  }
+  .ai-bar {
+    width: 360px;
+    height: 8px;
+    margin-top: 22px;
+    border-radius: 4px;
+  }
+  .msg-zone {
+    width: 560px;
+    min-height: 52px;
+    margin-top: 20px;
+  }
+  .msg {
+    font-size: 15.5px;
+    font-weight: 700;
+    color: #57534e;
+  }
+  .err-code {
+    margin-top: 26px;
+    font-size: 12.5px;
+    color: #78716c;
+  }
+
+  /* ⑤ 完成 */
+  .done-title {
+    font-size: 34px;
+    letter-spacing: -0.5px;
+  }
+  .refine-card {
+    margin-top: 28px;
+    padding: 20px 24px;
+  }
+  .refine-label {
+    font-size: 15.5px;
+  }
+  .refine-area {
+    height: 88px;
+    margin-top: 12px;
+    font-size: 15px;
+  }
+  .refine-used {
+    font-size: 13px;
+  }
+
+  /* 页脚厂牌：绝对定位左下 */
+  .foot {
+    position: absolute;
+    left: 40px;
+    bottom: 30px;
+    margin: 0;
+    padding: 0;
+  }
+  .foot-brand {
+    font-size: 13px;
+    letter-spacing: 0.5px;
+  }
+  .foot-sub {
+    margin-top: 5px;
+    font-size: 12px;
+    color: rgba(28, 25, 23, 0.62);
+  }
 }
 </style>

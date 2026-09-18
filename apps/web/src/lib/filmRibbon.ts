@@ -17,8 +17,8 @@ export const PERF = 30; // 齿孔步长（局部）
 export const CARD_W = 146; // 卡宽（局部，x ∈ [-73, 73]）
 export const CARD_H = 234; // 卡高（局部，y ∈ [-117, 117]）
 export const A0 = STRIDE * 0.52; // 卡片格点相位
-export const SPEED = 24; // 桌面走带速度（局部单位/秒）
-export const PHONE_SPEED = 26; // 手机走带速度（px/秒）
+export const SPEED = 7; // 桌面走带速度（局部单位/秒）—— Ackry 两轮反馈后定值
+export const PHONE_SPEED = 7.5; // 手机走带速度（px/秒）
 
 export const Y = "#F7D447";
 export const K = "#1C1917";
@@ -490,9 +490,10 @@ export function headDesk(liveCount: number, demoCount: number): string {
 }
 
 /** 右下角厂牌锁版 */
-export function footDesk(): string {
+export function footDesk(count: number): string {
   const W = 1920;
-  let s = `<text x="${W - 56}" y="934" text-anchor="end" font-family="${MONO}" font-size="12.5" letter-spacing="1.2" fill="rgba(247,212,71,.55)">12 EXPOSURES · 35MM · LOOP</text>`;
+  const shots = String(Math.max(0, count)).padStart(2, "0");
+  let s = `<text x="${W - 56}" y="934" text-anchor="end" font-family="${MONO}" font-size="12.5" letter-spacing="1.2" fill="rgba(247,212,71,.55)">${shots} EXPOSURES · 35MM · LOOP</text>`;
   s += mark(1470, 972, 84);
   s += `<text x="1564" y="1010" font-size="20" font-weight="900" fill="${CREAM}">Computer Psycho Union</text>`;
   s += `<text x="1564" y="1034" font-size="11.5" font-weight="700" fill="rgba(250,247,232,.72)">The University of Nottingham Ningbo China</text>`;

@@ -79,6 +79,7 @@ export interface TaskRow {
   screenshot: number;
   created_at: number;
   finished_at: number | null;
+  style_hint: string | null;
 }
 
 export interface SessionRow {
@@ -101,6 +102,7 @@ export const tasks = {
     email: string;
     domain: string;
     isPublic: boolean;
+    styleHint: string | null;
   }) {
     db.insert(tasksTable)
       .values({
@@ -113,6 +115,7 @@ export const tasks = {
         email: p.email,
         domain: p.domain,
         is_public: p.isPublic ? 1 : 0,
+        style_hint: p.styleHint,
         created_at: Date.now(),
       })
       .run();
@@ -152,20 +155,22 @@ export const tasks = {
     id: string;
     code: string | null;
     domain: string | null;
-    prompt: string;
     publish_url: string | null;
+    prompt: string;
     screenshot: number;
     created_at: number;
+    style_hint: string | null;
   }> {
     return db
       .select({
         id: tasksTable.id,
         code: tasksTable.code,
         domain: tasksTable.domain,
-        prompt: tasksTable.prompt,
         publish_url: tasksTable.publish_url,
+        prompt: tasksTable.prompt,
         screenshot: tasksTable.screenshot,
         created_at: tasksTable.created_at,
+        style_hint: tasksTable.style_hint,
       })
       .from(tasksTable)
       .where(

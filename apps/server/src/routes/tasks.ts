@@ -8,6 +8,7 @@ import { queue } from "../services/queue.js";
 import { publish } from "../services/publisher.js";
 import { sendCompletionMail } from "../services/mailer.js";
 import { captureScreenshot, shotPath } from "../services/screenshot.js";
+import { pickStyle } from "../services/styleHint.js";
 import { newTaskId, newCertCode, isValidDeviceId } from "../util/ids.js";
 
 export const tasksRouter = Router();
@@ -79,6 +80,7 @@ tasksRouter.post("/", (req: Request, res: Response) => {
     email: mail,
     domain,
     isPublic: isPublic !== false,
+    styleHint: pickStyle(trimmed),
   });
   queue.enqueueGen(id);
   res.json({ taskId: id, queuePosition: queue.positionOf(id), domain });
@@ -123,6 +125,7 @@ screenRouter.get("/all", (_req: Request, res: Response) => {
       prompt: t.prompt,
       hasScreenshot: !!t.screenshot,
       createdAt: t.created_at,
+      styleHint: t.style_hint,
     })),
   );
 });

@@ -11,6 +11,7 @@ import {
   PHONE,
   PRIGHT_Y,
   PSTRIDE,
+  PHONE_SPEED,
   bgPhone,
   footPhone,
   headPhone,
@@ -53,9 +54,9 @@ const trackR = computed(() =>
 );
 
 const perfTile = PERF_TILE;
-/** 走完一个卡步长 / 一个齿孔步长的时间（s），两者同速 */
-const DUR = PSTRIDE / 26;
-const HOLE_DUR = PHONE.PPERF / 26;
+/** 走完一个卡步长 / 一个齿孔步长的时间（s），两者同速——速度统一在 filmRibbon.ts 的 PHONE_SPEED 改 */
+const DUR = PSTRIDE / PHONE_SPEED;
+const HOLE_DUR = PHONE.PPERF / PHONE_SPEED;
 
 const perfStyle = {
   width: PHW * 2 + "px",
@@ -154,9 +155,22 @@ onUnmounted(() => removeEventListener("resize", fit));
         :height="H"
         :viewBox="`0 0 ${W} ${H}`"
         v-html="
-          `<circle cx='187.5' cy='404' r='52' fill='none' stroke='rgba(247,212,71,.5)' stroke-width='2.5' stroke-dasharray='10 10'/>` +
-          `<text x='187.5' y='492' text-anchor='middle' font-family='Consolas,Menlo,monospace' font-size='12' letter-spacing='3' fill='rgba(247,212,71,.6)'>WAITING FOR THE FIRST PAGE…</text>`
+          `<rect x='37.5' y='322' width='300' height='158' rx='6' fill='#17140F' fill-opacity='.94' stroke='rgba(247,212,71,.32)' stroke-width='1.2' stroke-dasharray='7 7'/>` +
+          `<circle cx='187.5' cy='386' r='38' fill='none' stroke='rgba(247,212,71,.55)' stroke-width='2.2' stroke-dasharray='9 9'/>` +
+          `<text x='187.5' y='456' text-anchor='middle' font-family='Consolas,Menlo,monospace' font-size='11' letter-spacing='2.6' fill='rgba(247,212,71,.72)'>WAITING FOR THE FIRST PAGE…</text>`
         "
+      />
+      <!-- 去做网页的入口：底部厂牌 logo（画布 20,720 起 48px）做成热区 -->
+      <RouterLink
+        to="/start"
+        class="start-link"
+        aria-label="开始制作你的网页"
+        :style="{
+          left: '20px',
+          top: H - 80 + 'px',
+          width: '48px',
+          height: '60px',
+        }"
       />
     </div>
   </div>
@@ -166,6 +180,11 @@ onUnmounted(() => removeEventListener("resize", fit));
 .film-svg {
   font-family:
     -apple-system, "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+}
+.start-link {
+  position: absolute;
+  z-index: 30;
+  border-radius: 8px;
 }
 .clip {
   position: absolute;
