@@ -11,6 +11,7 @@ import {
   PHONE,
   PRIGHT_Y,
   PSTRIDE,
+  PHONE_SPEED,
   bgPhone,
   footPhone,
   headPhone,
@@ -53,9 +54,9 @@ const trackR = computed(() =>
 );
 
 const perfTile = PERF_TILE;
-/** 走完一个卡步长 / 一个齿孔步长的时间（s），两者同速（13 px/s，看清爽为准） */
-const DUR = PSTRIDE / 13;
-const HOLE_DUR = PHONE.PPERF / 13;
+/** 走完一个卡步长 / 一个齿孔步长的时间（s），两者同速——速度统一在 filmRibbon.ts 的 PHONE_SPEED 改 */
+const DUR = PSTRIDE / PHONE_SPEED;
+const HOLE_DUR = PHONE.PPERF / PHONE_SPEED;
 
 const perfStyle = {
   width: PHW * 2 + "px",

@@ -199,4 +199,42 @@ const recording = rec.state;
   text-align: center;
   color: rgba(28, 25, 23, 0.68);
 }
+
+/* 桌面端：整体放大一档 */
+@media (min-width: 900px) {
+  .rec-zone {
+    gap: 20px;
+    padding: 28px 0;
+  }
+  .rec-mic,
+  .rec-live-circle {
+    width: 128px;
+    height: 128px;
+    gap: 8px;
+  }
+  .rec-mic-icon {
+    width: 40px;
+    height: 40px;
+  }
+  .rec-mic-label {
+    font-size: 15px;
+  }
+  .rec-live-time {
+    font-size: 12.5px;
+  }
+  .rec-stop {
+    height: 58px;
+    padding: 0 28px;
+    font-size: 15px;
+  }
+  .rec-warn {
+    font-size: 13px;
+  }
+  .rec-hint {
+    margin-top: 16px;
+    padding: 16px 20px;
+    font-size: 14px;
+    line-height: 1.8;
+  }
+}
 </style>

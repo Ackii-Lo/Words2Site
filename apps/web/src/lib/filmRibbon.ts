@@ -17,8 +17,8 @@ export const PERF = 30; // 齿孔步长（局部）
 export const CARD_W = 146; // 卡宽（局部，x ∈ [-73, 73]）
 export const CARD_H = 234; // 卡高（局部，y ∈ [-117, 117]）
 export const A0 = STRIDE * 0.52; // 卡片格点相位
-export const SPEED = 12; // 桌面走带速度（局部单位/秒）—— 24 太快看不清，减半
-export const PHONE_SPEED = 13; // 手机走带速度（px/秒）
+export const SPEED = 7; // 桌面走带速度（局部单位/秒）—— Ackry 两轮反馈后定值
+export const PHONE_SPEED = 7.5; // 手机走带速度（px/秒）
 
 export const Y = "#F7D447";
 export const K = "#1C1917";

@@ -374,31 +374,36 @@ onUnmounted(stopWaitingTimers);
 
         <!-- ③ 填写信息 -->
         <template v-else-if="step === 'info'">
-          <div class="flabel">邮箱（接收网页链接和集章凭证）</div>
-          <input
-            v-model="email"
-            class="field-input"
-            type="email"
-            inputmode="email"
-            autocapitalize="off"
-            autocorrect="off"
-            placeholder="name@example.com"
-          />
-
-          <div class="flabel">为你的网页选个网址</div>
-          <input
-            v-model="domainLabel"
-            class="field-input"
-            type="text"
-            autocapitalize="off"
-            autocorrect="off"
-            spellcheck="false"
-            placeholder="my-cat"
-          />
-          <p v-if="domainLabel" class="url-preview">
-            你的网址：https://<mark>{{ domainLabel }}</mark
-            >{{ domainSuffix }}/
-          </p>
+          <div class="fgroups">
+            <div class="fgroup">
+              <div class="flabel">邮箱（接收网页链接和集章凭证）</div>
+              <input
+                v-model="email"
+                class="field-input"
+                type="email"
+                inputmode="email"
+                autocapitalize="off"
+                autocorrect="off"
+                placeholder="name@example.com"
+              />
+            </div>
+            <div class="fgroup">
+              <div class="flabel">为你的网页选个网址</div>
+              <input
+                v-model="domainLabel"
+                class="field-input"
+                type="text"
+                autocapitalize="off"
+                autocorrect="off"
+                spellcheck="false"
+                placeholder="my-cat"
+              />
+              <p v-if="domainLabel" class="url-preview">
+                你的网址：https://<mark>{{ domainLabel }}</mark
+                >{{ domainSuffix }}/
+              </p>
+            </div>
+          </div>
 
           <label class="pub-card">
             <input v-model="isPublic" class="cb-native" type="checkbox" />
@@ -880,7 +885,8 @@ onUnmounted(stopWaitingTimers);
   box-sizing: border-box;
   flex: 0 0 auto;
 }
-.sheet-body > .flabel:first-child {
+.sheet-body > .flabel:first-child,
+.sheet-body > .fgroup:first-child > .flabel:first-child {
   margin-top: 0;
 }
 .field-input {
@@ -1154,5 +1160,355 @@ onUnmounted(stopWaitingTimers);
   font-size: 7.2px;
   font-weight: 700;
   color: #1c1917;
+}
+
+/* ============================================================
+   桌面端（电脑版方案二，1440×900 定稿）
+   角标左上 88px、单行空心大标题右对齐、
+   880px 居中白卡 + 72px 黑带卡头 + 10px 硬投影
+   ============================================================ */
+@media (min-width: 900px) {
+  .shell {
+    max-width: none;
+    min-height: 100vh;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='240'%3E%3Cpath d='M0 0V240M0 0H360' fill='none' stroke='rgba(28,25,23,0.12)' stroke-width='3' stroke-dasharray='9 12'/%3E%3C/svg%3E");
+    background-size: 360px 240px;
+    background-repeat: repeat;
+  }
+
+  /* 顶部：角标贴左上角，标题单行右对齐、距右 40px */
+  .hero {
+    padding: 13px 40px 0 0;
+  }
+  .badge {
+    left: 0;
+    top: 0;
+    width: 88px;
+    height: 88px;
+  }
+  .badge-mark {
+    width: 55px;
+    height: 52px;
+  }
+  .hero-title {
+    flex-direction: row;
+    justify-content: flex-end;
+    gap: 0.28em;
+    margin: 0;
+    font-size: 110px;
+    line-height: 1;
+    letter-spacing: 2px;
+    -webkit-text-stroke: 3.5px #faf7e8;
+  }
+
+  /* 主卡：880px 居中 */
+  .sheet {
+    width: 880px;
+    margin: 45px auto 0;
+    border-radius: 6px;
+    box-shadow: 10px 10px 0 #1c1917;
+  }
+  .sheet-head {
+    height: 67px;
+    padding: 0 30px;
+  }
+  .sheet-num {
+    font-size: 26px;
+    line-height: 1;
+  }
+  .sheet-div {
+    height: 26px;
+    margin: 0 16px;
+    background: rgba(250, 247, 232, 0.28);
+  }
+  .sheet-name {
+    font-size: 26px;
+    line-height: 1;
+  }
+  .sheet-step {
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: rgba(250, 247, 232, 0.6);
+  }
+  .sheet-track {
+    height: 5px;
+  }
+  .sheet-fill {
+    height: 5px;
+  }
+  .sheet-body {
+    padding: 44px 48px 48px;
+  }
+
+  /* 按钮 */
+  .btn-ink {
+    height: 64px;
+    margin-top: 32px;
+    font-size: 17px;
+    letter-spacing: 1px;
+  }
+  .btn-ink::after {
+    right: 26px;
+    font-size: 18px;
+  }
+  .btn-slim {
+    height: 56px;
+  }
+  .btn-narrow {
+    width: 420px;
+  }
+  .btn-ghost {
+    display: block;
+    width: 300px;
+    height: 60px;
+    margin: 16px auto 0;
+    font-size: 15px;
+  }
+  .btn-dashed {
+    width: 420px;
+    height: 58px;
+    margin-top: 16px;
+    border: 2px dashed #1c1917;
+    font-size: 15px;
+  }
+  .err-text {
+    font-size: 13px;
+  }
+
+  /* ① 欢迎 */
+  .hero-h {
+    font-size: 50px;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+  }
+  .hero-sub2 {
+    margin-top: 16px;
+    font-size: 16.5px;
+    line-height: 1.7;
+  }
+  .howto {
+    display: flex;
+    gap: 18px;
+    margin-top: 32px;
+  }
+  .howto-row {
+    flex: 1;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    height: auto;
+    margin-bottom: 0;
+    padding: 22px 18px 24px;
+  }
+  .howto-num {
+    width: 36px;
+    height: 36px;
+    font-size: 17px;
+    border-radius: 4px;
+  }
+  .howto-txt {
+    font-size: 15.5px;
+    font-weight: 700;
+    line-height: 1.5;
+  }
+
+  /* ② 描述网页 */
+  .tabs {
+    width: fit-content;
+    height: auto;
+    gap: 4px;
+    padding: 4px;
+  }
+  .tab {
+    padding: 10px 34px;
+    font-size: 15.5px;
+    border-radius: 2px;
+  }
+  .mic-card {
+    gap: 16px;
+    height: auto;
+    margin-top: 20px;
+    padding: 16px 22px;
+  }
+  .mic-circle {
+    width: 52px;
+    height: 52px;
+  }
+  .mic-svg {
+    width: 26px;
+    height: 26px;
+  }
+  .mic-title {
+    font-size: 16.5px;
+  }
+  .mic-sub {
+    font-size: 13px;
+    color: rgba(28, 25, 23, 0.62);
+  }
+  .edit-card {
+    margin-top: 16px;
+    padding: 20px 24px 16px;
+  }
+  .edit-label {
+    margin-bottom: 12px;
+    font-size: 13.5px;
+    font-weight: 900;
+    color: rgba(28, 25, 23, 0.66);
+  }
+  .edit-area {
+    min-height: 84px;
+    font-size: 17px;
+  }
+  .edit-count {
+    margin-top: 12px;
+    font-size: 12.5px;
+    color: #78716c;
+  }
+
+  /* ③ 填写信息：两栏 */
+  .fgroups {
+    display: flex;
+    gap: 32px;
+  }
+  .fgroup {
+    flex: 1;
+  }
+  /* 桌面两栏：两个标签顶端对齐 */
+  .fgroup > .flabel:first-child {
+    margin-top: 0;
+  }
+  .flabel {
+    gap: 9px;
+    margin-top: 0;
+    font-size: 14px;
+    letter-spacing: 0.3px;
+  }
+  .flabel::before {
+    width: 10px;
+    height: 10px;
+  }
+  .field-input {
+    height: 64px;
+    margin-top: 10px;
+    padding: 0 16px;
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .url-preview {
+    margin-top: 12px;
+    font-size: 14.5px;
+    font-weight: 700;
+  }
+  .url-preview mark {
+    padding: 1px 2px;
+  }
+  .pub-card {
+    margin-top: 30px;
+    padding: 22px 24px;
+  }
+  .pub-row {
+    gap: 12px;
+  }
+  .pub-box {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+  }
+  .pub-check {
+    width: 17px;
+    height: 17px;
+  }
+  .pub-title {
+    font-size: 16.5px;
+  }
+  .pub-desc {
+    margin: 10px 0 0 36px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: rgba(250, 247, 232, 0.72);
+  }
+
+  /* ④ 生成中 / 卡住 */
+  .wait-wrap {
+    padding-top: 64px;
+  }
+  .logo-wrap,
+  .logo-circle {
+    width: 190px;
+    height: 190px;
+  }
+  .logo-halo {
+    inset: -18px;
+    border-width: 3px;
+  }
+  .logo-mark {
+    width: 87px;
+    height: 84px;
+  }
+  .wait-title {
+    margin-top: 26px;
+    font-size: 34px;
+    letter-spacing: -0.5px;
+  }
+  .ai-bar {
+    width: 360px;
+    height: 8px;
+    margin-top: 22px;
+    border-radius: 4px;
+  }
+  .msg-zone {
+    width: 560px;
+    min-height: 52px;
+    margin-top: 20px;
+  }
+  .msg {
+    font-size: 15.5px;
+    font-weight: 700;
+    color: #57534e;
+  }
+  .err-code {
+    margin-top: 26px;
+    font-size: 12.5px;
+    color: #78716c;
+  }
+
+  /* ⑤ 完成 */
+  .done-title {
+    font-size: 34px;
+    letter-spacing: -0.5px;
+  }
+  .refine-card {
+    margin-top: 28px;
+    padding: 20px 24px;
+  }
+  .refine-label {
+    font-size: 15.5px;
+  }
+  .refine-area {
+    height: 88px;
+    margin-top: 12px;
+    font-size: 15px;
+  }
+  .refine-used {
+    font-size: 13px;
+  }
+
+  /* 页脚厂牌：绝对定位左下 */
+  .foot {
+    position: absolute;
+    left: 40px;
+    bottom: 30px;
+    margin: 0;
+    padding: 0;
+  }
+  .foot-brand {
+    font-size: 13px;
+    letter-spacing: 0.5px;
+  }
+  .foot-sub {
+    margin-top: 5px;
+    font-size: 12px;
+    color: rgba(28, 25, 23, 0.62);
+  }
 }
 </style>

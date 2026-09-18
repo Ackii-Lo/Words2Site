@@ -35,4 +35,15 @@ const src = computed(() =>
   border-radius: 2px;
   background: #fafaf7;
 }
+
+/* 桌面端：880px 卡身里的预览框 */
+@media (min-width: 900px) {
+  .preview-card {
+    padding: 14px;
+    border-width: 3px;
+  }
+  .preview-frame {
+    height: 420px;
+  }
+}
 </style>

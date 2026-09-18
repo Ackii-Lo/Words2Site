@@ -117,4 +117,48 @@ const isRelative = computed(
   font-size: 9px;
   color: rgba(28, 25, 23, 0.5);
 }
+
+/* 桌面端（电脑版方案二定稿：520px 宽凭证卡） */
+@media (min-width: 900px) {
+  .voucher {
+    width: 520px;
+    margin: 14px auto 0;
+    padding: 16px 24px;
+    border-radius: 6px;
+  }
+  .v-label {
+    font-size: 12.5px;
+    color: #78716c;
+  }
+  .v-url {
+    margin-top: 6px;
+    font-size: 18px;
+  }
+  .v-divider {
+    height: 1px;
+    margin: 16px 0;
+    background: #e7e5e0;
+  }
+  .v-stamp {
+    font-size: 13px;
+    color: #78716c;
+  }
+  .v-code {
+    margin-top: 8px;
+    font-size: 26px;
+    letter-spacing: 2px;
+  }
+  .v-qr {
+    width: 128px;
+    height: 128px;
+    margin: 14px auto 0;
+    padding: 10px;
+    border-radius: 12px;
+  }
+  .v-no {
+    margin-top: 15px;
+    font-size: 12px;
+    color: #78716c;
+  }
+}
 </style>
