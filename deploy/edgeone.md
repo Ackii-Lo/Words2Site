@@ -117,7 +117,7 @@ Node 版本：     22
 
 ### SPA 路由回退（必配，仓库已带）
 
-前端是 vue-router **history 模式**，直接访问或刷新子路径（工作人员扫码核验 `/verify/W2S-XXXX`、管理台 `/admin`、大屏 `/screen`）时，静态托管找不到对应文件会返回平台 404。`apps/web/public/edgeone.json` 已配置回退：
+前端是 vue-router **history 模式**，直接访问或刷新子路径（工作人员扫码核验 `/verify/W2S-XXXX`、管理台 `/admin`、制作流程 `/start`）时，静态托管找不到对应文件会返回平台 404。`apps/web/public/edgeone.json` 已配置回退：
 
 ```json
 {
@@ -160,4 +160,3 @@ curl -i https://<pages 域名>/screen | head -3
 - **大陆访问慢或被拒**：加速区域含中国大陆但域名未备案时无法开启，改用「全球（不含中国大陆）」或先完成备案。
 - **刷新 `/verify/...`、`/admin` 等子路径 404**：SPA 回退未生效——确认构建产物里有 `edgeone.json`（本地 `pnpm --filter @words2site/web build` 后看 `apps/web/dist/`，见「SPA 路由回退」一节），且产物根目录没有 `404.html`。
 - **`/preview` 页面 404**：该路径由源站 `data/published` 目录动态提供，确认走的是方案 A 且回源正常，Pages 形态下无此路径。
-- **深链（`/start`、`/verify/xxx`）刷新 404**：SPA 用的是 history 路由，静态托管必须把未命中路径回退到 `index.html`。方案 A（Express 托管）已在服务端做好；方案 B（EdgeOne Pages）需在 Pages 项目里确认「SPA 回退 / 自定义错误页」把 404 指到 `index.html`，否则直开/刷新子路由会白屏 404。
