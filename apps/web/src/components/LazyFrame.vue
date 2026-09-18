@@ -31,13 +31,13 @@ onUnmounted(() => io?.disconnect());
 </script>
 
 <template>
-  <div ref="host" class="relative h-full w-full overflow-hidden bg-[#0B2E4B]">
+  <div ref="host" class="relative h-full w-full overflow-hidden bg-[#26231F]">
     <!-- 占位：图纸网格 + 角标，等待进入预载区 -->
     <div
       v-if="!live"
-      class="absolute inset-0 grid place-items-center bg-[linear-gradient(rgba(214,236,248,.05)_1px,transparent_1px),linear-gradient(90deg,rgba(214,236,248,.05)_1px,transparent_1px)] bg-[size:14px_14px]"
+      class="absolute inset-0 grid place-items-center bg-[linear-gradient(rgba(247,212,71,.05)_1px,transparent_1px),linear-gradient(90deg,rgba(247,212,71,.05)_1px,transparent_1px)] bg-[size:14px_14px]"
     >
-      <span class="font-mono text-[10px] tracking-widest text-[#4E7A9B]"
+      <span class="font-mono text-[10px] tracking-widest text-[#A8A29E]"
         >LOADING…</span
       >
     </div>
