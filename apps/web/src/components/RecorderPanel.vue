@@ -2,7 +2,6 @@
 import { ref } from "vue";
 import { useRecorder } from "@/composables/useRecorder";
 import { apiUrl } from "@/lib/apiBase";
-import Badge from "@/components/ui/Badge.vue";
 import { Mic, Square } from "lucide-vue-next";
 
 const emit = defineEmits<{
@@ -70,7 +69,7 @@ const recording = rec.state;
             >录音中 {{ rec.elapsed.value }}s / 90s</span
           >
         </span>
-        <button class="btn-primary" type="button" @click="rec.stop()">
+        <button class="rec-stop" type="button" @click="rec.stop()">
           <Square class="h-4 w-4" /> 说完啦，停一下
         </button>
       </div>
@@ -82,8 +81,7 @@ const recording = rec.state;
     <p v-if="uploadError" class="rec-warn">{{ uploadError }}，请打字输入</p>
 
     <div class="rec-hint">
-      <Badge variant="secondary" class="mb-2">提示</Badge>
-      想想你要什么网页：介绍你的猫？你的社团？你最喜欢的球队？
+      想想你要什么网页：介绍你的猫？你的社团？你最喜欢的球队？<br />
       说得越具体，生成的网页越精彩。
     </div>
   </div>
@@ -91,17 +89,17 @@ const recording = rec.state;
 
 <style scoped>
 .recorder {
-  margin-top: 24px;
+  margin-top: 14px;
 }
 .rec-zone {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 16px;
-  padding: 22px 0;
-  border: 1px dashed #e7e5e0;
-  border-radius: 14px;
-  background: #fff;
+  padding: 20px 0;
+  border: 2px dashed rgba(28, 25, 23, 0.45);
+  border-radius: 4px;
+  background: #ffffff;
 }
 .rec-mic {
   display: flex;
@@ -109,12 +107,13 @@ const recording = rec.state;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  width: 120px;
-  height: 120px;
-  border: 0;
+  width: 96px;
+  height: 96px;
+  border: 2px solid #1c1917;
   border-radius: 50%;
   background: #f7d447;
   color: #1c1917;
+  box-sizing: border-box;
   transition: transform 0.12s ease;
 }
 .rec-mic:active:not(:disabled) {
@@ -124,18 +123,18 @@ const recording = rec.state;
   opacity: 0.55;
 }
 .rec-mic-icon {
-  width: 38px;
-  height: 38px;
+  width: 32px;
+  height: 32px;
 }
 .rec-mic-label {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
 }
 .rec-live {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 18px;
+  gap: 16px;
 }
 .rec-live-circle {
   position: relative;
@@ -144,21 +143,23 @@ const recording = rec.state;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  width: 120px;
-  height: 120px;
+  width: 96px;
+  height: 96px;
+  border: 2px solid #1c1917;
   border-radius: 50%;
   background: #1c1917;
   color: #f7d447;
+  box-sizing: border-box;
 }
 .rec-live-ping {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: rgba(28, 25, 23, 0.12);
+  border: 2px solid rgba(28, 25, 23, 0.35);
   animation: ping 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 .rec-live-time {
-  font-size: 11px;
+  font-size: 10px;
 }
 @keyframes ping {
   75%,
@@ -167,35 +168,35 @@ const recording = rec.state;
     opacity: 0;
   }
 }
-.btn-primary {
+.rec-stop {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  height: 50px;
-  padding: 0 22px;
+  height: 44px;
+  padding: 0 20px;
   border: 0;
-  border-radius: 12px;
-  background: #f7d447;
-  color: #1c1917;
-  font-size: 15px;
-  font-weight: 700;
+  border-radius: 4px;
+  background: #1c1917;
+  color: #f7d447;
+  font-size: 13px;
+  font-weight: 800;
 }
 .rec-warn {
   margin-top: 12px;
-  font-size: 12px;
+  font-size: 11px;
   text-align: center;
-  color: #78716c;
+  color: #b42318;
 }
 .rec-hint {
-  margin-top: 16px;
-  padding: 16px;
-  border: 1px dashed #e7e5e0;
-  border-radius: 12px;
-  background: #fafaf7;
-  font-size: 12px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 2px solid #1c1917;
+  border-radius: 4px;
+  background: #fdf4d6;
+  font-size: 11px;
   line-height: 1.7;
   text-align: center;
-  color: #78716c;
+  color: rgba(28, 25, 23, 0.68);
 }
 </style>

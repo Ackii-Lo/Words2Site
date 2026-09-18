@@ -53,9 +53,9 @@ const trackR = computed(() =>
 );
 
 const perfTile = PERF_TILE;
-/** 走完一个卡步长 / 一个齿孔步长的时间（s），两者同速 */
-const DUR = PSTRIDE / 26;
-const HOLE_DUR = PHONE.PPERF / 26;
+/** 走完一个卡步长 / 一个齿孔步长的时间（s），两者同速（13 px/s，看清爽为准） */
+const DUR = PSTRIDE / 13;
+const HOLE_DUR = PHONE.PPERF / 13;
 
 const perfStyle = {
   width: PHW * 2 + "px",

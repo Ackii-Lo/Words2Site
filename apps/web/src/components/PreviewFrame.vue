@@ -22,17 +22,17 @@ const src = computed(() =>
 
 <style scoped>
 .preview-card {
-  padding: 14px;
-  border: 1px solid #eeede9;
-  border-radius: 14px;
-  background: #fff;
+  padding: 10px;
+  border: 2px solid #1c1917;
+  border-radius: 4px;
+  background: #ffffff;
 }
 .preview-frame {
   display: block;
   width: 100%;
   height: 292px;
   border: 0;
-  border-radius: 8px;
+  border-radius: 2px;
   background: #fafaf7;
 }
 </style>
