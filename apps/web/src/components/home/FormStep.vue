@@ -105,15 +105,18 @@ function submit() {
   <div class="fgroups">
     <div class="fgroup">
       <div class="flabel">{{ t("form.emailLabel") }}</div>
-      <input
-        v-model="emailPrefix"
-        class="field-input"
-        type="text"
-        autocapitalize="off"
-        autocorrect="off"
-        spellcheck="false"
-        :placeholder="t('form.emailPh')"
-      />
+      <div class="email-group">
+        <input
+          v-model="emailPrefix"
+          class="email-input"
+          type="text"
+          autocapitalize="off"
+          autocorrect="off"
+          spellcheck="false"
+          :placeholder="t('form.emailPh')"
+        />
+        <span class="email-addon">{{ EMAIL_SUFFIX }}</span>
+      </div>
       <p class="hint">{{ emailHint }}</p>
     </div>
     <div class="fgroup">
@@ -269,6 +272,49 @@ function submit() {
 }
 .field-input:focus {
   box-shadow: 3px 3px 0 #1c1917;
+}
+/* 邮箱分段输入组：左段可输入 + 右段固定后缀（浅黄底=不可编辑） */
+.email-group {
+  display: flex;
+  align-items: stretch;
+  height: 46px;
+  margin-top: 7px;
+  border: 2px solid #1c1917;
+  border-radius: 4px;
+  background: #ffffff;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.email-group:focus-within {
+  box-shadow: 3px 3px 0 #1c1917;
+}
+.email-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  padding: 0 12px;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1c1917;
+}
+.email-input::placeholder {
+  font-weight: 400;
+  color: rgba(28, 25, 23, 0.35);
+}
+.email-addon {
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  border-left: 2px solid #1c1917;
+  background: #fdf4d6;
+  font-family: Consolas, Menlo, ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(28, 25, 23, 0.75);
+  flex: 0 0 auto;
+  user-select: none;
 }
 /* 提示行：邮箱完整地址 / 网址预览，mono 小字，两列视觉对称 */
 .hint {
@@ -461,6 +507,18 @@ function submit() {
     padding: 0 16px;
     font-size: 16px;
     font-weight: 700;
+  }
+  .email-group {
+    height: 64px;
+    margin-top: 10px;
+  }
+  .email-input {
+    padding: 0 16px;
+    font-size: 16px;
+  }
+  .email-addon {
+    padding: 0 14px;
+    font-size: 12.5px;
   }
   .hint {
     margin-top: 10px;
