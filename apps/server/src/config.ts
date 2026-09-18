@@ -66,9 +66,10 @@ if (!["read-only", "workspace-write", "danger-full-access"].includes(sandbox)) {
   );
 }
 
-// DATA_DIR 相对路径一律相对仓库根解析（避免 tsx/dev/cwd 差异）
+// DATA_DIR 相对路径一律相对仓库根解析（避免 tsx/dev/cwd 差异）；
+// 空串视为未设置（?? 不会兜底空串，会把库和 .bak 落到仓库根）
 const repoRoot = path.resolve(import.meta.dirname, "../../..");
-const dataDir = path.resolve(repoRoot, str("DATA_DIR", "data"));
+const dataDir = path.resolve(repoRoot, process.env.DATA_DIR?.trim() || "data");
 if (
   !process.env.DEPLOY_DOMAIN_TEMPLATE?.includes("{label}") &&
   process.env.DEPLOY_DOMAIN_TEMPLATE
