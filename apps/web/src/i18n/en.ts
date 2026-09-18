@@ -28,6 +28,10 @@ const dict = {
   "form.emailPh": "li.zhou",
   "form.domainLabel": "Pick a web address",
   "form.urlPrefix": "Your URL: https://",
+  "form.domainChecking": "Checking availability…",
+  "form.domainFree": "Available",
+  "form.domainTaken": "Already taken — try another",
+  "form.pageLangLabel": "Page language",
   "form.publicTitle": "Show on the wall",
   "form.publicDesc":
     "Checked: your page scrolls on the live wall.\nUnchecked: only accessible via your link.",

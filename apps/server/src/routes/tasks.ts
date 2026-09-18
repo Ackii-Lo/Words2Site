@@ -69,6 +69,8 @@ tasksRouter.post("/", (req: Request, res: Response) => {
     res.status(429).json({ error: "生成次数已达上限，找工作人员帮忙吧" });
     return;
   }
+  const pageLang =
+    (req.body as { pageLang?: string }).pageLang === "en" ? "en" : "zh";
 
   try {
     tasks.create({
@@ -79,6 +81,7 @@ tasksRouter.post("/", (req: Request, res: Response) => {
       email: mail,
       domain,
       isPublic: isPublic !== false,
+      pageLang,
       styleHint: pickStyle(trimmed),
     });
   } catch (e) {
@@ -87,6 +90,19 @@ tasksRouter.post("/", (req: Request, res: Response) => {
   }
   queue.enqueueGen(id);
   res.json({ taskId: id, queuePosition: queue.positionOf(id), domain });
+});
+
+/** 网址占用即时校验（表单输入防抖轮询；非破坏性，最终以提交时的原子预约为准）。
+ *  注意必须挂在 GET /:id 之前，否则 "domain-check" 会被当任务 id 吃掉。 */
+tasksRouter.get("/domain-check", (req: Request, res: Response) => {
+  const label = String(req.query.label ?? "")
+    .trim()
+    .toLowerCase();
+  if (!DOMAIN_LABEL_RE.test(label)) {
+    res.json({ valid: false, available: false });
+    return;
+  }
+  res.json({ valid: true, available: !reservations.taken(fullDomain(label)) });
 });
 
 /** 轮询状态 */

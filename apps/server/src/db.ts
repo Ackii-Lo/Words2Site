@@ -74,6 +74,7 @@ export interface TaskRow {
   publish_url: string | null;
   email: string | null;
   domain: string | null;
+  page_lang: string | null;
   is_public: number;
   removed_at: number | null;
   screenshot: number;
@@ -103,6 +104,7 @@ export const tasks = {
     email: string;
     domain: string;
     isPublic: boolean;
+    pageLang: "zh" | "en";
     styleHint: string | null;
   }) {
     db.insert(tasksTable)
@@ -115,6 +117,7 @@ export const tasks = {
         device_id: p.deviceId,
         email: p.email,
         domain: p.domain,
+        page_lang: p.pageLang,
         is_public: p.isPublic ? 1 : 0,
         style_hint: p.styleHint,
         created_at: Date.now(),
@@ -297,6 +300,16 @@ export const sessions = {
  * 创建时预约，最终失败 / 人工跳过 / 下线时释放。
  */
 export const reservations = {
+  /** 非破坏性占用查询（表单输入即校验用；不预约，最终以 tryReserve 原子结果为准） */
+  taken(domain: string): boolean {
+    return (
+      db
+        .select({ n: sql<number>`count(*)` })
+        .from(domainReservationsTable)
+        .where(eq(domainReservationsTable.domain, domain))
+        .get()!.n > 0
+    );
+  },
   /** 原子预约：true = 抢到；false = 已被占用（PK 冲突） */
   tryReserve(domain: string, taskId: string): boolean {
     const r = db

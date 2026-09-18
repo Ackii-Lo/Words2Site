@@ -113,6 +113,7 @@ async function runGen(taskId: string) {
   const result = await generate({
     taskId,
     workdir,
+    pageLang: t.page_lang === "en" ? "en" : "zh",
     // spawn 即回填 pid：占位会话阶段就能 kill 进程组（修 pid 恒 null 的旧 bug）
     onSpawn: (pid) => sessionManager.updatePid(tempSession, pid),
     onStdout: (chunk) => sessionLog.write(taskId, chunk),

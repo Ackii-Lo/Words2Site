@@ -30,6 +30,8 @@ export const tasksTable = sqliteTable(
     publish_url: text("publish_url"),
     email: text("email"),
     domain: text("domain"),
+    /** 生成页面的文案语言：zh（默认）/ en。可空无 default → 简单 ADD COLUMN */
+    page_lang: text("page_lang"),
     is_public: integer("is_public").default(1),
     removed_at: integer("removed_at"),
     /** 0 无 1 有（data/tasks/<id>/shot.png） */

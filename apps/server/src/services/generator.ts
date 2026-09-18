@@ -19,14 +19,25 @@ export interface GenResult {
 export interface GenOptions {
   taskId: string;
   workdir: string;
+  /** 生成页面的文案语言（zh 简体中文 / en 英文），默认 zh */
+  pageLang?: "zh" | "en";
   onSpawn?: (pid: number) => void;
   onStdout?: (chunk: string) => void;
 }
 
+/** 硬性要求第 3 条：页面文案语言（其余要求与语言无关） */
+const LANG_RULE: Record<"zh" | "en", string> = {
+  zh: "页面文案使用简体中文，内容积极友好，适合公开展示",
+  en: "Write all page copy in English; keep the content positive, friendly, and suitable for public display",
+};
+
 /**
  * 用户输入包装：指令与数据分离，显式声明定界符内内容仅为需求描述。
  */
-export function buildPrompt(userText: string): string {
+export function buildPrompt(
+  userText: string,
+  lang: "zh" | "en" = "zh",
+): string {
   // 剥离可能干扰定界符的内容
   const sanitized = userText
     .replace(/<<<\/?(USER_INPUT|END_USER_INPUT)>>>/g, "")
@@ -36,7 +47,7 @@ export function buildPrompt(userText: string): string {
 硬性要求：
 1. 只创建一个文件：当前工作目录下的 index.html
 2. 所有 CSS/JS 必须内联；禁止引用任何外部资源（不用外链 CDN/字体/图片，图片用 SVG/CSS/emoji 代替）
-3. 页面文案使用简体中文，内容积极友好，适合公开展示
+3. ${LANG_RULE[lang]}
 4. 适配手机竖屏（viewport、响应式布局）
 5. 不使用 cookie / localStorage / 任何网络请求
 6. 文件体积控制在 200KB 以内
@@ -90,6 +101,7 @@ async function codexGenerate(opts: GenOptions): Promise<GenResult> {
   const { taskId, workdir } = opts;
   const prompt = buildPrompt(
     fs.readFileSync(path.join(workdir, "prompt.txt"), "utf-8"),
+    opts.pageLang ?? "zh",
   );
   const args = codexArgs(prompt, workdir);
 

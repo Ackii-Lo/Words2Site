@@ -29,6 +29,10 @@ const dict: Record<keyof typeof en, string> = {
   "form.emailPh": "li.zhou",
   "form.domainLabel": "为你的网页选个网址",
   "form.urlPrefix": "你的网址：https://",
+  "form.domainChecking": "正在检查是否可用…",
+  "form.domainFree": "可用",
+  "form.domainTaken": "已被别人用了，换一个试试",
+  "form.pageLangLabel": "网页语言",
   "form.publicTitle": "上大屏展示",
   "form.publicDesc":
     "勾选后你的网页会出现在现场大屏上滚动展示；\n不勾选仅自己通过链接访问",

@@ -29,6 +29,7 @@ interface SubmitPayload {
   email: string;
   domainLabel: string;
   isPublic: boolean;
+  pageLang: "zh" | "en";
 }
 /** 最近一次提交（failed「点击刷新」重发用；表单步已卸载，输入态不在手上） */
 let lastPayload: SubmitPayload | null = null;
@@ -88,6 +89,7 @@ async function submitTask() {
         email: lastPayload.email,
         domainLabel: lastPayload.domainLabel,
         isPublic: lastPayload.isPublic,
+        pageLang: lastPayload.pageLang,
       }),
     });
     taskId.value = data.taskId;

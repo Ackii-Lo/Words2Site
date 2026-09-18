@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { Check } from "lucide-vue-next";
+import { computed, onUnmounted, ref, watch } from "vue";
+import { Check, CircleX, LoaderCircle } from "lucide-vue-next";
+import { api } from "@/composables/useApi";
 import { t } from "@/i18n";
 
 /**
- * 步骤② 填写信息：描述 + 邮箱 + 网址 + 是否公开，一次提交。
+ * 步骤② 填写信息：描述 + 邮箱前缀 + 网址 + 网页语言 + 是否公开，一次提交。
  * 输入状态为本组件局部（切步即卸载、自动清空）；提交与错误展示由父级管。
  */
 const props = defineProps<{
@@ -18,6 +19,7 @@ const emit = defineEmits<{
       email: string;
       domainLabel: string;
       isPublic: boolean;
+      pageLang: "zh" | "en";
     },
   ];
 }>();
@@ -26,6 +28,7 @@ const draft = ref("");
 const emailPrefix = ref(""); // 只填前缀，域名固定 @nottingham.edu.cn
 const domainLabel = ref("");
 const isPublic = ref(true);
+const pageLang = ref<"zh" | "en">("zh"); // 生成页面的文案语言
 const domainSuffix = ".unnc.space"; // 与服务端 DEPLOY_DOMAIN_TEMPLATE 对应
 const EMAIL_SUFFIX = "@nottingham.edu.cn";
 
@@ -35,13 +38,39 @@ const emailValid = computed(() =>
 const domainValid = computed(() =>
   /^[a-z0-9][a-z0-9-]{2,30}$/.test(domainLabel.value.trim()),
 );
+
+/* ---------- 网址占用即时校验：输入停顿 400ms 即查（非破坏性，提交仍以原子预约为准） ---------- */
+const domainStatus = ref<"idle" | "checking" | "free" | "taken">("idle");
+let checkTimer: ReturnType<typeof setTimeout> | null = null;
+
+watch([domainLabel, domainValid], ([, valid]) => {
+  if (checkTimer) clearTimeout(checkTimer);
+  if (!valid) {
+    domainStatus.value = "idle";
+    return;
+  }
+  domainStatus.value = "checking";
+  checkTimer = setTimeout(async () => {
+    try {
+      const r = await api<{ valid: boolean; available: boolean }>(
+        `/api/tasks/domain-check?label=${encodeURIComponent(domainLabel.value.trim())}`,
+      );
+      domainStatus.value = r.available ? "free" : "taken";
+    } catch {
+      domainStatus.value = "idle"; // 弱网容忍：交给提交时的原子校验兜底
+    }
+  }, 400);
+});
+onUnmounted(() => checkTimer && clearTimeout(checkTimer));
+
 const canSubmit = computed(
   () =>
     !props.submitting &&
     draft.value.trim().length >= 10 &&
     draft.value.length <= 300 &&
     emailValid.value &&
-    domainValid.value,
+    domainValid.value &&
+    domainStatus.value === "free",
 );
 
 function submit() {
@@ -51,6 +80,7 @@ function submit() {
     email: emailPrefix.value.trim().toLowerCase() + EMAIL_SUFFIX,
     domainLabel: domainLabel.value.trim(),
     isPublic: isPublic.value,
+    pageLang: pageLang.value,
   });
 }
 </script>
@@ -97,6 +127,50 @@ function submit() {
         {{ t("form.urlPrefix") }}<mark>{{ domainLabel }}</mark
         >{{ domainSuffix }}/
       </p>
+      <!-- 占用即时校验：输入停顿即查 -->
+      <p
+        v-if="domainStatus !== 'idle'"
+        class="domain-status"
+        :class="'is-' + domainStatus"
+      >
+        <LoaderCircle
+          v-if="domainStatus === 'checking'"
+          class="ds-icon spin"
+          :size="12"
+        />
+        <Check v-else-if="domainStatus === 'free'" class="ds-icon" :size="12" />
+        <CircleX v-else class="ds-icon" :size="12" />
+        {{
+          domainStatus === "checking"
+            ? t("form.domainChecking")
+            : domainStatus === "free"
+              ? t("form.domainFree")
+              : t("form.domainTaken")
+        }}
+      </p>
+    </div>
+  </div>
+
+  <!-- 生成页面的文案语言 -->
+  <div class="fgroup">
+    <div class="flabel">{{ t("form.pageLangLabel") }}</div>
+    <div class="seg">
+      <button
+        class="seg-btn"
+        :class="{ 'seg-on': pageLang === 'zh' }"
+        type="button"
+        @click="pageLang = 'zh'"
+      >
+        简体中文
+      </button>
+      <button
+        class="seg-btn"
+        :class="{ 'seg-on': pageLang === 'en' }"
+        type="button"
+        @click="pageLang = 'en'"
+      >
+        English
+      </button>
     </div>
   </div>
 
@@ -219,6 +293,61 @@ function submit() {
   padding: 0 1px;
   background: #f7d447;
   color: #1c1917;
+}
+/* 占用校验状态行：转圈／可用绿／占用红 */
+.domain-status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+.ds-icon {
+  flex: 0 0 auto;
+}
+.spin {
+  animation: ds-spin 0.9s linear infinite;
+}
+@keyframes ds-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.is-free {
+  color: #15803d;
+}
+.is-taken {
+  color: #b42318;
+}
+.is-checking {
+  color: rgba(28, 25, 23, 0.6);
+}
+
+/* 网页语言分段选择 */
+.seg {
+  display: flex;
+  width: 200px;
+  height: 40px;
+  margin-top: 7px;
+  padding: 3px;
+  border: 2px solid #1c1917;
+  border-radius: 4px;
+  background: #f1efe8;
+  box-sizing: border-box;
+}
+.seg-btn {
+  flex: 1;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: rgba(28, 25, 23, 0.6);
+}
+.seg-on {
+  background: #1c1917;
+  color: #f7d447;
 }
 
 .pub-card {
@@ -362,6 +491,22 @@ function submit() {
   }
   .url-preview mark {
     padding: 1px 2px;
+  }
+  .domain-status {
+    margin-top: 10px;
+    font-size: 13px;
+  }
+  .ds-icon {
+    width: 14px;
+    height: 14px;
+  }
+  .seg {
+    width: 280px;
+    height: 56px;
+    margin-top: 10px;
+  }
+  .seg-btn {
+    font-size: 15px;
   }
   .pub-card {
     margin-top: 30px;
