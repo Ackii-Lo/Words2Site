@@ -189,7 +189,7 @@ const statusVariant: Record<
             <Wrench class="h-6 w-6" /> Words2Site 管理台
           </h1>
           <a
-            href="/screen"
+            href="/"
             target="_blank"
             class="text-xs text-primary hover:underline"
             >大屏</a
@@ -205,7 +205,7 @@ const statusVariant: Record<
             <Activity class="h-4 w-4" />
             {{ probing ? "探活中…" : "codex 探活" }}
           </Button>
-          <a href="/screen" target="_blank">
+          <a href="/" target="_blank">
             <Button variant="outline" size="sm"
               ><Monitor class="h-4 w-4" /> 大屏</Button
             >

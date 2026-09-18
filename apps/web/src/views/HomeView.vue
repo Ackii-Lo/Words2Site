@@ -241,7 +241,18 @@ onUnmounted(stopWaitingTimers);
     <!-- 顶栏 + 步骤进度条 -->
     <header class="topwrap">
       <div class="topbar">
-        <span class="brand">CPU • Words2Site</span>
+        <div class="brand-group">
+          <!-- 点左上角 logo 返回现场大屏（/） -->
+          <RouterLink
+            to="/"
+            class="brand-logo"
+            aria-label="返回现场大屏"
+            title="返回现场大屏"
+          >
+            <CpuLogo class="brand-logo-svg" ink="#F7D447" />
+          </RouterLink>
+          <span class="brand">CPU • Words2Site</span>
+        </div>
         <span class="step"
           >步骤 {{ stepIndex }} / {{ STEPS.length }} · {{ stepLabel }}</span
         >
@@ -529,9 +540,30 @@ onUnmounted(stopWaitingTimers);
 
 .topbar {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   padding: 0 16px 3px;
+}
+.brand-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.brand-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: #1c1917;
+}
+.brand-logo:active {
+  transform: scale(0.94);
+}
+.brand-logo-svg {
+  width: 19px;
+  height: 18px;
 }
 .brand {
   font-size: 12.5px;

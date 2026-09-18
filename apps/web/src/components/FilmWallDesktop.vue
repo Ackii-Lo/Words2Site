@@ -247,6 +247,14 @@ onUnmounted(() => {
         :viewBox="`0 0 ${W} ${H}`"
         v-html="emptySvg"
       />
+      <!-- 去做网页的入口：右下角厂牌 logo（画布 1470,972 起 84px）做成热区 -->
+      <RouterLink
+        to="/start"
+        class="start-link"
+        aria-label="开始制作你的网页"
+        title="开始制作你的网页"
+        :style="{ left: '1470px', top: '972px', width: '84px', height: '84px' }"
+      />
     </div>
   </div>
 </template>
@@ -263,5 +271,14 @@ onUnmounted(() => {
   visibility: hidden; /* 首帧定位后再显示，避免新卡在左上角闪现 */
   transform-origin: 0 0;
   will-change: transform;
+}
+.start-link {
+  position: absolute;
+  z-index: 30;
+  border-radius: 10px;
+}
+.start-link:hover {
+  outline: 1.5px dashed rgba(247, 212, 71, 0.75);
+  outline-offset: 5px;
 }
 </style>

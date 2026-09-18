@@ -159,6 +159,18 @@ onUnmounted(() => removeEventListener("resize", fit));
           `<text x='187.5' y='456' text-anchor='middle' font-family='Consolas,Menlo,monospace' font-size='11' letter-spacing='2.6' fill='rgba(247,212,71,.72)'>WAITING FOR THE FIRST PAGE…</text>`
         "
       />
+      <!-- 去做网页的入口：底部厂牌 logo（画布 20,720 起 48px）做成热区 -->
+      <RouterLink
+        to="/start"
+        class="start-link"
+        aria-label="开始制作你的网页"
+        :style="{
+          left: '20px',
+          top: H - 80 + 'px',
+          width: '48px',
+          height: '60px',
+        }"
+      />
     </div>
   </div>
 </template>
@@ -167,6 +179,11 @@ onUnmounted(() => removeEventListener("resize", fit));
 .film-svg {
   font-family:
     -apple-system, "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+}
+.start-link {
+  position: absolute;
+  z-index: 30;
+  border-radius: 8px;
 }
 .clip {
   position: absolute;
