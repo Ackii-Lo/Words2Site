@@ -40,12 +40,14 @@ const mail = new EmailPoster({
 });
 
 // 与线上同款模板（共享构造函数，样式改动只需改 services/mailer.ts）
+// MAIL_TEST_LANG=en 可切英文版预览
 const { subject: mailSubject, body } = buildCompletionMail({
   code: "W2S-HCKP",
   domain: "w2s-e2e-demo.hnrobert.space",
   url: "https://w2s-e2e-demo.hnrobert.space/",
   verifyUrl: "https://words2site.unnc.space/verify/W2S-HCKP",
   prompt: "做一个介绍校园音乐社团的网页，青春活力风格，展示社团活动和招新信息",
+  lang: process.env.MAIL_TEST_LANG === "en" ? "en" : "zh",
 });
 
 for (const addr of to) {

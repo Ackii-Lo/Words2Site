@@ -49,7 +49,7 @@ export async function finalizeTask(taskId: string): Promise<boolean> {
   });
   taskLog(taskId, `发布成功 ${url}`);
 
-  // 异步收尾：完成邮件 + 大屏截图（失败不影响发布结果）
+  // 异步收尾：完成邮件（语言跟随用户选的网页语言）+ 大屏截图（失败不影响发布结果）
   if (t.email) {
     void sendCompletionMail({
       taskId,
@@ -59,6 +59,7 @@ export async function finalizeTask(taskId: string): Promise<boolean> {
       url,
       verifyUrl: `${config.publicBaseUrl}/verify/${code}`,
       prompt: t.prompt,
+      lang: t.page_lang === "en" ? "en" : "zh",
     });
   }
   if (url.startsWith("https://")) {

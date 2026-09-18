@@ -21,14 +21,38 @@ function getPoster(): EmailPoster | null {
   return poster;
 }
 
-/** 完成通知邮件内容（mailer 与 scripts/test-mail.ts 共用，避免模板漂移） */
+/**
+ * 完成通知邮件内容（mailer 与 scripts/test-mail.ts 共用，避免模板漂移）。
+ * lang 跟随用户表单里选择的「网页语言」（page_lang 列）。
+ */
 export function buildCompletionMail(p: {
   code: string;
   domain: string;
   url: string;
   verifyUrl: string;
   prompt: string;
+  lang: "zh" | "en";
 }): { subject: string; body: string } {
+  const t = {
+    zh: {
+      subject: `你的网页已上线 · ${p.code}`,
+      title: "你的网页已上线",
+      intro: "你在「Words to Website」活动中描述的网页已经生成并发布：",
+      codeLabel: "你的集章凭证编号：",
+      verify: "凭此编号在活动现场找工作人员核验盖章。核验页：",
+      footer: "本邮件由活动系统自动发送",
+    },
+    en: {
+      subject: `Your page is live · ${p.code}`,
+      title: "Your page is live",
+      intro:
+        "The page you described at the Words to Website event has been generated and published:",
+      codeLabel: "Your stamp collection code:",
+      verify:
+        "Show this code to the event staff to get it stamped. Verify page: ",
+      footer: "Sent automatically by the event system",
+    },
+  }[p.lang];
   // 站点同款视觉：纸张白卡 + 黄色描边（凭证卡语言）、黑底黄字编号章、
   // mono 字体编号、虚线引用块（对应页面虚线网格）——邮件客户端只认 inline style
   const body = `
@@ -36,25 +60,25 @@ export function buildCompletionMail(p: {
     <div style="background:#fff;border:3px solid #f7d447;border-radius:8px;overflow:hidden">
       <div style="background:#1c1917;padding:22px 30px">
         <div style="font-family:Consolas,Menlo,monospace;font-size:11px;letter-spacing:3px;color:#f7d447">WORDS TO WEBSITE</div>
-        <h1 style="margin:6px 0 0;font-size:21px;color:#fff;font-weight:700">你的网页已上线</h1>
+        <h1 style="margin:6px 0 0;font-size:21px;color:#fff;font-weight:700">${t.title}</h1>
       </div>
       <div style="padding:26px 30px">
-        <p style="margin:0;font-size:14px;color:#78716c">你在「Words to Website」活动中描述的网页已经生成并发布：</p>
+        <p style="margin:0;font-size:14px;color:#78716c">${t.intro}</p>
         <p style="margin:14px 0;font-size:13px;color:#1c1917;background:#fafaf7;border:1px dashed #e7e5e0;border-radius:8px;padding:12px 14px">"${p.prompt}"</p>
         <p style="margin:24px 0">
           <a href="${p.url}" style="display:inline-block;background:#f7d447;color:#1c1917;text-decoration:none;font-weight:700;padding:12px 28px;border-radius:12px;font-size:15px">${p.domain}</a>
         </p>
-        <p style="margin:0 0 6px;font-size:14px;color:#1c1917">你的集章凭证编号：</p>
+        <p style="margin:0 0 6px;font-size:14px;color:#1c1917">${t.codeLabel}</p>
         <p style="margin:0 0 18px">
           <span style="display:inline-block;background:#1c1917;color:#f7d447;font-family:Consolas,Menlo,monospace;font-size:18px;letter-spacing:3px;padding:10px 18px;border-radius:8px">${p.code}</span>
         </p>
-        <p style="margin:0;font-size:13px;color:#78716c">凭此编号在活动现场找工作人员核验盖章。核验页：<a href="${p.verifyUrl}" style="color:#1c1917;font-weight:600">${p.verifyUrl}</a></p>
+        <p style="margin:0;font-size:13px;color:#78716c">${t.verify}<a href="${p.verifyUrl}" style="color:#1c1917;font-weight:600">${p.verifyUrl}</a></p>
         <hr style="border:0;border-top:1px solid #e7e5e0;margin:24px 0">
-        <p style="margin:0;font-family:Consolas,Menlo,monospace;font-size:11px;letter-spacing:1px;color:#78716c">Words to Website · Activity 3 · 本邮件由活动系统自动发送</p>
+        <p style="margin:0;font-family:Consolas,Menlo,monospace;font-size:11px;letter-spacing:1px;color:#78716c">Words to Website · Activity 3 · ${t.footer}</p>
       </div>
     </div>
   </div>`;
-  return { subject: `你的网页已上线 · ${p.code}`, body };
+  return { subject: t.subject, body };
 }
 
 export async function sendCompletionMail(p: {
@@ -65,6 +89,7 @@ export async function sendCompletionMail(p: {
   url: string;
   verifyUrl: string;
   prompt: string;
+  lang: "zh" | "en";
 }): Promise<void> {
   const mail = getPoster();
   if (!mail) {
