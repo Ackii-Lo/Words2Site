@@ -454,17 +454,7 @@ export function ghostMarkup(): string {
   return bg + ghost;
 }
 
-// ---------------- CPU logo（真矢量，逐字取自品牌源文件） ----------------
-
-const P1 =
-  "M19.48,13.51c.5-6.74-.64-7.9-.66-7.9C18.94,1.59,16.12.04,16.14.01c-.09,2.96-1.57,3.15-2.05,3.31s-6.23-.23-8.18.94c-1.39.77-1.72.88-1.91.87-.99-.03-2.12-1.57-2.12-1.57h-.14l.03,1.67s-.57.07-.94,0c0,.4.78,1.37.84,1.39-.3.69-.33,2.52.28,6.75.02.02.03.14-.14.21-.8.02-1.37.76-1.43.84-.05.08-.21.97-.21.97,0,0,.24.41.63.49.17.08.28.7.28.7l-.03,2.26s.12.5.42.87c.29.37.73.52.73.52l6.13.03s.4-.06.8-.35.42-.87.42-.87l-.03-2.26h-.84l-.03,2.02s-.03.18-.17.31c-.13.12-.49.21-.49.21,0,0-3.42.12-5.31-.04-.1,0-.56-.13-.64-.48s.07-4,.07-4l.45-.28,5.6.03s.38.07.45.35-.12,1.12.38,1.15c.23.04.66-.28.66-.28,0,0,.16-1.42-.03-1.84-.14-.23-.68-.24-1.39-.35s-5.4-.03-5.36-.07c-.42-2.02.94-2.19.94-2.19,0,0-.24-2.11.31-2.51,1.84-.26,3.86-.85,6.72,1.04.16-.17.68-.8,1.01-.7.75.19,3.67.71,5.46-.28.26-.08.35.35.35.35,0,0,.12,2.17.14,2.19.64,0,.87,1.04.87,1.04,0,0-.07,2.03-.03,2.05.66-.03.8.42.8.42,0,0,.09,3.79.03,3.97s-.38.35-.38.35c0,0-5.45.15-5.78.03s-.45-.45-.45-.45v-5.12l-1.01.38s.02,4.79.07,5.01c0,0,.05.5.31.77s.49.33.66.42,5.48.05,5.99,0c.33-.05.68-.16,1.08-.56s.49-.91.49-.91v-2.51s.82-.99.84-1.15c.14-1.29-1.76-1.72-1.78-1.67l-.03.03ZM15.37,6.75l.52.1s-.63.7-2.33.91c-.85.05-8.18-1.18-8.7-1.04-.03-.02-.43.48-.42.49-2.18.81-2.19,2.19-2.19,2.19-.3-2.72.8-3.13,1.18-3.27s.77-.03.97-.07c2.24-1.61,4.18-1.32,4.18-1.32,0,0,.33.28.35.28.37-.01,1.24-.02,3.45-.14s3.82-.18,4.49-2.33c1.04,3.02-1.5,4.21-1.5,4.21h0Z";
-const P2 =
-  "M9.77,18.37v-3.07h.63v3.07h-.63ZM10.08,17.41v-.51h.51c.14,0,.25-.04.31-.13s.1-.22.1-.41h0c0-.19-.03-.33-.1-.42-.07-.09-.17-.13-.31-.13h-.52v-.51h.63c.2,0,.37.04.51.13s.25.21.32.36c.07.16.11.34.11.56h0c0,.22-.04.41-.11.56-.07.16-.18.28-.32.36-.14.09-.31.13-.51.13h-.63.01Z";
-
-export function mark(x: number, y: number, w: number, ink = Y): string {
-  const s = (w / 22.84).toFixed(5);
-  return `<g transform="translate(${x} ${y}) scale(${s})" fill="${ink}" fill-rule="evenodd"><path d="${P1}"/><path d="${P2}"/></g>`;
-}
+// CPU 厂牌矢量已移除：大屏右下角入口改为 START 按钮（组件层实现）
 
 // ---------------- 桌面品牌头/底（与定稿效果图一致） ----------------
 
@@ -506,11 +496,8 @@ export function headDesk(
 export function footDesk(count: number): string {
   const W = 1920;
   const shots = String(Math.max(0, count)).padStart(2, "0");
-  let s = `<text x="${W - 56}" y="934" text-anchor="end" font-family="${MONO}" font-size="12.5" letter-spacing="1.2" fill="rgba(247,212,71,.55)">${shots} EXPOSURES · 35MM · LOOP</text>`;
-  s += mark(1470, 972, 84);
-  s += `<text x="1564" y="1010" font-size="20" font-weight="900" fill="${CREAM}">Computer Psycho Union</text>`;
-  //   s += `<text x="1564" y="1034" font-size="11.5" font-weight="700" fill="rgba(250,247,232,.72)">The University of Nottingham Ningbo China</text>`;
-  return s;
+  // 右下角不再画厂牌 logo/文字——入口改为 FilmWall* 里的 START 按钮
+  return `<text x="${W - 56}" y="934" text-anchor="end" font-family="${MONO}" font-size="12.5" letter-spacing="1.2" fill="rgba(247,212,71,.55)">${shots} EXPOSURES · 35MM · LOOP</text>`;
 }
 
 // ---------------- 手机品牌头/底 ----------------
@@ -527,10 +514,8 @@ export function headPhone(): string {
 export function footPhone(demoCount: number, demoLabel: string): string {
   const W = 375;
   const H = 812;
+  // 底部条：左下不再画厂牌 logo/文字——入口改为 FilmWall* 里的 START 按钮
   let s = `<rect x="0" y="${H - 92}" width="${W}" height="92" fill="rgba(28,25,23,.92)"/>`;
-  s += mark(20, H - 74, 48);
-  s += `<text x="78" y="${H - 52}" font-size="12.5" font-weight="900" fill="${CREAM}">Computer Psycho Union</text>`;
-  //   s += `<text x="78" y="${H - 37}" font-size="7.5" font-weight="700" fill="rgba(250,247,232,.62)">The University of Nottingham Ningbo China</text>`;
   if (demoCount > 0) {
     s += `<rect x="${W - 124}" y="${H - 46}" width="102" height="21" rx="4" fill="${Y}"/>`;
     s += `<text x="${W - 73}" y="${H - 32}" text-anchor="middle" font-family="${MONO}" font-size="10" font-weight="700" fill="${K}">${demoLabel}</text>`;

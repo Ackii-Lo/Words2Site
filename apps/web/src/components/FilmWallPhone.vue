@@ -168,18 +168,20 @@ onUnmounted(() => removeEventListener("resize", fit));
           `<text x='187.5' y='456' text-anchor='middle' font-family='Consolas,Menlo,monospace' font-size='11' letter-spacing='2.6' fill='rgba(247,212,71,.72)'>WAITING FOR THE FIRST PAGE…</text>`
         "
       />
-      <!-- 去做网页的入口：底部厂牌 logo（画布 20,720 起 48px）做成热区 -->
+      <!-- 去做网页的入口：底部 START 按钮 -->
       <RouterLink
         to="/start"
         class="start-link"
         :aria-label="t('screen.start')"
         :style="{
           left: '20px',
-          top: H - 80 + 'px',
-          width: '48px',
-          height: '60px',
+          top: H - 62 + 'px',
+          width: '86px',
+          height: '28px',
         }"
-      />
+      >
+        START
+      </RouterLink>
     </div>
   </div>
 </template>
@@ -192,7 +194,21 @@ onUnmounted(() => removeEventListener("resize", fit));
 .start-link {
   position: absolute;
   z-index: 30;
-  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f7d447;
+  color: #1c1917;
+  font-family: Consolas, Menlo, ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-indent: 2.5px;
+  border-radius: 6px;
+  text-decoration: none;
+}
+.start-link:hover {
+  filter: brightness(1.08);
 }
 .clip {
   position: absolute;

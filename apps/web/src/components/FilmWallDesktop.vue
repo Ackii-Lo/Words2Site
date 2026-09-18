@@ -255,14 +255,21 @@ onUnmounted(() => {
         :viewBox="`0 0 ${W} ${H}`"
         v-html="emptySvg"
       />
-      <!-- 去做网页的入口：右下角厂牌 logo（画布 1470,972 起 84px）做成热区 -->
+      <!-- 去做网页的入口：右下角 START 按钮（画布坐标随舞台等比缩放） -->
       <RouterLink
         to="/start"
         class="start-link"
         :aria-label="t('screen.start')"
         :title="t('screen.start')"
-        :style="{ left: '1470px', top: '972px', width: '84px', height: '84px' }"
-      />
+        :style="{
+          left: '1470px',
+          top: '988px',
+          width: '154px',
+          height: '52px',
+        }"
+      >
+        START
+      </RouterLink>
     </div>
   </div>
 </template>
@@ -283,9 +290,21 @@ onUnmounted(() => {
 .start-link {
   position: absolute;
   z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f7d447;
+  color: #1c1917;
+  font-family: Consolas, Menlo, ui-monospace, monospace;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-indent: 4px;
   border-radius: 10px;
+  text-decoration: none;
 }
 .start-link:hover {
+  filter: brightness(1.08);
   outline: 1.5px dashed rgba(247, 212, 71, 0.75);
   outline-offset: 5px;
 }
