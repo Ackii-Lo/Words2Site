@@ -174,7 +174,7 @@ function restart() {
 
     <footer class="foot">
       <p class="foot-brand">Presented by CPU</p>
-      <p class="foot-sub">The University of Nottingham Ningbo China</p>
+      <!-- <p class="foot-sub">The University of Nottingham Ningbo China</p> -->
     </footer>
   </div>
 </template>
