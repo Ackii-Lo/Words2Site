@@ -74,7 +74,7 @@ onUnmounted(stopTimers);
     <div class="logo-wrap">
       <span class="logo-halo"></span>
       <span class="logo-circle"
-        ><CpuLogo class="logo-mark" ink="#FAF7E8"
+        ><CpuLogo class="logo-mark" ink="#000000"
       /></span>
     </div>
 
@@ -146,7 +146,6 @@ onUnmounted(stopTimers);
   animation: floaty 3.2s ease-in-out infinite;
 }
 .logo-mark {
-  color: #000000;
   width: 46px;
   height: 44px;
 }
