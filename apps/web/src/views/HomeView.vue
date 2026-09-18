@@ -116,16 +116,19 @@ function restart() {
 <template>
   <div class="shell">
     <!-- 顶部：左上角标（点回现场大屏）+ 右对齐空心标题 -->
+    <!-- 顶部：一行排布——logo 居左、空心标题居右，与页面左/上沿留边距 -->
     <header class="hero">
-      <RouterLink
-        to="/"
-        class="badge"
-        :aria-label="t('home.backToScreen')"
-        :title="t('home.backToScreen')"
-      >
-        <CpuLogo class="badge-mark" ink="#F7D447" />
-      </RouterLink>
-      <h1 class="hero-title"><span>WORDS TO</span><span>WEBSITE</span></h1>
+      <div class="hero-row">
+        <RouterLink
+          to="/"
+          class="badge"
+          :aria-label="t('home.backToScreen')"
+          :title="t('home.backToScreen')"
+        >
+          <CpuLogo class="badge-mark" ink="#F7D447" />
+        </RouterLink>
+        <h1 class="hero-title"><span>WORDS TO</span><span>WEBSITE</span></h1>
+      </div>
     </header>
 
     <!-- 主卡：黑带卡头（编号/名称/步骤）+ 进度条 + 卡身 -->
@@ -186,21 +189,25 @@ function restart() {
   background-repeat: repeat-y;
 }
 
-/* ===== 顶部：角标 + 空心标题 ===== */
+/* ===== 顶部：一行排布（logo 左 · 标题右） ===== */
 .hero {
-  position: relative;
-  padding: calc(10px + env(safe-area-inset-top)) 16px 0;
+  padding: calc(14px + env(safe-area-inset-top)) 16px 0;
+}
+.hero-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 .badge {
-  position: absolute;
-  left: 16px;
-  top: calc(10px + env(safe-area-inset-top));
   display: flex;
   align-items: center;
   justify-content: center;
   width: 48px;
   height: 48px;
   background: #1c1917;
+  border-radius: 6px;
+  flex: 0 0 auto;
 }
 .badge:active {
   transform: scale(0.94);
@@ -213,11 +220,10 @@ function restart() {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  width: 100%;
-  margin: 4px 0 0;
-  font-size: 48px;
+  margin: 0;
+  font-size: 40px;
   font-weight: 900;
-  line-height: 54px;
+  line-height: 44px;
   letter-spacing: 1px;
   color: transparent;
   -webkit-text-stroke: 2.5px #faf7e8;
@@ -317,15 +323,18 @@ function restart() {
     background-repeat: repeat;
   }
 
-  /* 顶部：角标贴左上角，标题单行右对齐、距右 40px */
+  /* 顶部：一行排布，logo 与标题垂直居中，四周留边距 */
   .hero {
-    padding: 13px 40px 0 0;
+    padding: 24px 40px 0;
+  }
+  .hero-row {
+    align-items: center;
+    gap: 24px;
   }
   .badge {
-    left: 0;
-    top: 0;
     width: 88px;
     height: 88px;
+    border-radius: 10px;
   }
   .badge-mark {
     width: 55px;
@@ -335,8 +344,7 @@ function restart() {
     flex-direction: row;
     justify-content: flex-end;
     gap: 0.28em;
-    margin: 0;
-    font-size: 110px;
+    font-size: 104px;
     line-height: 1;
     letter-spacing: 2px;
     -webkit-text-stroke: 3.5px #faf7e8;

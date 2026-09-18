@@ -509,7 +509,7 @@ export function footDesk(count: number): string {
   let s = `<text x="${W - 56}" y="934" text-anchor="end" font-family="${MONO}" font-size="12.5" letter-spacing="1.2" fill="rgba(247,212,71,.55)">${shots} EXPOSURES · 35MM · LOOP</text>`;
   s += mark(1470, 972, 84);
   s += `<text x="1564" y="1010" font-size="20" font-weight="900" fill="${CREAM}">Computer Psycho Union</text>`;
-  s += `<text x="1564" y="1034" font-size="11.5" font-weight="700" fill="rgba(250,247,232,.72)">The University of Nottingham Ningbo China</text>`;
+  //   s += `<text x="1564" y="1034" font-size="11.5" font-weight="700" fill="rgba(250,247,232,.72)">The University of Nottingham Ningbo China</text>`;
   return s;
 }
 
@@ -530,7 +530,7 @@ export function footPhone(demoCount: number, demoLabel: string): string {
   let s = `<rect x="0" y="${H - 92}" width="${W}" height="92" fill="rgba(28,25,23,.92)"/>`;
   s += mark(20, H - 74, 48);
   s += `<text x="78" y="${H - 52}" font-size="12.5" font-weight="900" fill="${CREAM}">Computer Psycho Union</text>`;
-  s += `<text x="78" y="${H - 37}" font-size="7.5" font-weight="700" fill="rgba(250,247,232,.62)">The University of Nottingham Ningbo China</text>`;
+  //   s += `<text x="78" y="${H - 37}" font-size="7.5" font-weight="700" fill="rgba(250,247,232,.62)">The University of Nottingham Ningbo China</text>`;
   if (demoCount > 0) {
     s += `<rect x="${W - 124}" y="${H - 46}" width="102" height="21" rx="4" fill="${Y}"/>`;
     s += `<text x="${W - 73}" y="${H - 32}" text-anchor="middle" font-family="${MONO}" font-size="10" font-weight="700" fill="${K}">${demoLabel}</text>`;
