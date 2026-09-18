@@ -112,6 +112,7 @@ function renderBand(
   slots: { value: number[] },
   els: Map<number, HTMLElement>,
   holesEl: SVGElement | null,
+  updateHoles: boolean,
 ) {
   const ph = dir * phase;
   const nMin = Math.ceil((rng[0] - A0 - ph) / STRIDE);
@@ -133,19 +134,29 @@ function renderBand(
     const p = atLs(band.P, l);
     const veil =
       band.floor + (band.dimMax - band.floor) * (1 - norm(band, p.k));
-    el.style.setProperty("--veil", veil.toFixed(3));
+    // 量化到 1/24：远端卡片亮度帧间几乎不变，省掉逐帧样式重算
+    const vs = String(Math.round(veil * 24) / 24);
+    if (el.dataset.v !== vs) {
+      el.dataset.v = vs;
+      el.style.setProperty("--veil", vs);
+    }
     el.style.visibility = "visible";
   }
-  if (holesEl) holesEl.innerHTML = holesAt(band, ph);
+  // 齿孔是小视觉元素，30fps 足够（transform 仍每帧）——innerHTML 重建是
+  // 每帧最大的 DOM/光栅开销，砍一半帧率换来整体 GPU 大幅下降
+  if (holesEl && updateHoles) holesEl.innerHTML = holesAt(band, ph);
 }
 
+let lastHolesAt = 0;
 function frame(now: number) {
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
   if (!paused && !reduced) elapsed += dt;
   const phase = elapsed * SPEED;
-  renderBand(bandB, rngB, 1, phase, slotsB, elsB, holesB.value);
-  renderBand(bandA, rngA, -1, phase, slotsA, elsA, holesA.value);
+  const updateHoles = now - lastHolesAt >= 33;
+  if (updateHoles) lastHolesAt = now;
+  renderBand(bandB, rngB, 1, phase, slotsB, elsB, holesB.value, updateHoles);
+  renderBand(bandA, rngA, -1, phase, slotsA, elsA, holesA.value, updateHoles);
   raf = requestAnimationFrame(frame);
 }
 

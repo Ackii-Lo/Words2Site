@@ -229,6 +229,7 @@ function restart() {
   transform: scale(0.94);
 }
 .badge-mark {
+  padding-left: 3px;
   width: 30px;
   height: 28px;
 }

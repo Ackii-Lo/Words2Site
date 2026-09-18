@@ -11,7 +11,7 @@ import { DEFAULT_STYLE, isCardStyle, type CardStyle } from "@/lib/styleHint";
  * 远端压暗由父层通过 CSS 变量 --veil 控制（0=全亮）。
  *
  * styleHint 决定渲染哪种外壳（七式之一）；缺省 archive 米纸衬底。
- * LazyFrame（真实生成页）始终渲染在每个外壳的「页面区」里。
+ * 页面区：有截图用 <img>（性能），演示卡/无截图页才落 iframe（LazyFrame）。
  *
  * 几何值全部对着定稿视觉稿（Desktop/CPU/大屏卡片样式七种_带文字.png）
  * 量出来的百分比走，改动前先量再改（见 skill words2site-dev）。
@@ -40,12 +40,22 @@ const style: CardStyle = isCardStyle(props.styleHint)
   ? props.styleHint
   : DEFAULT_STYLE;
 
-/** 内嵌的 LazyFrame 选用哪种源（演示 srcdoc / 真实截图 / 真实 HTML） */
+/**
+ * 页面区的源，三档：
+ * - 有截图 → frameImg：<img> 直出（浏览器解码缓存，GPU 合成远比 iframe 便宜；
+ *   大屏几十张卡同时滚动时这是性能命门）
+ * - 演示卡 → frameSrc.srcdoc：iframe 内置示例页
+ * - 真实页无截图 → frameSrc.src：iframe 兜底（活动常态是人人有截图，此档近零）
+ */
+const frameImg =
+  props.demoIndex === undefined && props.hasScreenshot
+    ? apiUrl(`/api/tasks/${props.taskId}/screenshot`)
+    : null;
 const frameSrc =
   props.demoIndex !== undefined
     ? { srcdoc: demoPage(props.demoIndex ?? 0) }
     : props.hasScreenshot
-      ? { src: apiUrl(`/api/tasks/${props.taskId}/screenshot`) }
+      ? {}
       : { src: apiUrl(`/api/tasks/${props.taskId}/html`) };
 
 const cardTitle = props.domain ?? props.taskId;
@@ -98,7 +108,15 @@ const emBase = (props.w / 146) * 12.5;
             box-shadow: 0 1px 3px rgba(28, 25, 23, 0.12);
           "
         >
-          <LazyFrame v-bind="frameSrc" :title="cardTitle" />
+          <img
+            v-if="frameImg"
+            :src="frameImg"
+            class="h-full w-full object-cover object-top"
+            loading="lazy"
+            decoding="async"
+            alt=""
+          />
+          <LazyFrame v-else v-bind="frameSrc" :title="cardTitle" />
         </div>
         <!-- 黄胶囊凭证章 -->
         <div class="absolute inset-x-0" style="bottom: 6.4%; height: 7%">
@@ -129,7 +147,15 @@ const emBase = (props.w / 146) * 12.5;
       <div class="absolute inset-0 overflow-hidden bg-[#0E1526]">
         <!-- 页面铺满 -->
         <div class="absolute inset-0">
-          <LazyFrame v-bind="frameSrc" :title="cardTitle" />
+          <img
+            v-if="frameImg"
+            :src="frameImg"
+            class="h-full w-full object-cover object-top"
+            loading="lazy"
+            decoding="async"
+            alt=""
+          />
+          <LazyFrame v-else v-bind="frameSrc" :title="cardTitle" />
         </div>
         <!-- 顶黑信息条 -->
         <div
@@ -273,7 +299,15 @@ const emBase = (props.w / 146) * 12.5;
           </div>
           <!-- 页面区 -->
           <div class="absolute inset-x-[0.6em]" style="top: 10%; bottom: 11%">
-            <LazyFrame v-bind="frameSrc" :title="cardTitle" />
+            <img
+              v-if="frameImg"
+              :src="frameImg"
+              class="h-full w-full object-cover object-top"
+              loading="lazy"
+              decoding="async"
+              alt=""
+            />
+            <LazyFrame v-else v-bind="frameSrc" :title="cardTitle" />
           </div>
           <!-- 底部小标签 -->
           <div
@@ -332,7 +366,15 @@ const emBase = (props.w / 146) * 12.5;
           "
         >
           <div class="absolute inset-[1.5px] overflow-hidden">
-            <LazyFrame v-bind="frameSrc" :title="cardTitle" />
+            <img
+              v-if="frameImg"
+              :src="frameImg"
+              class="h-full w-full object-cover object-top"
+              loading="lazy"
+              decoding="async"
+              alt=""
+            />
+            <LazyFrame v-else v-bind="frameSrc" :title="cardTitle" />
           </div>
         </div>
         <!-- 远端压暗 -->
@@ -392,7 +434,15 @@ const emBase = (props.w / 146) * 12.5;
             class="absolute"
             style="top: 17%; bottom: 12%; left: 4%; right: 4%"
           >
-            <LazyFrame v-bind="frameSrc" :title="cardTitle" />
+            <img
+              v-if="frameImg"
+              :src="frameImg"
+              class="h-full w-full object-cover object-top"
+              loading="lazy"
+              decoding="async"
+              alt=""
+            />
+            <LazyFrame v-else v-bind="frameSrc" :title="cardTitle" />
           </div>
           <!-- 底部黑条：域名+码 -->
           <div
@@ -456,7 +506,15 @@ const emBase = (props.w / 146) * 12.5;
             border-radius: 7%;
           "
         >
-          <LazyFrame v-bind="frameSrc" :title="cardTitle" />
+          <img
+            v-if="frameImg"
+            :src="frameImg"
+            class="h-full w-full object-cover object-top"
+            loading="lazy"
+            decoding="async"
+            alt=""
+          />
+          <LazyFrame v-else v-bind="frameSrc" :title="cardTitle" />
         </div>
         <!-- 右上黄星（压在粉页面区之上，与设计稿一致） -->
         <div
@@ -563,7 +621,15 @@ const emBase = (props.w / 146) * 12.5;
             background: #f7f3e8;
           "
         >
-          <LazyFrame v-bind="frameSrc" :title="cardTitle" />
+          <img
+            v-if="frameImg"
+            :src="frameImg"
+            class="h-full w-full object-cover object-top"
+            loading="lazy"
+            decoding="async"
+            alt=""
+          />
+          <LazyFrame v-else v-bind="frameSrc" :title="cardTitle" />
         </div>
         <!-- 短黄分隔线 -->
         <div
@@ -601,7 +667,15 @@ const emBase = (props.w / 146) * 12.5;
     <!-- 兜底（type 卡住时）：archive 同款，但不加 NO 标头 -->
     <template v-else>
       <div class="absolute inset-0 overflow-hidden bg-[#FAF7E8]">
-        <LazyFrame v-bind="frameSrc" :title="cardTitle" />
+        <img
+          v-if="frameImg"
+          :src="frameImg"
+          class="h-full w-full object-cover object-top"
+          loading="lazy"
+          decoding="async"
+          alt=""
+        />
+        <LazyFrame v-else v-bind="frameSrc" :title="cardTitle" />
         <div
           class="pointer-events-none absolute inset-0 bg-[rgba(18,16,14,1)]"
           style="opacity: var(--veil, 0)"
@@ -611,7 +685,7 @@ const emBase = (props.w / 146) * 12.5;
 
     <!-- 胶卷底片外框（与所有外壳共存；定稿：3px 描边居中在 +4 矩形上 → 外扩 3.5px） -->
     <div
-      class="pointer-events-none absolute -inset-[3.5px] border-[3.5px] border-[rgba(14,12,10,.85)]"
+      class="pointer-events-none absolute inset-[-3.5px] border-[3.5px] border-[rgba(14,12,10,.85)]"
     />
   </div>
 </template>
