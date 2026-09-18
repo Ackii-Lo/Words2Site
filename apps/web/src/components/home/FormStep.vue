@@ -38,6 +38,10 @@ const emailValid = computed(() =>
 const domainValid = computed(() =>
   /^[a-z0-9][a-z0-9-]{2,30}$/.test(domainLabel.value.trim()),
 );
+/** 邮箱提示行：前缀 + 固定域名（与网址列的预览行对称） */
+const emailHint = computed(
+  () => emailPrefix.value.trim().toLowerCase() + EMAIL_SUFFIX,
+);
 
 /* ---------- 网址占用即时校验：输入停顿 400ms 即查（非破坏性，提交仍以原子预约为准） ---------- */
 const domainStatus = ref<"idle" | "checking" | "free" | "taken">("idle");
@@ -86,6 +90,7 @@ function submit() {
 </script>
 
 <template>
+  <!-- 描述：全宽 -->
   <div class="fgroup">
     <div class="flabel">{{ t("form.descLabel") }}</div>
     <textarea
@@ -96,21 +101,20 @@ function submit() {
     <p class="edit-count">{{ draft.length }} / 300</p>
   </div>
 
+  <!-- 邮箱 / 网址：两列对称（label + 输入框 + 提示行） -->
   <div class="fgroups">
     <div class="fgroup">
       <div class="flabel">{{ t("form.emailLabel") }}</div>
-      <div class="email-row">
-        <input
-          v-model="emailPrefix"
-          class="field-input email-prefix"
-          type="text"
-          autocapitalize="off"
-          autocorrect="off"
-          spellcheck="false"
-          :placeholder="t('form.emailPh')"
-        />
-        <span class="email-suffix">{{ EMAIL_SUFFIX }}</span>
-      </div>
+      <input
+        v-model="emailPrefix"
+        class="field-input"
+        type="text"
+        autocapitalize="off"
+        autocorrect="off"
+        spellcheck="false"
+        :placeholder="t('form.emailPh')"
+      />
+      <p class="hint">{{ emailHint }}</p>
     </div>
     <div class="fgroup">
       <div class="flabel">{{ t("form.domainLabel") }}</div>
@@ -123,11 +127,10 @@ function submit() {
         spellcheck="false"
         placeholder="my-cat"
       />
-      <p v-if="domainLabel" class="url-preview">
+      <p v-if="domainLabel" class="hint">
         {{ t("form.urlPrefix") }}<mark>{{ domainLabel }}</mark
         >{{ domainSuffix }}/
       </p>
-      <!-- 占用即时校验：输入停顿即查 -->
       <p
         v-if="domainStatus !== 'idle'"
         class="domain-status"
@@ -151,39 +154,43 @@ function submit() {
     </div>
   </div>
 
-  <!-- 生成页面的文案语言 -->
-  <div class="fgroup">
-    <div class="flabel">{{ t("form.pageLangLabel") }}</div>
-    <div class="seg">
-      <button
-        class="seg-btn"
-        :class="{ 'seg-on': pageLang === 'zh' }"
-        type="button"
-        @click="pageLang = 'zh'"
-      >
-        简体中文
-      </button>
-      <button
-        class="seg-btn"
-        :class="{ 'seg-on': pageLang === 'en' }"
-        type="button"
-        @click="pageLang = 'en'"
-      >
-        English
-      </button>
+  <!-- 网页语言 / 大屏展示：两列对称（分段按钮 ↔ 黑底开关同高） -->
+  <div class="fgroups">
+    <div class="fgroup">
+      <div class="flabel">{{ t("form.pageLangLabel") }}</div>
+      <div class="seg">
+        <button
+          class="seg-btn"
+          :class="{ 'seg-on': pageLang === 'zh' }"
+          type="button"
+          @click="pageLang = 'zh'"
+        >
+          简体中文
+        </button>
+        <button
+          class="seg-btn"
+          :class="{ 'seg-on': pageLang === 'en' }"
+          type="button"
+          @click="pageLang = 'en'"
+        >
+          English
+        </button>
+      </div>
+    </div>
+    <div class="fgroup">
+      <div class="flabel">{{ t("form.publicLabel") }}</div>
+      <label class="pub-toggle" :class="{ 'pub-on': isPublic }">
+        <input v-model="isPublic" class="cb-native" type="checkbox" />
+        <span class="pub-box">
+          <Check v-if="isPublic" class="pub-check" :stroke-width="3" />
+        </span>
+        <span class="pub-title">{{
+          isPublic ? t("form.publicOn") : t("form.publicOff")
+        }}</span>
+      </label>
+      <p class="hint dim">{{ t("form.publicDesc") }}</p>
     </div>
   </div>
-
-  <label class="pub-card">
-    <input v-model="isPublic" class="cb-native" type="checkbox" />
-    <span class="pub-row">
-      <span class="pub-box" :class="{ 'pub-box-on': isPublic }">
-        <Check v-if="isPublic" class="pub-check" :stroke-width="3" />
-      </span>
-      <span class="pub-title">{{ t("form.publicTitle") }}</span>
-    </span>
-    <span class="pub-desc">{{ t("form.publicDesc") }}</span>
-  </label>
 
   <p v-if="error" class="err-text">{{ error }}</p>
   <button class="btn-ink" type="button" :disabled="!canSubmit" @click="submit">
@@ -263,43 +270,29 @@ function submit() {
 .field-input:focus {
   box-shadow: 3px 3px 0 #1c1917;
 }
-/* 邮箱：只填前缀，@nottingham.edu.cn 固定展示 */
-.email-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 7px;
-}
-.email-prefix {
-  flex: 1;
-  min-width: 0;
-  margin-top: 0;
-}
-.email-suffix {
-  font-family: Consolas, Menlo, ui-monospace, monospace;
-  font-size: 10px;
-  font-weight: 700;
-  color: rgba(28, 25, 23, 0.72);
-  flex: 0 0 auto;
-}
-.url-preview {
-  margin-top: 12px;
+/* 提示行：邮箱完整地址 / 网址预览，mono 小字，两列视觉对称 */
+.hint {
+  margin-top: 8px;
   font-family: Consolas, Menlo, ui-monospace, monospace;
   font-size: 10.5px;
-  color: #1c1917;
+  color: rgba(28, 25, 23, 0.72);
   word-break: break-all;
 }
-.url-preview mark {
+.hint mark {
   padding: 0 1px;
   background: #f7d447;
   color: #1c1917;
 }
+.hint.dim {
+  color: rgba(28, 25, 23, 0.5);
+}
+
 /* 占用校验状态行：转圈／可用绿／占用红 */
 .domain-status {
   display: flex;
   align-items: center;
   gap: 5px;
-  margin-top: 8px;
+  margin-top: 6px;
   font-size: 10.5px;
   font-weight: 700;
 }
@@ -327,7 +320,6 @@ function submit() {
 /* 网页语言分段选择 */
 .seg {
   display: flex;
-  width: 200px;
   height: 40px;
   margin-top: 7px;
   padding: 3px;
@@ -350,54 +342,49 @@ function submit() {
   color: #f7d447;
 }
 
-.pub-card {
-  display: block;
-  margin-top: 18px;
-  padding: 14px 14px 12px;
-  border-radius: 4px;
-  background: #1c1917;
-  cursor: pointer;
-}
-.cb-native {
-  display: none;
-}
-.pub-row {
+/* 大屏展示开关：黑底单行，与分段选择同高对齐 */
+.pub-toggle {
   display: flex;
   align-items: center;
   gap: 10px;
+  height: 40px;
+  margin-top: 7px;
+  padding: 0 12px;
+  border-radius: 4px;
+  background: rgba(28, 25, 23, 0.86);
+  cursor: pointer;
+  user-select: none;
+}
+.pub-toggle.pub-on {
+  background: #1c1917;
+}
+.cb-native {
+  display: none;
 }
 .pub-box {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border: 1.5px solid rgba(250, 247, 232, 0.5);
   border-radius: 4px;
   background: rgba(250, 247, 232, 0.08);
   flex: 0 0 auto;
 }
-.pub-box-on {
+.pub-on .pub-box {
   border-color: #f7d447;
   background: #f7d447;
 }
 .pub-check {
-  width: 13px;
-  height: 13px;
+  width: 12px;
+  height: 12px;
   color: #1c1917;
 }
 .pub-title {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 800;
   color: #faf7e8;
-}
-.pub-desc {
-  display: block;
-  margin-top: 8px;
-  font-size: 9.5px;
-  line-height: 14px;
-  color: rgba(250, 247, 232, 0.75);
-  white-space: pre-line; /* 双语文案用 \n 分行 */
 }
 
 .btn-ink {
@@ -434,7 +421,7 @@ function submit() {
   color: #b42318;
 }
 
-/* ===== 桌面端：两栏 ===== */
+/* ===== 桌面端：两列 ===== */
 @media (min-width: 900px) {
   .fgroups {
     display: flex;
@@ -442,6 +429,7 @@ function submit() {
   }
   .fgroup {
     flex: 1;
+    min-width: 0;
   }
   .fgroup > .flabel:first-child {
     margin-top: 0;
@@ -474,26 +462,15 @@ function submit() {
     font-size: 16px;
     font-weight: 700;
   }
-  .email-row {
-    gap: 10px;
+  .hint {
     margin-top: 10px;
+    font-size: 13px;
   }
-  .email-prefix {
-    margin-top: 0;
-  }
-  .email-suffix {
-    font-size: 13.5px;
-  }
-  .url-preview {
-    margin-top: 12px;
-    font-size: 14.5px;
-    font-weight: 700;
-  }
-  .url-preview mark {
+  .hint mark {
     padding: 1px 2px;
   }
   .domain-status {
-    margin-top: 10px;
+    margin-top: 8px;
     font-size: 13px;
   }
   .ds-icon {
@@ -501,37 +478,29 @@ function submit() {
     height: 14px;
   }
   .seg {
-    width: 280px;
     height: 56px;
     margin-top: 10px;
   }
   .seg-btn {
     font-size: 15px;
   }
-  .pub-card {
-    margin-top: 30px;
-    padding: 22px 24px;
-  }
-  .pub-row {
+  .pub-toggle {
+    height: 56px;
+    margin-top: 10px;
     gap: 12px;
+    padding: 0 16px;
   }
   .pub-box {
-    width: 24px;
-    height: 24px;
-    border-radius: 4px;
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
   }
   .pub-check {
-    width: 17px;
-    height: 17px;
+    width: 15px;
+    height: 15px;
   }
   .pub-title {
-    font-size: 16.5px;
-  }
-  .pub-desc {
-    margin: 10px 0 0 36px;
-    font-size: 13px;
-    line-height: 1.6;
-    color: rgba(250, 247, 232, 0.72);
+    font-size: 15px;
   }
   .btn-ink {
     height: 64px;

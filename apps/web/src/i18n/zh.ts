@@ -33,9 +33,10 @@ const dict: Record<keyof typeof en, string> = {
   "form.domainFree": "可用",
   "form.domainTaken": "已被别人用了，换一个试试",
   "form.pageLangLabel": "网页语言",
-  "form.publicTitle": "上大屏展示",
-  "form.publicDesc":
-    "勾选后你的网页会出现在现场大屏上滚动展示；\n不勾选仅自己通过链接访问",
+  "form.publicLabel": "大屏展示",
+  "form.publicOn": "在现场大屏滚动展示",
+  "form.publicOff": "仅自己可见",
+  "form.publicDesc": "勾选后你的网页会在现场投影大屏滚动展示",
   "form.submit": "让 AI 生成！",
   "form.submitting": "提交中…",
 

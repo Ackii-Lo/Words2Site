@@ -32,9 +32,10 @@ const dict = {
   "form.domainFree": "Available",
   "form.domainTaken": "Already taken — try another",
   "form.pageLangLabel": "Page language",
-  "form.publicTitle": "Show on the wall",
-  "form.publicDesc":
-    "Checked: your page scrolls on the live wall.\nUnchecked: only accessible via your link.",
+  "form.publicLabel": "Visibility",
+  "form.publicOn": "Scroll on the live wall",
+  "form.publicOff": "Private link only",
+  "form.publicDesc": "Toggle to show your page on the venue projector.",
   "form.submit": "Let AI build it!",
   "form.submitting": "Submitting…",
 
