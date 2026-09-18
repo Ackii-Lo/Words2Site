@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onUnmounted, ref, watch } from "vue";
 import CpuLogo from "@/components/CpuLogo.vue";
-import { WAITING_MESSAGES } from "@/lib/waitingMessages";
+import { t, waitingMessages } from "@/i18n";
 
 /**
  * 步骤③ 生成中 / 卡住了：logo 动画 + 假进度 + 轮换文案 + failed 应急 UI。
@@ -43,7 +43,7 @@ function startTimers() {
   msgTimer = window.setInterval(() => {
     msgVisible.value = false;
     msgFadeTimer = window.setTimeout(() => {
-      msgIndex.value = (msgIndex.value + 1) % WAITING_MESSAGES.length;
+      msgIndex.value = (msgIndex.value + 1) % waitingMessages().length;
       msgVisible.value = true;
     }, 500);
   }, 5000);
@@ -79,29 +79,33 @@ onUnmounted(stopTimers);
     </div>
 
     <template v-if="!failed">
-      <h2 class="wait-title">你的网页正在搭建…</h2>
-      <p class="wait-sub">完成后网址会发送到你的邮箱：{{ email || "—" }}</p>
+      <h2 class="wait-title">{{ t("waiting.title") }}</h2>
+      <p class="wait-sub">{{ t("waiting.sub", { email: email || "—" }) }}</p>
       <div class="ai-bar">
         <div class="ai-bar-fill" :style="{ width: waitProgress + '%' }"></div>
       </div>
       <div class="msg-zone">
         <p class="msg" :class="{ 'msg-show': msgVisible }">
-          {{ WAITING_MESSAGES[msgIndex] }}
+          {{ waitingMessages()[msgIndex] }}
         </p>
       </div>
     </template>
 
     <template v-else>
-      <h2 class="wait-title">啊哦，卡住了</h2>
+      <h2 class="wait-title">{{ t("waiting.failedTitle") }}</h2>
       <button
         class="btn-ink btn-narrow no-arrow"
         type="button"
         @click="emit('retry')"
       >
-        点击刷新
+        {{ t("waiting.retry") }}
       </button>
-      <button class="btn-dashed" type="button">找工作人员帮忙</button>
-      <p class="err-code">错误码 · {{ error || "W2S-GEN-TIMEOUT" }}</p>
+      <button class="btn-dashed" type="button">
+        {{ t("waiting.help") }}
+      </button>
+      <p class="err-code">
+        {{ t("waiting.errorCode") }} · {{ error || "W2S-GEN-TIMEOUT" }}
+      </p>
     </template>
   </div>
 </template>

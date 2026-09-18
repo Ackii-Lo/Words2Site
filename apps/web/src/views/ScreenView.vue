@@ -5,6 +5,7 @@ import { demoItems } from "@/lib/demoPages";
 import type { WallItem } from "@/lib/wall";
 import FilmWallDesktop from "@/components/FilmWallDesktop.vue";
 import FilmWallPhone from "@/components/FilmWallPhone.vue";
+import LanguageSwitch from "@/components/LanguageSwitch.vue";
 
 const items = ref<WallItem[]>([]);
 const demoCount = Number(new URLSearchParams(location.search).get("demo") ?? 0);
@@ -37,5 +38,7 @@ onUnmounted(() => removeEventListener("orientationchange", onOri));
   <div class="fixed inset-0 overflow-hidden">
     <FilmWallDesktop v-if="!portrait" :items="items" :demo-count="demoCount" />
     <FilmWallPhone v-else :items="items" :demo-count="demoCount" />
+    <!-- 语言切换：视口右上角，避开画布内 SHEET 01 标识 -->
+    <LanguageSwitch variant="screen" class="absolute top-3 right-4 z-40" />
   </div>
 </template>

@@ -2,6 +2,7 @@
 import LazyFrame from "@/components/LazyFrame.vue";
 import { demoPage } from "@/lib/demoPages";
 import { apiUrl } from "@/lib/apiBase";
+import { t } from "@/i18n";
 import { DEFAULT_STYLE, isCardStyle, type CardStyle } from "@/lib/styleHint";
 
 /**
@@ -160,9 +161,9 @@ const emBase = (props.w / 146) * 12.5;
               class="inline-block rounded-full bg-[#F7D447]"
               style="width: 0.4em; height: 0.4em"
             />
-            <span class="font-mono text-[#F7D447]" style="font-size: 0.55em"
-              >凭证</span
-            >
+            <span class="font-mono text-[#F7D447]" style="font-size: 0.55em">{{
+              t("film.proof")
+            }}</span>
           </span>
         </div>
         <!-- 整卡黄色发丝边 + 四角取景标 -->
@@ -586,7 +587,7 @@ const emBase = (props.w / 146) * 12.5;
               font-size: 0.62em;
               letter-spacing: 1.5px;
             "
-            >凭 · {{ props.code ?? "——" }}</span
+            >{{ t("film.proofCode", { code: props.code ?? "——" }) }}</span
           >
         </div>
         <!-- 远端压暗 -->

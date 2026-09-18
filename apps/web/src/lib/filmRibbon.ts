@@ -470,21 +470,34 @@ export function mark(x: number, y: number, w: number, ink = Y): string {
 
 const HALO = `paint-order="stroke" stroke="${K}" stroke-width="5" stroke-linejoin="round"`;
 
+/** 大屏标题区文案（i18n：组件层从字典组装传入，lib 不依赖 Vue）。EN 需短避免固定坐标溢出 */
+export interface HeadLabels {
+  /** 左侧胶囊（152px 宽框内） */
+  badge: string;
+  /** 上线数的先后缀（数字用 mono 黄色 tspan 高亮，tspan 内自动排文，坐标无关语言） */
+  onlinePre: string;
+  onlinePost: string;
+  /** 演示模式徽标（128px 黄框内） */
+  demo: string;
+}
+
 /** 标题区（画在胶卷之上：胶片可压进标题区，标题优先） */
-export function headDesk(liveCount: number, demoCount: number): string {
+export function headDesk(
+  liveCount: number,
+  demoCount: number,
+  L: HeadLabels,
+): string {
   const W = 1920;
   let s = `<text x="56" y="132" font-size="126" font-weight="900" letter-spacing="3" fill="none" stroke="${Y}" stroke-width="3.5">WORDS TO WEBSITE</text>`;
   s += `<text x="56" y="241" font-size="60" font-weight="900" fill="${Y}">01</text>`;
   s += `<rect x="146" y="206" width="152" height="34" rx="17" fill="none" stroke="${Y}" stroke-width="1.5"/>`;
-  s += `<text x="222" y="228" text-anchor="middle" font-size="14" letter-spacing="1" fill="${Y}">现场大屏 · 投影</text>`;
-  s += `<text x="322" y="228" font-size="15" fill="${CREAM}">已上线 </text>`;
-  s += `<text x="368" y="228" font-family="${MONO}" font-size="15" font-weight="700" fill="${Y}">${liveCount}</text>`;
-  s += `<text x="382" y="228" font-size="15" fill="${CREAM}"> 个网页</text>`;
+  s += `<text x="222" y="228" text-anchor="middle" font-size="14" letter-spacing="1" fill="${Y}">${L.badge}</text>`;
+  s += `<text x="322" y="228" font-size="15" fill="${CREAM}">${L.onlinePre}<tspan font-family="${MONO}" font-size="15" font-weight="700" fill="${Y}">${liveCount}</tspan>${L.onlinePost}</text>`;
   s += `<text x="560" y="228" font-family="${MONO}" font-size="13" letter-spacing="1" fill="rgba(247,212,71,.72)">ROLL 01 · 35MM</text>`;
   s += `<text x="${W - 56}" y="60" text-anchor="end" font-family="${MONO}" font-size="13" letter-spacing="1" fill="rgba(247,212,71,.85)" ${HALO}>SHEET 01 · SCALE 1:1</text>`;
   if (demoCount > 0) {
     s += `<rect x="${W - 184}" y="76" width="128" height="26" rx="4" fill="${Y}"/>`;
-    s += `<text x="${W - 120}" y="93.5" text-anchor="middle" font-family="${MONO}" font-size="12.5" font-weight="700" fill="${K}">演示模式 ×${demoCount}</text>`;
+    s += `<text x="${W - 120}" y="93.5" text-anchor="middle" font-family="${MONO}" font-size="12.5" font-weight="700" fill="${K}">${L.demo}</text>`;
   }
   return s;
 }
@@ -511,7 +524,7 @@ export function headPhone(): string {
   return s;
 }
 
-export function footPhone(demoCount: number): string {
+export function footPhone(demoCount: number, demoLabel: string): string {
   const W = 375;
   const H = 812;
   let s = `<rect x="0" y="${H - 92}" width="${W}" height="92" fill="rgba(28,25,23,.92)"/>`;
@@ -520,7 +533,7 @@ export function footPhone(demoCount: number): string {
   s += `<text x="78" y="${H - 37}" font-size="7.5" font-weight="700" fill="rgba(250,247,232,.62)">The University of Nottingham Ningbo China</text>`;
   if (demoCount > 0) {
     s += `<rect x="${W - 124}" y="${H - 46}" width="102" height="21" rx="4" fill="${Y}"/>`;
-    s += `<text x="${W - 73}" y="${H - 32}" text-anchor="middle" font-family="${MONO}" font-size="10" font-weight="700" fill="${K}">演示模式 ×${demoCount}</text>`;
+    s += `<text x="${W - 73}" y="${H - 32}" text-anchor="middle" font-family="${MONO}" font-size="10" font-weight="700" fill="${K}">${demoLabel}</text>`;
   }
   return s;
 }

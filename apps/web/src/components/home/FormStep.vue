@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { Check } from "lucide-vue-next";
+import { t } from "@/i18n";
 
 /**
  * 步骤② 填写信息：描述 + 邮箱 + 网址 + 是否公开，一次提交。
@@ -55,18 +56,18 @@ function submit() {
 
 <template>
   <div class="fgroup">
-    <div class="flabel">描述你想要的网页</div>
+    <div class="flabel">{{ t("form.descLabel") }}</div>
     <textarea
       v-model="draft"
       class="edit-area"
-      placeholder="比如：做一个介绍我家猫咪的网页，粉色可爱风，要有它的照片墙…"
+      :placeholder="t('form.descPlaceholder')"
     ></textarea>
     <p class="edit-count">{{ draft.length }} / 300</p>
   </div>
 
   <div class="fgroups">
     <div class="fgroup">
-      <div class="flabel">邮箱（接收网址和集章凭证）</div>
+      <div class="flabel">{{ t("form.emailLabel") }}</div>
       <input
         v-model="email"
         class="field-input"
@@ -78,7 +79,7 @@ function submit() {
       />
     </div>
     <div class="fgroup">
-      <div class="flabel">为你的网页选个网址</div>
+      <div class="flabel">{{ t("form.domainLabel") }}</div>
       <input
         v-model="domainLabel"
         class="field-input"
@@ -89,7 +90,7 @@ function submit() {
         placeholder="my-cat"
       />
       <p v-if="domainLabel" class="url-preview">
-        你的网址：https://<mark>{{ domainLabel }}</mark
+        {{ t("form.urlPrefix") }}<mark>{{ domainLabel }}</mark
         >{{ domainSuffix }}/
       </p>
     </div>
@@ -101,16 +102,14 @@ function submit() {
       <span class="pub-box" :class="{ 'pub-box-on': isPublic }">
         <Check v-if="isPublic" class="pub-check" :stroke-width="3" />
       </span>
-      <span class="pub-title">上大屏展示</span>
+      <span class="pub-title">{{ t("form.publicTitle") }}</span>
     </span>
-    <span class="pub-desc"
-      >勾选后你的网页会出现在现场大屏上滚动展示；<br />不勾选仅自己通过链接访问</span
-    >
+    <span class="pub-desc">{{ t("form.publicDesc") }}</span>
   </label>
 
   <p v-if="error" class="err-text">{{ error }}</p>
   <button class="btn-ink" type="button" :disabled="!canSubmit" @click="submit">
-    {{ submitting ? "提交中…" : "让 AI 生成！" }}
+    {{ submitting ? t("form.submitting") : t("form.submit") }}
   </button>
 </template>
 
@@ -246,6 +245,7 @@ function submit() {
   font-size: 9.5px;
   line-height: 14px;
   color: rgba(250, 247, 232, 0.75);
+  white-space: pre-line; /* 双语文案用 \n 分行 */
 }
 
 .btn-ink {

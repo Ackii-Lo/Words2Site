@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import FilmCard from "@/components/FilmCard.vue";
+import { t } from "@/i18n";
 import type { WallItem } from "@/lib/wall";
 import {
   A0,
@@ -80,9 +81,16 @@ const itemAt = (n: number): WallItem | undefined => {
 const cardAt = (n: number): WallItem => itemAt(n) as WallItem;
 
 const empty = () => props.items.length === 0;
-const liveCount = () => props.items.length - props.demoCount;
-const topSvg = () =>
-  headDesk(liveCount(), props.demoCount) + footDesk(props.items.length);
+// 标题/厂牌 SVG 依赖 locale（切换语言即时重算）
+const topSvg = computed(
+  () =>
+    headDesk(props.items.length - props.demoCount, props.demoCount, {
+      badge: t("screen.badge"),
+      onlinePre: t("screen.onlinePre"),
+      onlinePost: t("screen.onlinePost"),
+      demo: t("screen.demo", { n: props.demoCount }),
+    }) + footDesk(props.items.length),
+);
 const emptySvg =
   // 承托面板：空态提示会落在胶片轨上，加一层近黑底 + 黄虚线框把提示托出来
   `<rect x="650" y="418" width="620" height="238" rx="8" fill="#17140F" fill-opacity=".94" stroke="rgba(247,212,71,.32)" stroke-width="1.5" stroke-dasharray="9 9"/>` +
@@ -91,7 +99,7 @@ const emptySvg =
 
 // ---------- 动画 ----------
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-let t = 0;
+let elapsed = 0; // 累计走带时间（s）；改名避免与 i18n 的 t() 撞名
 let last = performance.now();
 let paused = false;
 let raf = 0;
@@ -134,8 +142,8 @@ function renderBand(
 function frame(now: number) {
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
-  if (!paused && !reduced) t += dt;
-  const phase = t * SPEED;
+  if (!paused && !reduced) elapsed += dt;
+  const phase = elapsed * SPEED;
   renderBand(bandB, rngB, 1, phase, slotsB, elsB, holesB.value);
   renderBand(bandA, rngA, -1, phase, slotsA, elsA, holesA.value);
   raf = requestAnimationFrame(frame);
@@ -237,7 +245,7 @@ onUnmounted(() => {
         :width="W"
         :height="H"
         :viewBox="`0 0 ${W} ${H}`"
-        v-html="topSvg()"
+        v-html="topSvg"
       />
       <svg
         v-if="empty()"
@@ -251,8 +259,8 @@ onUnmounted(() => {
       <RouterLink
         to="/start"
         class="start-link"
-        aria-label="开始制作你的网页"
-        title="开始制作你的网页"
+        :aria-label="t('screen.start')"
+        :title="t('screen.start')"
         :style="{ left: '1470px', top: '972px', width: '84px', height: '84px' }"
       />
     </div>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import CertificateCard from "@/components/CertificateCard.vue";
+import { t } from "@/i18n";
 
 /**
  * 步骤④ 完成：自动发布后直接出凭证（父级轮询到 published 时组装 cert 传入）。
@@ -17,7 +18,7 @@ defineEmits<{ restart: [] }>();
 </script>
 
 <template>
-  <h2 class="done-title">网页发布成功！</h2>
+  <h2 class="done-title">{{ t("done.title") }}</h2>
   <CertificateCard
     :code="cert.code"
     :publish-url="cert.publishUrl"
@@ -26,10 +27,10 @@ defineEmits<{ restart: [] }>();
     :email="cert.email"
   />
   <p v-if="cert.email" class="done-sub">
-    网址也已发送到你的邮箱：{{ cert.email }}
+    {{ t("done.mailed", { email: cert.email }) }}
   </p>
   <button class="btn-ghost" type="button" @click="$emit('restart')">
-    帮朋友也做一个 →
+    {{ t("done.restart") }}
   </button>
 </template>
 

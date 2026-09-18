@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import QRCode from "qrcode";
+import { t } from "@/i18n";
 
 const props = defineProps<{
   code: string;
@@ -31,7 +32,7 @@ const isRelative = computed(
 
 <template>
   <section class="voucher">
-    <p class="v-label">你的网页地址</p>
+    <p class="v-label">{{ t("cert.urlLabel") }}</p>
     <a
       v-if="displayUrl"
       class="v-url"
@@ -43,14 +44,14 @@ const isRelative = computed(
 
     <div class="v-divider"></div>
 
-    <p class="v-stamp">凭此页面找工作人员集章</p>
+    <p class="v-stamp">{{ t("cert.stamp") }}</p>
     <p class="v-code">{{ code }}</p>
 
     <div v-if="qrDataUrl" class="v-qr">
-      <img class="v-qr-img" :src="qrDataUrl" alt="核验二维码" />
+      <img class="v-qr-img" :src="qrDataUrl" :alt="t('cert.qrAlt')" />
     </div>
 
-    <p class="v-no">凭证编号 · {{ code }}</p>
+    <p class="v-no">{{ t("cert.no", { code }) }}</p>
   </section>
 </template>
 

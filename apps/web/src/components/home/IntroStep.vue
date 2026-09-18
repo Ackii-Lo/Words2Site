@@ -1,29 +1,34 @@
 <script setup lang="ts">
+import { t } from "@/i18n";
+
 /**
  * 步骤① 欢迎：主张 + 三行 howto + 开始按钮。
  * 纯展示，点击即向父级抛 next 进入表单步。
  */
 defineEmits<{ next: [] }>();
 
-const HOWTO: [string, string][] = [
-  ["1", "填写邮箱、网址和网页描述"],
-  ["2", "AI 现场为你生成网页"],
-  ["3", "自动发布，网址发送到你的邮箱"],
-];
+const HOWTO = () =>
+  [
+    ["1", t("intro.how1")],
+    ["2", t("intro.how2")],
+    ["3", t("intro.how3")],
+  ] as [string, string][];
 </script>
 
 <template>
-  <h2 class="hero-h">一句话，生成你的网页</h2>
-  <p class="hero-sub2">填好信息交给 AI<br />几分钟后网址就会发到你的邮箱</p>
+  <h2 class="hero-h">{{ t("intro.title") }}</h2>
+  <p class="hero-sub2">{{ t("intro.sub") }}</p>
 
   <div class="howto">
-    <div v-for="[num, txt] in HOWTO" :key="num" class="howto-row">
+    <div v-for="[num, txt] in HOWTO()" :key="num" class="howto-row">
       <span class="howto-num">{{ num }}</span>
       <span class="howto-txt">{{ txt }}</span>
     </div>
   </div>
 
-  <button class="btn-ink" type="button" @click="$emit('next')">开始体验</button>
+  <button class="btn-ink" type="button" @click="$emit('next')">
+    {{ t("intro.start") }}
+  </button>
 </template>
 
 <style scoped>
@@ -37,6 +42,7 @@ const HOWTO: [string, string][] = [
   font-size: 11.5px;
   line-height: 16px;
   color: rgba(28, 25, 23, 0.68);
+  white-space: pre-line; /* 双语文案用 \n 分行 */
 }
 .howto {
   margin-top: 18px;

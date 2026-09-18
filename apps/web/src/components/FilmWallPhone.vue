@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import FilmCard from "@/components/FilmCard.vue";
+import { t } from "@/i18n";
 import type { WallItem } from "@/lib/wall";
 import {
   PERF_TILE,
@@ -32,8 +33,15 @@ const CX_R = W - 22 - PHW; // 右列中心
 
 const stripL = phoneStripSvg("L", CX_L, PLEFT_Y[0], PLEFT_Y[1]);
 const stripR = phoneStripSvg("R", CX_R, PRIGHT_Y[0], PRIGHT_Y[1]);
-const chromeSvg =
-  bgPhone() + stripL + stripR + headPhone() + footPhone(props.demoCount);
+// 品牌层含演示徽标文案，依赖 locale（切换语言即时重算）
+const chromeSvg = computed(
+  () =>
+    bgPhone() +
+    stripL +
+    stripR +
+    headPhone() +
+    footPhone(props.demoCount, t("screen.demo", { n: props.demoCount })),
+);
 
 const wrap = ref<HTMLElement | null>(null);
 const stage = ref<HTMLElement | null>(null);
@@ -164,7 +172,7 @@ onUnmounted(() => removeEventListener("resize", fit));
       <RouterLink
         to="/start"
         class="start-link"
-        aria-label="开始制作你的网页"
+        :aria-label="t('screen.start')"
         :style="{
           left: '20px',
           top: H - 80 + 'px',

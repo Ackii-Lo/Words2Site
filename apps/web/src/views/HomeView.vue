@@ -3,7 +3,9 @@ import { computed, ref, watch } from "vue";
 import { api } from "@/composables/useApi";
 import { useTaskPolling } from "@/composables/useTaskPolling";
 import { deviceId } from "@/lib/utils";
+import { t, type MessageKey } from "@/i18n";
 import CpuLogo from "@/components/CpuLogo.vue";
+import LanguageSwitch from "@/components/LanguageSwitch.vue";
 import IntroStep from "@/components/home/IntroStep.vue";
 import FormStep from "@/components/home/FormStep.vue";
 import WaitingStep from "@/components/home/WaitingStep.vue";
@@ -16,12 +18,7 @@ import DoneStep from "@/components/home/DoneStep.vue";
  */
 type Step = "intro" | "form" | "waiting" | "done";
 
-const STEPS: { key: Step; label: string }[] = [
-  { key: "intro", label: "欢迎" },
-  { key: "form", label: "填写信息" },
-  { key: "waiting", label: "生成中" },
-  { key: "done", label: "完成" },
-];
+const STEPS: Step[] = ["intro", "form", "waiting", "done"];
 
 const step = ref<Step>("intro");
 const submitting = ref(false);
@@ -48,10 +45,8 @@ const cert = ref<{
 
 const { status, start: startPolling } = useTaskPolling();
 
-const stepIndex = computed(() =>
-  Math.max(1, STEPS.findIndex((s) => s.key === step.value) + 1),
-);
-const stepLabel = computed(() => STEPS[stepIndex.value - 1]?.label ?? "");
+const stepIndex = computed(() => Math.max(1, STEPS.indexOf(step.value) + 1));
+const stepLabel = computed(() => t(`home.step.${step.value}` as MessageKey));
 const stepNum = computed(() => String(stepIndex.value).padStart(2, "0"));
 const progressPct = computed(() => (stepIndex.value / STEPS.length) * 100);
 const failed = computed(() => status.value?.status === "failed");
@@ -123,8 +118,8 @@ function restart() {
       <RouterLink
         to="/"
         class="badge"
-        aria-label="返回现场大屏"
-        title="返回现场大屏"
+        :aria-label="t('home.backToScreen')"
+        :title="t('home.backToScreen')"
       >
         <CpuLogo class="badge-mark" ink="#F7D447" />
       </RouterLink>
@@ -137,10 +132,12 @@ function restart() {
         <span class="sheet-num">{{ stepNum }}</span>
         <span class="sheet-div"></span>
         <span class="sheet-name">{{ stepLabel }}</span>
-        <span class="sheet-step"
-          >步骤 {{ stepIndex }} / {{ STEPS.length }}</span
-        >
+        <span class="sheet-step">{{
+          t("home.stepOf", { n: stepIndex, total: STEPS.length })
+        }}</span>
       </div>
+      <!-- 语言切换：卡身右上角，覆盖在内容层之上 -->
+      <LanguageSwitch class="lang-float" />
       <div class="sheet-track">
         <div class="sheet-fill" :style="{ width: progressPct + '%' }"></div>
       </div>
@@ -277,6 +274,13 @@ function restart() {
 .sheet-body {
   padding: 24px 22px 28px;
 }
+/* 语言切换：黑带与进度条之下、卡身右上角，不占文档流 */
+.lang-float {
+  position: absolute;
+  top: 58px;
+  right: 12px;
+  z-index: 5;
+}
 
 /* ===== 页脚厂牌 ===== */
 .foot {
@@ -373,6 +377,10 @@ function restart() {
   }
   .sheet-body {
     padding: 44px 48px 48px;
+  }
+  .lang-float {
+    top: 86px;
+    right: 20px;
   }
 
   /* 页脚厂牌：绝对定位左下 */
