@@ -63,10 +63,10 @@
   body {
     background: var(--background);
     color: var(--foreground);
-    /* -apple-system 必须在 system-ui 之前：macOS Chromium 的 system-ui
-       在 font-weight 900 下会把 B 等字形渲染成错误轮廓 */
-    font-family:
-      -apple-system, system-ui, "PingFang SC", "Microsoft YaHei", sans-serif;
+    /* 不用 system-ui/-apple-system：macOS Chromium 在多字体栈里把 900 字重
+       的拉丁字形（如 WEBSITE 的 B）走合成粗体路径，描边字会出现错位重影。
+       PingFang 的拉丁字形即 SF 风格，Windows 落到雅黑，已实测无此问题 */
+    font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
     -webkit-font-smoothing: antialiased;
     min-height: 100dvh;
   }
