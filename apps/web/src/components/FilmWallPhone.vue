@@ -168,21 +168,12 @@ onUnmounted(() => removeEventListener("resize", fit));
           `<text x='187.5' y='456' text-anchor='middle' font-family='Consolas,Menlo,monospace' font-size='11' letter-spacing='2.6' fill='rgba(247,212,71,.72)'>WAITING FOR THE FIRST PAGE…</text>`
         "
       />
-      <!-- 去做网页的入口：底部 START 按钮 -->
-      <RouterLink
-        to="/start"
-        class="start-link"
-        :aria-label="t('screen.start')"
-        :style="{
-          left: '20px',
-          top: H - 62 + 'px',
-          width: '86px',
-          height: '28px',
-        }"
-      >
-        START
-      </RouterLink>
     </div>
+    <!-- 去做网页的入口：底部 START 按钮。钉在视口（非画布坐标）——
+         舞台是 cover 缩放，画布底部在长屏视口会裁出屏外 -->
+    <RouterLink to="/start" class="start-link" :aria-label="t('screen.start')">
+      START
+    </RouterLink>
   </div>
 </template>
 
@@ -193,10 +184,14 @@ onUnmounted(() => removeEventListener("resize", fit));
 }
 .start-link {
   position: absolute;
+  left: 16px;
+  bottom: 16px;
   z-index: 30;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 86px;
+  height: 30px;
   background: #f7d447;
   color: #1c1917;
   font-family: Consolas, Menlo, ui-monospace, monospace;

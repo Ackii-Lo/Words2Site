@@ -255,22 +255,17 @@ onUnmounted(() => {
         :viewBox="`0 0 ${W} ${H}`"
         v-html="emptySvg"
       />
-      <!-- 去做网页的入口：右下角 START 按钮（画布坐标随舞台等比缩放） -->
-      <RouterLink
-        to="/start"
-        class="start-link"
-        :aria-label="t('screen.start')"
-        :title="t('screen.start')"
-        :style="{
-          left: '1470px',
-          top: '988px',
-          width: '154px',
-          height: '52px',
-        }"
-      >
-        START
-      </RouterLink>
     </div>
+    <!-- 去做网页的入口：右下角 START 按钮。钉在视口（非画布坐标）——
+         舞台是 cover 缩放（超出部分被裁），画布右下角在超宽/带栏视口会裁出屏外 -->
+    <RouterLink
+      to="/start"
+      class="start-link"
+      :aria-label="t('screen.start')"
+      :title="t('screen.start')"
+    >
+      START
+    </RouterLink>
   </div>
 </template>
 
@@ -289,14 +284,18 @@ onUnmounted(() => {
 }
 .start-link {
   position: absolute;
+  right: 28px;
+  bottom: 28px;
   z-index: 30;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 350px;
+  height: 46px;
   background: #f7d447;
   color: #1c1917;
   font-family: Consolas, Menlo, ui-monospace, monospace;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 4px;
   text-indent: 4px;
