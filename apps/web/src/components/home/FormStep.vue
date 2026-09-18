@@ -120,19 +120,18 @@ function submit() {
     </div>
     <div class="fgroup">
       <div class="flabel">{{ t("form.domainLabel") }}</div>
-      <input
-        v-model="domainLabel"
-        class="field-input"
-        type="text"
-        autocapitalize="off"
-        autocorrect="off"
-        spellcheck="false"
-        placeholder="my-cat"
-      />
-      <p v-if="domainLabel" class="hint">
-        {{ t("form.urlPrefix") }}<mark>{{ domainLabel }}</mark
-        >{{ domainSuffix }}/
-      </p>
+      <div class="email-group">
+        <input
+          v-model="domainLabel"
+          class="email-input"
+          type="text"
+          autocapitalize="off"
+          autocorrect="off"
+          spellcheck="false"
+          placeholder="my-cat"
+        />
+        <span class="email-addon">{{ domainSuffix }}</span>
+      </div>
       <p
         v-if="domainStatus !== 'idle'"
         class="domain-status"
@@ -327,18 +326,13 @@ function submit() {
   flex: 0 0 auto;
   user-select: none;
 }
-/* 提示行：邮箱完整地址 / 网址预览，mono 小字，两列视觉对称 */
+/* 提示行（dim：表单区说明小字） */
 .hint {
   margin-top: 8px;
   font-family: Consolas, Menlo, ui-monospace, monospace;
   font-size: 10.5px;
   color: rgba(28, 25, 23, 0.72);
   word-break: break-all;
-}
-.hint mark {
-  padding: 0 1px;
-  background: #f7d447;
-  color: #1c1917;
 }
 .hint.dim {
   color: rgba(28, 25, 23, 0.5);
@@ -539,9 +533,6 @@ function submit() {
   .hint {
     margin-top: 10px;
     font-size: 13px;
-  }
-  .hint mark {
-    padding: 1px 2px;
   }
   .domain-status {
     margin-top: 8px;

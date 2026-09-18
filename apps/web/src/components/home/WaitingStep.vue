@@ -146,6 +146,7 @@ onUnmounted(stopTimers);
   animation: floaty 3.2s ease-in-out infinite;
 }
 .logo-mark {
+  color: #000000;
   width: 46px;
   height: 44px;
 }

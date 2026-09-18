@@ -28,7 +28,6 @@ const dict: Record<keyof typeof en, string> = {
   "form.emailLabel": "宁诺邮箱（只填前缀）",
   "form.emailPh": "li.zhou",
   "form.domainLabel": "为你的网页选个网址",
-  "form.urlPrefix": "你的网址：https://",
   "form.domainChecking": "正在检查是否可用…",
   "form.domainFree": "可用",
   "form.domainTaken": "已被别人用了，换一个试试",
