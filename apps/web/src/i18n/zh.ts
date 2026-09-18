@@ -25,7 +25,8 @@ const dict: Record<keyof typeof en, string> = {
   "form.descLabel": "描述你想要的网页",
   "form.descPlaceholder":
     "比如：做一个介绍我家猫咪的网页，粉色可爱风，要有照片墙…",
-  "form.emailLabel": "邮箱（接收网址和集章凭证）",
+  "form.emailLabel": "宁诺邮箱（只填前缀）",
+  "form.emailPh": "li.zhou",
   "form.domainLabel": "为你的网页选个网址",
   "form.urlPrefix": "你的网址：https://",
   "form.publicTitle": "上大屏展示",

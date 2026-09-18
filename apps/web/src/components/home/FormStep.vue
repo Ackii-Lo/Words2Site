@@ -23,13 +23,14 @@ const emit = defineEmits<{
 }>();
 
 const draft = ref("");
-const email = ref("");
+const emailPrefix = ref(""); // 只填前缀，域名固定 @nottingham.edu.cn
 const domainLabel = ref("");
 const isPublic = ref(true);
 const domainSuffix = ".unnc.space"; // 与服务端 DEPLOY_DOMAIN_TEMPLATE 对应
+const EMAIL_SUFFIX = "@nottingham.edu.cn";
 
 const emailValid = computed(() =>
-  /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.value.trim()),
+  /^[A-Za-z0-9][A-Za-z0-9._-]{1,30}$/.test(emailPrefix.value.trim()),
 );
 const domainValid = computed(() =>
   /^[a-z0-9][a-z0-9-]{2,30}$/.test(domainLabel.value.trim()),
@@ -47,7 +48,7 @@ function submit() {
   if (!canSubmit.value) return;
   emit("submit", {
     text: draft.value.trim(),
-    email: email.value.trim(),
+    email: emailPrefix.value.trim().toLowerCase() + EMAIL_SUFFIX,
     domainLabel: domainLabel.value.trim(),
     isPublic: isPublic.value,
   });
@@ -68,15 +69,18 @@ function submit() {
   <div class="fgroups">
     <div class="fgroup">
       <div class="flabel">{{ t("form.emailLabel") }}</div>
-      <input
-        v-model="email"
-        class="field-input"
-        type="email"
-        inputmode="email"
-        autocapitalize="off"
-        autocorrect="off"
-        placeholder="name@example.com"
-      />
+      <div class="email-row">
+        <input
+          v-model="emailPrefix"
+          class="field-input email-prefix"
+          type="text"
+          autocapitalize="off"
+          autocorrect="off"
+          spellcheck="false"
+          :placeholder="t('form.emailPh')"
+        />
+        <span class="email-suffix">{{ EMAIL_SUFFIX }}</span>
+      </div>
     </div>
     <div class="fgroup">
       <div class="flabel">{{ t("form.domainLabel") }}</div>
@@ -184,6 +188,25 @@ function submit() {
 }
 .field-input:focus {
   box-shadow: 3px 3px 0 #1c1917;
+}
+/* 邮箱：只填前缀，@nottingham.edu.cn 固定展示 */
+.email-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 7px;
+}
+.email-prefix {
+  flex: 1;
+  min-width: 0;
+  margin-top: 0;
+}
+.email-suffix {
+  font-family: Consolas, Menlo, ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(28, 25, 23, 0.72);
+  flex: 0 0 auto;
 }
 .url-preview {
   margin-top: 12px;
@@ -321,6 +344,16 @@ function submit() {
     padding: 0 16px;
     font-size: 16px;
     font-weight: 700;
+  }
+  .email-row {
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .email-prefix {
+    margin-top: 0;
+  }
+  .email-suffix {
+    font-size: 13.5px;
   }
   .url-preview {
     margin-top: 12px;

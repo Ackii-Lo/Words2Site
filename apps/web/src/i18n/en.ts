@@ -24,7 +24,8 @@ const dict = {
   "form.descLabel": "Describe the page you want",
   "form.descPlaceholder":
     "e.g. A page about my cat — cute, pink, with a photo wall…",
-  "form.emailLabel": "Email (for your URL & stamp code)",
+  "form.emailLabel": "UNNC email — prefix only",
+  "form.emailPh": "li.zhou",
   "form.domainLabel": "Pick a web address",
   "form.urlPrefix": "Your URL: https://",
   "form.publicTitle": "Show on the wall",

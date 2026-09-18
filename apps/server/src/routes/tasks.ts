@@ -14,7 +14,8 @@ export const tasksRouter = Router();
 
 /** 终态：done 仅存量兼容（旧库行 /:id/html 仍可访问） */
 const TERMINAL = new Set(["done", "published", "failed"]);
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+/** 仅支持宁诺邮箱：前缀（字母数字 . _ -）+ 固定域名 */
+const EMAIL_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{1,30}@nottingham\.edu\.cn$/;
 const DOMAIN_LABEL_RE = /^[a-z0-9][a-z0-9-]{2,30}$/;
 
 function clientIp(req: Request): string {
@@ -38,8 +39,10 @@ tasksRouter.post("/", (req: Request, res: Response) => {
     return;
   }
   const mail = (email ?? "").trim().toLowerCase();
-  if (!EMAIL_RE.test(mail) || mail.length > 100) {
-    res.status(400).json({ error: "邮箱格式不正确" });
+  if (!EMAIL_RE.test(mail)) {
+    res.status(400).json({
+      error: "仅支持宁诺邮箱：请只填写 @nottingham.edu.cn 前缀",
+    });
     return;
   }
   const label = (domainLabel ?? "").trim().toLowerCase();
