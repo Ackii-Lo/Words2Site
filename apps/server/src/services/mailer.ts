@@ -21,6 +21,42 @@ function getPoster(): EmailPoster | null {
   return poster;
 }
 
+/** 完成通知邮件内容（mailer 与 scripts/test-mail.ts 共用，避免模板漂移） */
+export function buildCompletionMail(p: {
+  code: string;
+  domain: string;
+  url: string;
+  verifyUrl: string;
+  prompt: string;
+}): { subject: string; body: string } {
+  // 站点同款视觉：纸张白卡 + 黄色描边（凭证卡语言）、黑底黄字编号章、
+  // mono 字体编号、虚线引用块（对应页面虚线网格）——邮件客户端只认 inline style
+  const body = `
+  <div style="max-width:560px;margin:0 auto;font-family:system-ui,-apple-system,'PingFang SC',sans-serif;color:#1c1917">
+    <div style="background:#fff;border:3px solid #f7d447;border-radius:8px;overflow:hidden">
+      <div style="background:#1c1917;padding:22px 30px">
+        <div style="font-family:Consolas,Menlo,monospace;font-size:11px;letter-spacing:3px;color:#f7d447">WORDS TO WEBSITE</div>
+        <h1 style="margin:6px 0 0;font-size:21px;color:#fff;font-weight:700">你的网页已上线</h1>
+      </div>
+      <div style="padding:26px 30px">
+        <p style="margin:0;font-size:14px;color:#78716c">你在「Words to Website」活动中描述的网页已经生成并发布：</p>
+        <p style="margin:14px 0;font-size:13px;color:#1c1917;background:#fafaf7;border:1px dashed #e7e5e0;border-radius:8px;padding:12px 14px">"${p.prompt}"</p>
+        <p style="margin:24px 0">
+          <a href="${p.url}" style="display:inline-block;background:#f7d447;color:#1c1917;text-decoration:none;font-weight:700;padding:12px 28px;border-radius:12px;font-size:15px">${p.domain}</a>
+        </p>
+        <p style="margin:0 0 6px;font-size:14px;color:#1c1917">你的集章凭证编号：</p>
+        <p style="margin:0 0 18px">
+          <span style="display:inline-block;background:#1c1917;color:#f7d447;font-family:Consolas,Menlo,monospace;font-size:18px;letter-spacing:3px;padding:10px 18px;border-radius:8px">${p.code}</span>
+        </p>
+        <p style="margin:0;font-size:13px;color:#78716c">凭此编号在活动现场找工作人员核验盖章。核验页：<a href="${p.verifyUrl}" style="color:#1c1917;font-weight:600">${p.verifyUrl}</a></p>
+        <hr style="border:0;border-top:1px solid #e7e5e0;margin:24px 0">
+        <p style="margin:0;font-family:Consolas,Menlo,monospace;font-size:11px;letter-spacing:1px;color:#78716c">Words to Website · Activity 3 · 本邮件由活动系统自动发送</p>
+      </div>
+    </div>
+  </div>`;
+  return { subject: `你的网页已上线 · ${p.code}`, body };
+}
+
 export async function sendCompletionMail(p: {
   taskId: string;
   to: string;
@@ -38,27 +74,11 @@ export async function sendCompletionMail(p: {
     );
     return;
   }
-  const body = `
-  <div style="max-width:560px;margin:0 auto;font-family:system-ui,-apple-system,'PingFang SC',sans-serif">
-    <div style="background:linear-gradient(135deg,#7c3aed,#db2777);color:#fff;padding:28px 32px;border-radius:16px 16px 0 0">
-      <h1 style="margin:0;font-size:22px">你的网页已上线</h1>
-    </div>
-    <div style="border:1px solid #e5e7eb;border-top:0;border-radius:0 0 16px 16px;padding:28px 32px">
-      <p style="color:#6b7280;font-size:14px">你在「Words to Website」活动中描述的网页已经生成并发布：</p>
-      <p style="font-size:13px;color:#374151;background:#f9fafb;border-radius:8px;padding:12px">"${p.prompt}"</p>
-      <p style="margin:24px 0">
-        <a href="${p.url}" style="display:inline-block;background:#7c3aed;color:#fff;text-decoration:none;padding:12px 28px;border-radius:10px;font-size:15px">${p.domain}</a>
-      </p>
-      <p style="font-size:14px;color:#374151">你的集章凭证编号：<b style="font-size:18px;letter-spacing:2px;color:#7c3aed">${p.code}</b></p>
-      <p style="font-size:13px;color:#6b7280">凭此编号在活动现场找工作人员核验盖章。核验页：<a href="${p.verifyUrl}" style="color:#7c3aed">${p.verifyUrl}</a></p>
-      <hr style="border:0;border-top:1px solid #f3f4f6;margin:24px 0">
-      <p style="font-size:12px;color:#9ca3af">Words to Website · Activity 3 · 本邮件由活动系统自动发送</p>
-    </div>
-  </div>`;
+  const { subject, body } = buildCompletionMail(p);
   try {
     const res = await mail.send({
       to: p.to,
-      subject: `你的网页已上线 · ${p.code}`,
+      subject,
       body,
       type: "html",
     });
