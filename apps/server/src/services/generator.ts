@@ -79,19 +79,13 @@ function codexArgs(
       `-c`,
       `model_providers.${g.modelProvider}.env_key=W2S_CODEX_API_KEY`,
       `-c`,
-      `model_providers.${g.modelProvider}.wire_api=responses`,
+      `model_providers.${g.modelProvider}.wire_api=${g.wireApi}`,
     );
     if (g.model) args.push(`-c`, `model=${g.model}`);
   } else if (g.model) {
     args.push(`-c`, `model=${g.model}`);
   }
-  args.push(
-    "--sandbox",
-    "workspace-write",
-    "--skip-git-repo-check",
-    "-C",
-    workdir,
-  );
+  args.push("--sandbox", g.sandbox, "--skip-git-repo-check", "-C", workdir);
   if (resumeSessionId) args.push("resume", resumeSessionId);
   args.push(prompt);
   return args;

@@ -129,8 +129,12 @@ const stmts = {
   listQueueAhead: db.prepare(
     "SELECT COUNT(*) AS n FROM tasks WHERE status = 'queued' AND created_at < ?",
   ),
+  // 域名占用：失败任务即释放（部署成功前炸了不占坑），进行中/已发布仍占用防并发撞名
   domainTaken: db.prepare(
-    "SELECT COUNT(*) AS n FROM tasks WHERE domain = ? COLLATE NOCASE AND removed_at IS NULL",
+    "SELECT COUNT(*) AS n FROM tasks WHERE domain = ? COLLATE NOCASE AND removed_at IS NULL AND status != 'failed'",
+  ),
+  domainTakenByOther: db.prepare(
+    "SELECT COUNT(*) AS n FROM tasks WHERE domain = ? COLLATE NOCASE AND removed_at IS NULL AND status != 'failed' AND id != ?",
   ),
   listScreen: db.prepare(`
     SELECT id, code, domain, prompt, publish_url, screenshot, created_at
@@ -194,6 +198,9 @@ export const tasks = {
   },
   domainTaken(domain: string): boolean {
     return (stmts.domainTaken.get(domain) as { n: number }).n > 0;
+  },
+  domainTakenByOther(domain: string, id: string): boolean {
+    return (stmts.domainTakenByOther.get(domain, id) as { n: number }).n > 0;
   },
   listScreen(): Array<{
     id: string;

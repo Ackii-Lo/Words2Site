@@ -54,6 +54,18 @@ if (provider === "codex") {
   }
 }
 
+// codex wire 协议与沙箱档位（fail-fast 校验）
+const wireApi = str("CODEX_WIRE_API", "responses");
+if (wireApi !== "responses" && wireApi !== "chat") {
+  fail(`CODEX_WIRE_API 只能是 responses 或 chat，当前： ${wireApi}`);
+}
+const sandbox = str("CODEX_SANDBOX", "workspace-write");
+if (!["read-only", "workspace-write", "danger-full-access"].includes(sandbox)) {
+  fail(
+    `CODEX_SANDBOX 非法： ${sandbox}（read-only | workspace-write | danger-full-access）`,
+  );
+}
+
 // DATA_DIR 相对路径一律相对仓库根解析（避免 tsx/dev/cwd 差异）
 const repoRoot = path.resolve(import.meta.dirname, "../../..");
 const dataDir = path.resolve(repoRoot, str("DATA_DIR", "data"));
@@ -85,6 +97,9 @@ export const config = {
     maxConcurrent: num("MAX_CONCURRENT", 3),
     timeoutMs: num("GEN_TIMEOUT_MS", 240_000),
     maxRefine: num("MAX_REFINE", 2),
+    // chat-only 端点（如智谱 Coding Plan）需 chat + codex CLI ≤0.92（更高版本已移除 chat）
+    wireApi,
+    sandbox,
   },
 
   whisper: {
