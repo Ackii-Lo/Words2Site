@@ -81,10 +81,13 @@ const cardAt = (n: number): WallItem => itemAt(n) as WallItem;
 
 const empty = () => props.items.length === 0;
 const liveCount = () => props.items.length - props.demoCount;
-const topSvg = () => headDesk(liveCount(), props.demoCount) + footDesk();
+const topSvg = () =>
+  headDesk(liveCount(), props.demoCount) + footDesk(props.items.length);
 const emptySvg =
-  `<circle cx="960" cy="540" r="64" fill="none" stroke="rgba(247,212,71,.5)" stroke-width="2.5" stroke-dasharray="10 10"/>` +
-  `<text x="960" y="648" text-anchor="middle" font-family="Consolas,Menlo,monospace" font-size="15" letter-spacing="4" fill="rgba(247,212,71,.6)">WAITING FOR THE FIRST PAGE…</text>`;
+  // 承托面板：空态提示会落在胶片轨上，加一层近黑底 + 黄虚线框把提示托出来
+  `<rect x="650" y="418" width="620" height="238" rx="8" fill="#17140F" fill-opacity=".94" stroke="rgba(247,212,71,.32)" stroke-width="1.5" stroke-dasharray="9 9"/>` +
+  `<circle cx="960" cy="510" r="56" fill="none" stroke="rgba(247,212,71,.55)" stroke-width="2.5" stroke-dasharray="11 11"/>` +
+  `<text x="960" y="618" text-anchor="middle" font-family="Consolas,Menlo,monospace" font-size="16" letter-spacing="4.5" fill="rgba(247,212,71,.78)">WAITING FOR THE FIRST PAGE…</text>`;
 
 // ---------- 动画 ----------
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;

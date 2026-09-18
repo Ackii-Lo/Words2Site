@@ -154,8 +154,9 @@ onUnmounted(() => removeEventListener("resize", fit));
         :height="H"
         :viewBox="`0 0 ${W} ${H}`"
         v-html="
-          `<circle cx='187.5' cy='404' r='52' fill='none' stroke='rgba(247,212,71,.5)' stroke-width='2.5' stroke-dasharray='10 10'/>` +
-          `<text x='187.5' y='492' text-anchor='middle' font-family='Consolas,Menlo,monospace' font-size='12' letter-spacing='3' fill='rgba(247,212,71,.6)'>WAITING FOR THE FIRST PAGE…</text>`
+          `<rect x='37.5' y='322' width='300' height='158' rx='6' fill='#17140F' fill-opacity='.94' stroke='rgba(247,212,71,.32)' stroke-width='1.2' stroke-dasharray='7 7'/>` +
+          `<circle cx='187.5' cy='386' r='38' fill='none' stroke='rgba(247,212,71,.55)' stroke-width='2.2' stroke-dasharray='9 9'/>` +
+          `<text x='187.5' y='456' text-anchor='middle' font-family='Consolas,Menlo,monospace' font-size='11' letter-spacing='2.6' fill='rgba(247,212,71,.72)'>WAITING FOR THE FIRST PAGE…</text>`
         "
       />
     </div>

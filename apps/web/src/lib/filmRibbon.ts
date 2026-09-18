@@ -490,9 +490,10 @@ export function headDesk(liveCount: number, demoCount: number): string {
 }
 
 /** 右下角厂牌锁版 */
-export function footDesk(): string {
+export function footDesk(count: number): string {
   const W = 1920;
-  let s = `<text x="${W - 56}" y="934" text-anchor="end" font-family="${MONO}" font-size="12.5" letter-spacing="1.2" fill="rgba(247,212,71,.55)">12 EXPOSURES · 35MM · LOOP</text>`;
+  const shots = String(Math.max(0, count)).padStart(2, "0");
+  let s = `<text x="${W - 56}" y="934" text-anchor="end" font-family="${MONO}" font-size="12.5" letter-spacing="1.2" fill="rgba(247,212,71,.55)">${shots} EXPOSURES · 35MM · LOOP</text>`;
   s += mark(1470, 972, 84);
   s += `<text x="1564" y="1010" font-size="20" font-weight="900" fill="${CREAM}">Computer Psycho Union</text>`;
   s += `<text x="1564" y="1034" font-size="11.5" font-weight="700" fill="rgba(250,247,232,.72)">The University of Nottingham Ningbo China</text>`;

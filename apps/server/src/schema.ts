@@ -36,6 +36,16 @@ export const tasksTable = sqliteTable(
     screenshot: integer("screenshot").default(0),
     created_at: integer("created_at"),
     finished_at: integer("finished_at"),
+    /**
+     * 大屏卡片外壳（七式之一：archive/fullscreen/spine/bigno/collage/bubble/classic）。
+     * 创建任务时由主题关键词分类器一次性算出并写入；前台只读不判。
+     *
+     * 注意：这里**不要**加 .default()。drizzle-kit 对 SQLite 只在「新增可空无默认列」
+     * 时才生成 ALTER TABLE ADD COLUMN；一旦带 DEFAULT 就退化为整表重建，
+     * 而重建序列里的 `INSERT ... SELECT "style_hint" FROM tasks` 会引用尚不存在的新列
+     * 直接报错（旧库上服务起不来）。历史行的 NULL 由前端兜底成默认外壳。
+     */
+    style_hint: text("style_hint"),
   },
   (t) => [
     index("idx_tasks_status").on(t.status),
