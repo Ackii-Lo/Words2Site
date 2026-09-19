@@ -1,7 +1,8 @@
 /**
- * 大屏演示页生成器：/?demo=N 时填充 N 张模拟卡片（srcdoc）,
+ * 大屏演示页生成器：/?demo=N 时填充 N 张模拟卡片，
  * 用于压测滚动墙与活动前大屏预演，不依赖服务端数据。
  * 产物为自包含 HTML(无外链、无 emoji)，按模板参数生成多样化版式。
+ * demoShot()：同一版式包成 SVG「截图」，演示卡走 <img> 路径（与生产截图同构）。
  *
  * 【重要】用户只输入文字，真实生成页里不存在自定义图片。
  * 所以这里不设任何图片占位（灰块 / 色块 / 占位条），
@@ -196,6 +197,228 @@ const SPECS: DemoSpec[] = [
     lines: ["豚骨 · 酱油 · 味噌", "已打卡 12 家", "汤头浓度评分榜"],
     styleHint: "collage", // 05 拼贴
   },
+  {
+    title: "社团招新周",
+    subtitle: "百团大战 · 一周限时",
+    tags: ["社团", "招新"],
+    bg: "linear-gradient(160deg,#F7D447,#E3B332)",
+    ink: "#1C1917",
+    accent: "#7A5E00",
+    layout: "cards",
+    art: "grid",
+    lines: ["120+ 社团现场设摊", "扫码一键报名", "集章换纪念徽章"],
+    styleHint: "collage", // 05 拼贴：手作感
+  },
+  {
+    title: "校园马拉松",
+    subtitle: "环校三圈 · 秋季赛季",
+    tags: ["跑步", "赛事"],
+    bg: "linear-gradient(180deg,#EAF4FF,#C6DDF5)",
+    ink: "#16324F",
+    accent: "#2F6FB5",
+    layout: "hero",
+    art: "wave",
+    lines: ["半程 21.0975 km", "周日 07:30 鸣枪", "完赛奖牌限量 500 枚"],
+    styleHint: "archive", // 01 档案：米纸衬底
+  },
+  {
+    title: "天文社夜谈",
+    subtitle: "秋季星图与望远镜实操",
+    tags: ["天文", "社团"],
+    bg: "radial-gradient(120% 100% at 30% 0%,#101B3D,#050A1A)",
+    ink: "#D9E4FF",
+    accent: "#7C9AFF",
+    layout: "hero",
+    art: "orbit",
+    lines: ["秋季星图讲解", "望远镜实操体验", "周五 20:00 天台见"],
+    styleHint: "fullscreen", // 02 满幕：深色铺满
+  },
+  {
+    title: "陶艺工作坊",
+    subtitle: "手拉坯初体验",
+    tags: ["手作", "工作坊"],
+    bg: "linear-gradient(160deg,#E8DFD3,#CBBBA4)",
+    ink: "#4A3A28",
+    accent: "#A15E31",
+    layout: "split",
+    art: "ring",
+    lines: ["手拉坯初体验", "成品两周后取件", "材料费 30 元"],
+    styleHint: "classic", // 07 典雅：博物馆展签
+  },
+  {
+    title: "街舞之夜",
+    subtitle: "Breaking · Popping · Jazz",
+    tags: ["舞蹈", "现场"],
+    bg: "linear-gradient(135deg,#0E0E12,#23233B)",
+    ink: "#F0F0FF",
+    accent: "#FF4D8D",
+    layout: "stripes",
+    art: "bars",
+    lines: ["battle 赛制当晚揭晓", "新人 cypher 环节", "大礼堂 19:00 开跳"],
+    styleHint: "bigno", // 04 巨号：出血大序号
+  },
+  {
+    title: "植物图鉴",
+    subtitle: "香樟 · 桂花 · 银杏",
+    tags: ["自然", "观察"],
+    bg: "linear-gradient(180deg,#EAF6E4,#CDE8C4)",
+    ink: "#24401E",
+    accent: "#4F8C3D",
+    layout: "cards",
+    art: "moon",
+    lines: ["叶脉书签手作", "花期观测记录中", "已收录 42 种"],
+    styleHint: "archive", // 01 档案
+  },
+  {
+    title: "航模开放日",
+    subtitle: "遥控特技飞行表演",
+    tags: ["航模", "科技"],
+    bg: "linear-gradient(160deg,#D8ECFF,#A9CFEF)",
+    ink: "#123A5C",
+    accent: "#1D6FA8",
+    layout: "split",
+    art: "star",
+    lines: ["特技编队飞行表演", "模拟器免费体验", "操场北侧 14:00"],
+    styleHint: "fullscreen", // 02 满幕
+  },
+  {
+    title: "诗歌之夜",
+    subtitle: "读诗 · 朗诗 · 写诗",
+    tags: ["文学", "开放麦"],
+    bg: "linear-gradient(135deg,#F4EFE2,#E2D6BE)",
+    ink: "#3A3226",
+    accent: "#8C6D3F",
+    layout: "hero",
+    art: "glyph",
+    glyph: "诗",
+    lines: ["开放麦 每人五分钟", "原创优先 不限语种", "图书馆咖啡角"],
+    styleHint: "classic", // 07 典雅
+  },
+  {
+    title: "篮球联赛战报",
+    subtitle: "四强产生 · 半决赛在即",
+    tags: ["篮球", "联赛"],
+    bg: "linear-gradient(180deg,#B7302B,#701812)",
+    ink: "#FFF1E8",
+    accent: "#FFC53D",
+    layout: "stripes",
+    art: "bars",
+    lines: ["半决赛 周三 18:30", "主场 连续 7 场不败", "MVP 投票进行中"],
+    styleHint: "bigno", // 04 巨号
+  },
+  {
+    title: "手账市集",
+    subtitle: "胶带 · 贴纸 · 印章",
+    tags: ["手账", "市集"],
+    bg: "linear-gradient(160deg,#FDE7F1,#F7C4DC)",
+    ink: "#5C2438",
+    accent: "#D6548A",
+    layout: "cards",
+    art: "star",
+    lines: ["以物易物专区", "限定封蜡现场制作", "集章换和纸胶带"],
+    styleHint: "bubble", // 06 泡泡：可爱
+  },
+  {
+    title: "深夜自习室",
+    subtitle: "期末周不打烊",
+    tags: ["自习", "夜间"],
+    bg: "linear-gradient(180deg,#1C2233,#0C101C)",
+    ink: "#E8ECF8",
+    accent: "#93A8D8",
+    layout: "split",
+    art: "moon",
+    lines: ["24:00 前不打烊", "白噪声 + 热茶自取", "期末周专属座位"],
+    styleHint: "spine", // 03 书脊：档案感
+  },
+  {
+    title: "校园声音地图",
+    subtitle: "钟楼 · 湖畔 · 风雨操场",
+    tags: ["声音", "地图"],
+    bg: "linear-gradient(135deg,#0F3B3A,#072422)",
+    ink: "#DDF3EF",
+    accent: "#52C7B9",
+    layout: "hero",
+    art: "wave",
+    lines: ["已收录 36 处声音", "扫描点位二维码试听", "欢迎投稿新点位"],
+    styleHint: "fullscreen", // 02 满幕
+  },
+  {
+    title: "桂花季限定",
+    subtitle: "香满校园的两周",
+    tags: ["季节", "限定"],
+    bg: "linear-gradient(180deg,#FBF3DF,#F0DFB8)",
+    ink: "#5C4A1E",
+    accent: "#B8860B",
+    layout: "cards",
+    art: "glyph",
+    glyph: "桂",
+    lines: ["桂花乌龙限时供应", "落花标本手作课", "每日限量 100 杯"],
+    styleHint: "classic", // 07 典雅
+  },
+  {
+    title: "辩论赛决赛",
+    subtitle: "辩题现场揭晓",
+    tags: ["辩论", "决赛"],
+    bg: "linear-gradient(160deg,#2B2B33,#141419)",
+    ink: "#F2F2F7",
+    accent: "#E8C34A",
+    layout: "stripes",
+    art: "grid",
+    lines: ["正反双方各四人", "周六 15:00 报告厅", "观众投票制最佳辩手"],
+    styleHint: "bigno", // 04 巨号
+  },
+  {
+    title: "露天电影院",
+    subtitle: "本周片单 · 胶片专场",
+    tags: ["电影", "露天"],
+    bg: "radial-gradient(110% 90% at 50% 0%,#241B3D,#0D0918)",
+    ink: "#EFE9FF",
+    accent: "#B69CFF",
+    layout: "hero",
+    art: "moon",
+    lines: ["草坪席地而坐", "19:45 准时放映", "遇雨改期室内"],
+    styleHint: "spine", // 03 书脊
+  },
+  {
+    title: "烘焙实验室",
+    subtitle: "可颂 · 司康 · 贝果",
+    tags: ["烘焙", "实验室"],
+    bg: "linear-gradient(160deg,#FBEAD5,#F2CE9E)",
+    ink: "#5A3A1E",
+    accent: "#C07B3A",
+    layout: "cards",
+    art: "steam",
+    lines: ["失败品免费试吃", "烤箱位需预约", "配方全部公开"],
+    styleHint: "bubble", // 06 泡泡
+  },
+  {
+    title: "环保回收周",
+    subtitle: "旧衣 · 纸箱 · 电池",
+    tags: ["环保", "回收"],
+    bg: "linear-gradient(180deg,#EDF5EA,#CFE5C8)",
+    ink: "#2C4526",
+    accent: "#5D9C4E",
+    layout: "split",
+    art: "ring",
+    lines: ["累计减碳 1.2 吨", "集满十次换布袋", "各宿舍楼下设点"],
+    styleHint: "archive", // 01 档案
+  },
+  {
+    title: "爵士四重奏",
+    subtitle: "不插电原声专场",
+    tags: ["爵士", "音乐会"],
+    bg: "linear-gradient(135deg,#12100E,#2E2A24)",
+    ink: "#F5EFE4",
+    accent: "#D8A25E",
+    layout: "stripes",
+    art: "bars",
+    lines: [
+      "萨克斯 · 钢琴 · 贝斯 · 鼓",
+      "湖畔亭 周日黄昏",
+      "免费入场 坐满即止",
+    ],
+    styleHint: "classic", // 07 典雅
+  },
 ];
 
 /**
@@ -214,7 +437,7 @@ function esc(s: string): string {
 }
 
 const svg = (inner: string): string =>
-  `<svg viewBox="0 0 100 100" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" fill="none">${inner}</svg>`;
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" fill="none">${inner}</svg>`;
 
 /**
  * 统一图案库：全部为纯矢量描边/填充图形（不是图片、不是占位框）。
@@ -335,6 +558,14 @@ function body(spec: DemoSpec): string {
     </div>`;
 }
 
+/** 页面外壳样式（body 级）：srcdoc 的 <body> 与 SVG 截图的包裹 div 共用同一组值 */
+const shellStyle = (spec: DemoSpec): string =>
+  `font-family:system-ui,-apple-system,'PingFang SC',sans-serif;background:${spec.bg};color:${spec.ink};display:flex;flex-direction:column;overflow:hidden;margin:0;box-sizing:border-box;`;
+
+/** 顶部 chrome：品牌字 + 演示编号（内联样式，srcdoc / SVG 截图共用） */
+const chrome = (index: number): string =>
+  `<div style="flex:0 0 auto;display:flex;justify-content:space-between;align-items:center;padding:${v(12)} ${v(16)};font-size:${v(10)};letter-spacing:${v(2)};opacity:.75;font-family:'IBM Plex Mono',monospace"><span>WORDS2SITE</span><span>DEMO-${String(index + 1).padStart(2, "0")}</span></div>`;
+
 export function demoPage(index: number): string {
   const spec = SPECS[index % SPECS.length];
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">
@@ -342,13 +573,31 @@ export function demoPage(index: number): string {
 <style>
   * { margin: 0; box-sizing: border-box; }
   html, body { height: 100%; }
-  body { font-family: system-ui, -apple-system, "PingFang SC", sans-serif; background: ${spec.bg}; color: ${spec.ink}; display: flex; flex-direction: column; overflow: hidden; }
-  header { flex: 0 0 auto; display: flex; justify-content: space-between; align-items: center; padding: ${v(12)} ${v(16)}; font-size: ${v(10)}; letter-spacing: ${v(2)}; opacity: .75; font-family: "IBM Plex Mono", monospace; }
 </style></head>
-<body>
-  <header><span>WORDS2SITE</span><span>DEMO-${String(index + 1).padStart(2, "0")}</span></header>
+<body style="height:100%;${shellStyle(spec)}">
+  ${chrome(index)}
   ${body(spec)}
 </body></html>`;
+}
+
+/**
+ * SVG「截图」：同一版式包进 <img> 能直接渲染的 SVG（foreignObject + XHTML），
+ * 让演示卡走与生产截图一致的 <img> 解码 / GPU 合成路径（压测真实负载）。
+ * 390×625 = 卡片 146×234 等比放大，FilmCard 的 object-cover 不裁切；
+ * SVG 按 intrinsic 尺寸布局后整体缩放，等效一张静态截图。
+ * XHTML 内嵌 <svg> 必须自带 xmlns（XML 解析不认 HTML 的命名空间推断）。
+ */
+export function demoShot(index: number): string {
+  const spec = SPECS[index % SPECS.length];
+  const page =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="390" height="625" viewBox="0 0 390 625">` +
+    `<foreignObject width="390" height="625">` +
+    `<div xmlns="http://www.w3.org/1999/xhtml" style="width:390px;height:625px;${shellStyle(spec)}">` +
+    `<style>* { margin: 0; box-sizing: border-box; }</style>` +
+    chrome(index) +
+    body(spec) +
+    `</div></foreignObject></svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(page)}`;
 }
 
 /** 模拟条目（与真实条目同构） */
@@ -376,6 +625,24 @@ export function demoItems(count: number): Array<{
     "books",
     "aqua",
     "ramen",
+    "clubs",
+    "marathon",
+    "astro",
+    "pottery",
+    "dance",
+    "plants",
+    "aero",
+    "poetry",
+    "hoops",
+    "journal",
+    "study",
+    "soundmap",
+    "osmanthus",
+    "debate",
+    "cinema",
+    "bake",
+    "recycle",
+    "jazz",
   ];
   return Array.from({ length: count }, (_, i) => {
     const k = i % SPECS.length;

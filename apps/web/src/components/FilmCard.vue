@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import LazyFrame from "@/components/LazyFrame.vue";
-import { demoPage } from "@/lib/demoPages";
+import { demoShot } from "@/lib/demoPages";
 import { apiUrl } from "@/lib/apiBase";
 import { t } from "@/i18n";
 import { DEFAULT_STYLE, isCardStyle, type CardStyle } from "@/lib/styleHint";
@@ -12,7 +12,9 @@ import { DEFAULT_STYLE, isCardStyle, type CardStyle } from "@/lib/styleHint";
  * 远端压暗由父层通过 CSS 变量 --veil 控制（0=全亮）。
  *
  * styleHint 决定渲染哪种外壳（七式之一）；缺省 archive 米纸衬底。
- * 页面区：有截图用 <img>（性能），演示卡/无截图页才落 iframe（LazyFrame）。
+ * 页面区：演示卡走内置 SVG「截图」、真实卡有截图走服务端截图——
+ * 两者都是 <img>（GPU 合成便宜，滚动墙几十张同屏的性能命门）；
+ * 只有真实页无截图才落 iframe（LazyFrame）兜底。
  *
  * 几何值全部对着定稿视觉稿（Desktop/CPU/大屏卡片样式七种_带文字.png）
  * 量出来的百分比走，改动前先量再改（见 skill words2site-dev）。
@@ -43,25 +45,23 @@ const style: CardStyle = isCardStyle(props.styleHint)
 
 /**
  * 页面区的源，三档：
- * - 有截图 → frameImg：<img> 直出（浏览器解码缓存，GPU 合成远比 iframe 便宜；
- *   大屏几十张卡同时滚动时这是性能命门）
- * - 演示卡 → frameSrc.srcdoc：iframe 内置示例页
- * - 真实页无截图 → frameSrc.src：iframe 兜底（活动常态是人人有截图，此档近零）
+ * - 演示卡 → demoShot：内置 SVG「截图」data URI，<img> 直出（与生产截图同构）
+ * - 真实卡有截图 → frameImg：<img> 直出（浏览器解码缓存，GPU 合成远比
+ *   iframe 便宜；大屏几十张卡同时滚动时这是性能命门）
+ * - 真实页无截图 → frameSrc.src：iframe 兜底（活动常态是人人有截图，近零）
  *
  * 必须是 computed：卡片实例按槽位 index 复用，hasScreenshot 会在轮询里
  * 从 0 翻 1（用户浏览器上传截图后 15s 内），const 只在 setup 算一次就永远翻不过去。
  */
 const frameImg = computed(() =>
-  props.demoIndex === undefined && props.hasScreenshot
-    ? apiUrl(`/api/tasks/${props.taskId}/screenshot`)
-    : null,
+  props.demoIndex !== undefined
+    ? demoShot(props.demoIndex)
+    : props.hasScreenshot
+      ? apiUrl(`/api/tasks/${props.taskId}/screenshot`)
+      : null,
 );
 const frameSrc = computed(() =>
-  props.demoIndex !== undefined
-    ? { srcdoc: demoPage(props.demoIndex ?? 0) }
-    : props.hasScreenshot
-      ? {}
-      : { src: apiUrl(`/api/tasks/${props.taskId}/html`) },
+  props.hasScreenshot ? {} : { src: apiUrl(`/api/tasks/${props.taskId}/html`) },
 );
 
 const cardTitle = props.domain ?? props.taskId;
