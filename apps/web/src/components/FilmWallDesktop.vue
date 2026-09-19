@@ -5,8 +5,11 @@ import { t } from "@/i18n";
 import type { WallItem } from "@/lib/wall";
 import {
   A0,
+  HW,
+  PERF,
   SPEED,
   STRIDE,
+  Y,
   RIBBON_A,
   RIBBON_B,
   atLs,
@@ -15,7 +18,6 @@ import {
   footDesk,
   ghostMarkup,
   headDesk,
-  holesAt,
   homography,
   lRange,
   matrix3d,
@@ -26,8 +28,13 @@ import {
 /**
  * B 方案桌面大屏：双胶卷透视滚墙。
  * 上带左近右远（卡右→左走），下带左远右近（卡左→右走）——每条带朝
- * 自己的近端走，两条带互为反向。带体/齿孔走 SVG；卡片是 HTML，
- * 用单应（matrix3d）贴到带面上，rAF 每帧只更新 transform 与齿孔。
+ * 自己的近端走，两条带互为反向。带体走 SVG；齿孔走画布；
+ * 卡片是 HTML，两级变换贴到带面上（外层每帧只改位移、内层形变低频更新）。
+ *
+ * 性能约束（2026-09-19 上线后实测）：主线程开销必须压低——
+ * 齿孔每帧重建 SVG 字符串要吃掉约 24% 单核，已改画布重绘；
+ * 卡片逐帧写整条 matrix3d 会让每层重新栅格化（掉帧/闪烁），
+ * 已拆成「外层位移 + 内层形变」两级。
  */
 const props = defineProps<{ items: WallItem[]; demoCount: number }>();
 
@@ -60,16 +67,44 @@ const bandASvg = bandA.body;
 
 const wrap = ref<HTMLElement | null>(null);
 const stage = ref<HTMLElement | null>(null);
-const holesA = ref<SVGElement | null>(null);
-const holesB = ref<SVGElement | null>(null);
+const holesA = ref<HTMLCanvasElement | null>(null);
+const holesB = ref<HTMLCanvasElement | null>(null);
 const slotsA = ref<number[]>([]);
 const slotsB = ref<number[]>([]);
-const elsA = new Map<number, HTMLElement>();
-const elsB = new Map<number, HTMLElement>();
 
-function bindEl(map: Map<number, HTMLElement>, n: number, el: unknown) {
-  if (el) map.set(n, el as HTMLElement);
+/** 卡片两级结构：outer 每帧改位移；inner 只在形变超阈值时重写 */
+interface El {
+  outer: HTMLElement;
+  inner: HTMLElement | null;
+  /** 上次写入内层时的局部缩放，用于形变阈值判定 */
+  sc?: number;
+}
+const elsA = new Map<number, El>();
+const elsB = new Map<number, El>();
+
+function slot(map: Map<number, El>, n: number): El {
+  const cur = map.get(n);
+  if (cur) return cur;
+  const rec: El = { outer: null as unknown as HTMLElement, inner: null };
+  map.set(n, rec);
+  return rec;
+}
+/**
+ * 脏标记：Vue 补丁后才把真实元素交给渲染循环（bindOuter/bindInner），
+ * 此时相位可能没变——必须强制补渲染一帧，否则新卡的 transform 永远写不上。
+ * 「减少动效」下相位恒定，不补这一帧就是整墙空白（2026-09-19 实测复现）。
+ */
+let dirty = false;
+function bindOuter(map: Map<number, El>, n: number, el: unknown) {
+  if (el) slot(map, n).outer = el as HTMLElement;
   else map.delete(n);
+  dirty = true;
+}
+function bindInner(map: Map<number, El>, n: number, el: unknown) {
+  const rec = map.get(n);
+  if (rec && el) rec.inner = el as HTMLElement;
+  else if (rec) rec.inner = null;
+  dirty = true;
 }
 
 const itemAt = (n: number): WallItem | undefined => {
@@ -108,6 +143,87 @@ const FRAME_MS = 33;
 let lastRenderAt = 0;
 /** 上次渲染的相位：未变化则跳过整帧（悬停/减少动效时白算归零） */
 let renderedPhase = -1;
+/** 画布像素比（DPR × 舞台缩放，封顶 2），保齿孔清晰又不过度分配 */
+const hpx = ref(1);
+
+/** 针孔：把 homography 平移到以卡片中心为原点（内层用） */
+function centered(h: number[], cx: number, cy: number): number[] {
+  return [
+    h[0] - cx * h[6],
+    h[1] - cx * h[7],
+    h[2] - cx,
+    h[3] - cy * h[6],
+    h[4] - cy * h[7],
+    h[5] - cy,
+    h[6],
+    h[7],
+  ];
+}
+
+/**
+ * 形变是否需要重算：局部缩放相对变化 > 0.5% 才重写内层 matrix3d。
+ * 卡片位移（外层）是每帧精确的，形变滞后<1px，肉眼不可辨；
+ * 换来的是内层图层不逐帧重新栅格化。
+ */
+function needsReshape(rec: El, h: number[]): boolean {
+  const sc = Math.hypot(h[0], h[3]);
+  if (rec.sc === undefined) {
+    rec.sc = sc;
+    return true;
+  }
+  if (Math.abs(sc - rec.sc) / (rec.sc || 1) < 0.005) return false;
+  rec.sc = sc;
+  return true;
+}
+
+let ctxA: CanvasRenderingContext2D | null = null;
+let ctxB: CanvasRenderingContext2D | null = null;
+
+/**
+ * 齿孔：整块画布重绘。
+ * 旧实现每帧拼 SVG 字符串再 innerHTML 覆盖（约 900 个节点重建），
+ * 实测占单核约 24%——画布只做「清屏 + 画小方块」，无 DOM、无样式重算。
+ */
+function drawHoles(
+  cv: HTMLCanvasElement | null,
+  ctx: CanvasRenderingContext2D | null,
+  band: Band,
+  phase: number,
+) {
+  if (!cv || !ctx) return;
+  const k = hpx.value;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.fillStyle = Y;
+  const P0 = PERF * 0.58;
+  const rounded = typeof ctx.roundRect === "function";
+  for (
+    let n = Math.ceil((26 - P0 - phase) / PERF);
+    P0 + n * PERF + phase <= band.Lmax - 26;
+    n++
+  ) {
+    const l = P0 + n * PERF + phase;
+    const p = atLs(band.P, l);
+    if (p.x < -160 || p.x > W + 160) continue;
+    const ang = Math.atan2(p.ty, p.tx);
+    const cos = Math.cos(ang);
+    const sin = Math.sin(ang);
+    const sk = k * p.k;
+    const off = (HW - 13) * p.k;
+    ctx.globalAlpha = 0.42 + 0.58 * norm(band, p.k);
+    for (const sx of [1, -1]) {
+      const cx = p.x + p.nx * off * sx;
+      const cy = p.y + p.ny * off * sx;
+      ctx.setTransform(cos * sk, sin * sk, -sin * sk, cos * sk, cx * k, cy * k);
+      ctx.beginPath();
+      if (rounded) ctx.roundRect(-8, -5.5, 16, 11, 2.4);
+      else ctx.rect(-8, -5.5, 16, 11);
+      ctx.fill();
+    }
+  }
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalAlpha = 1;
+}
 
 function renderBand(
   band: Band,
@@ -115,8 +231,9 @@ function renderBand(
   dir: number,
   phase: number,
   slots: { value: number[] },
-  els: Map<number, HTMLElement>,
-  holesEl: SVGElement | null,
+  els: Map<number, El>,
+  cv: HTMLCanvasElement | null,
+  ctx: CanvasRenderingContext2D | null,
 ) {
   const ph = dir * phase;
   const nMin = Math.ceil((rng[0] - A0 - ph) / STRIDE);
@@ -131,10 +248,18 @@ function renderBand(
   ) {
     slots.value = list;
   }
-  for (const [n, el] of els) {
+  for (const [n, rec] of els) {
+    const el = rec.outer;
     const l = A0 + n * STRIDE + ph;
     const h = homography(cardQuad(band, l));
-    el.style.transform = matrix3d(h, 146, 234);
+    // 卡片中心在屏幕上的位置：外层只做纯位移（合成器可平移，不重新栅格化）
+    const den = h[6] * 0.5 + h[7] * 0.5 + 1;
+    const cx = (h[0] * 0.5 + h[1] * 0.5 + h[2]) / den;
+    const cy = (h[3] * 0.5 + h[4] * 0.5 + h[5]) / den;
+    el.style.transform = `translate3d(${cx.toFixed(2)}px,${cy.toFixed(2)}px,0)`;
+    if (rec.inner && needsReshape(rec, h)) {
+      rec.inner.style.transform = matrix3d(centered(h, cx, cy), 146, 234);
+    }
     const p = atLs(band.P, l);
     const veil =
       band.floor + (band.dimMax - band.floor) * (1 - norm(band, p.k));
@@ -144,26 +269,26 @@ function renderBand(
       el.dataset.v = vs;
       el.style.setProperty("--veil", vs);
     }
-    el.style.visibility = "visible";
+    if (el.style.visibility !== "visible") el.style.visibility = "visible";
   }
-  if (holesEl) holesEl.innerHTML = holesAt(band, ph);
+  drawHoles(cv, ctx, band, ph);
 }
 
 function frame(now: number) {
   raf = requestAnimationFrame(frame);
-  // 整体 30fps 门控：单应求解、transform/veil 赋值、齿孔 innerHTML
-  // （每帧最大的 JS+DOM+光栅开销）全部减半
+  // 整体 30fps 门控：单应求解、transform/veil 赋值、齿孔绘制全部减半
   if (now - lastRenderAt < FRAME_MS) return;
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
   lastRenderAt = now;
   if (!paused && !reduced) elapsed += dt;
   const phase = elapsed * SPEED;
-  // 相位未变（悬停/减少动效/首帧后）→ 画面无变化，整帧跳过
-  if (phase === renderedPhase) return;
+  // 相位未变且没有待补的新卡片（悬停/减少动效）→ 画面无变化，整帧跳过
+  if (phase === renderedPhase && !dirty) return;
+  dirty = false;
   renderedPhase = phase;
-  renderBand(bandB, rngB, 1, phase, slotsB, elsB, holesB.value);
-  renderBand(bandA, rngA, -1, phase, slotsA, elsA, holesA.value);
+  renderBand(bandB, rngB, 1, phase, slotsB, elsB, holesB.value, ctxB);
+  renderBand(bandA, rngA, -1, phase, slotsA, elsA, holesA.value, ctxA);
 }
 
 // ---------- 缩放（设计画布 cover 铺满视口） ----------
@@ -171,6 +296,17 @@ function fit() {
   if (!stage.value || !wrap.value) return;
   const s = Math.max(wrap.value.clientWidth / W, wrap.value.clientHeight / H);
   stage.value.style.transform = `scale(${s})`;
+  // 齿孔画布按实际显示尺寸分配像素，封顶 2x（再高清也看不出，只烧显存）
+  const want = Math.min(2, Math.max(1, s * (devicePixelRatio || 1)));
+  if (Math.abs(want - hpx.value) > 0.05) {
+    hpx.value = want;
+    for (const cv of [holesA.value, holesB.value]) {
+      if (!cv) continue;
+      cv.width = Math.round(W * want);
+      cv.height = Math.round(H * want);
+    }
+    renderedPhase = -1; // 重绘一帧
+  }
 }
 
 function onEnter() {
@@ -182,6 +318,8 @@ function onLeave() {
 
 onMounted(() => {
   fit();
+  ctxA = holesA.value?.getContext("2d") ?? null;
+  ctxB = holesB.value?.getContext("2d") ?? null;
   addEventListener("resize", fit);
   document.addEventListener("visibilitychange", onVis);
   raf = requestAnimationFrame(frame);
@@ -224,12 +362,12 @@ function onVis() {
         :viewBox="`0 0 ${W} ${H}`"
         v-html="underSvg"
       />
-      <svg
+      <canvas
         ref="holesB"
-        class="film-svg pointer-events-none absolute left-0 top-0"
-        :width="W"
-        :height="H"
-        :viewBox="`0 0 ${W} ${H}`"
+        class="pointer-events-none absolute left-0 top-0"
+        :width="Math.round(W * hpx)"
+        :height="Math.round(H * hpx)"
+        :style="{ width: W + 'px', height: H + 'px' }"
       />
       <div
         class="pointer-events-none absolute left-0 top-0"
@@ -238,10 +376,12 @@ function onVis() {
         <div
           v-for="n in slotsB"
           :key="'B' + n"
-          :ref="(el) => bindEl(elsB, n, el)"
+          :ref="(el) => bindOuter(elsB, n, el)"
           class="fcard"
         >
-          <FilmCard v-if="itemAt(n)" v-bind="cardAt(n)" :w="146" :h="234" />
+          <div :ref="(el) => bindInner(elsB, n, el)" class="fcard-inner">
+            <FilmCard v-if="itemAt(n)" v-bind="cardAt(n)" :w="146" :h="234" />
+          </div>
         </div>
       </div>
       <svg
@@ -251,12 +391,12 @@ function onVis() {
         :viewBox="`0 0 ${W} ${H}`"
         v-html="bandASvg"
       />
-      <svg
+      <canvas
         ref="holesA"
-        class="film-svg pointer-events-none absolute left-0 top-0"
-        :width="W"
-        :height="H"
-        :viewBox="`0 0 ${W} ${H}`"
+        class="pointer-events-none absolute left-0 top-0"
+        :width="Math.round(W * hpx)"
+        :height="Math.round(H * hpx)"
+        :style="{ width: W + 'px', height: H + 'px' }"
       />
       <div
         class="pointer-events-none absolute left-0 top-0"
@@ -265,10 +405,12 @@ function onVis() {
         <div
           v-for="n in slotsA"
           :key="'A' + n"
-          :ref="(el) => bindEl(elsA, n, el)"
+          :ref="(el) => bindOuter(elsA, n, el)"
           class="fcard"
         >
-          <FilmCard v-if="itemAt(n)" v-bind="cardAt(n)" :w="146" :h="234" />
+          <div :ref="(el) => bindInner(elsA, n, el)" class="fcard-inner">
+            <FilmCard v-if="itemAt(n)" v-bind="cardAt(n)" :w="146" :h="234" />
+          </div>
         </div>
       </div>
       <svg
@@ -305,6 +447,11 @@ function onVis() {
   font-family:
     -apple-system, "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
 }
+/**
+ * 两级变换：外层每帧只改 translate3d（合成器平移，不触发重新栅格化），
+ * 内层承载单应形变（低频更新）。旧版把整条 matrix3d 写到同一个元素上，
+ * 每帧都要重新栅格化整张卡——既是功耗大头，也是页面区闪烁的来源。
+ */
 .fcard {
   position: absolute;
   left: 0;
@@ -312,6 +459,14 @@ function onVis() {
   visibility: hidden; /* 首帧定位后再显示，避免新卡在左上角闪现 */
   transform-origin: 0 0;
   will-change: transform;
+}
+.fcard-inner {
+  position: absolute;
+  left: -73px; /* 卡片半宽：让卡心落在外层原点 */
+  top: -117px; /* 卡片半高 */
+  width: 146px;
+  height: 234px;
+  transform-origin: 0 0;
 }
 .start-link {
   position: absolute;

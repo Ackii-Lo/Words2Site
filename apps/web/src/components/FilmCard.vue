@@ -112,7 +112,6 @@ const emBase = (props.w / 146) * 12.5;
             v-if="frameImg"
             :src="frameImg"
             class="h-full w-full object-cover object-top"
-            loading="lazy"
             decoding="async"
             alt=""
           />
@@ -151,7 +150,6 @@ const emBase = (props.w / 146) * 12.5;
             v-if="frameImg"
             :src="frameImg"
             class="h-full w-full object-cover object-top"
-            loading="lazy"
             decoding="async"
             alt=""
           />
@@ -303,7 +301,6 @@ const emBase = (props.w / 146) * 12.5;
               v-if="frameImg"
               :src="frameImg"
               class="h-full w-full object-cover object-top"
-              loading="lazy"
               decoding="async"
               alt=""
             />
@@ -370,7 +367,6 @@ const emBase = (props.w / 146) * 12.5;
               v-if="frameImg"
               :src="frameImg"
               class="h-full w-full object-cover object-top"
-              loading="lazy"
               decoding="async"
               alt=""
             />
@@ -438,7 +434,6 @@ const emBase = (props.w / 146) * 12.5;
               v-if="frameImg"
               :src="frameImg"
               class="h-full w-full object-cover object-top"
-              loading="lazy"
               decoding="async"
               alt=""
             />
@@ -510,7 +505,6 @@ const emBase = (props.w / 146) * 12.5;
             v-if="frameImg"
             :src="frameImg"
             class="h-full w-full object-cover object-top"
-            loading="lazy"
             decoding="async"
             alt=""
           />
@@ -625,7 +619,6 @@ const emBase = (props.w / 146) * 12.5;
             v-if="frameImg"
             :src="frameImg"
             class="h-full w-full object-cover object-top"
-            loading="lazy"
             decoding="async"
             alt=""
           />
@@ -671,7 +664,6 @@ const emBase = (props.w / 146) * 12.5;
           v-if="frameImg"
           :src="frameImg"
           class="h-full w-full object-cover object-top"
-          loading="lazy"
           decoding="async"
           alt=""
         />
