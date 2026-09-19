@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import FilmCard from "@/components/FilmCard.vue";
 import { t } from "@/i18n";
-import type { WallItem } from "@/lib/wall";
+import { openWallItem, type WallItem } from "@/lib/wall";
 import {
   A0,
   CARD_H,
@@ -116,6 +116,12 @@ const itemAt = (n: number): WallItem | undefined => {
 };
 /** 供模板 v-bind 用（外层 v-if 已保证存在） */
 const cardAt = (n: number): WallItem => itemAt(n) as WallItem;
+
+/** 点击卡片直达对应页面（卡容器层挂 pointer-events，卡片本体可点） */
+function openAt(n: number) {
+  const it = itemAt(n);
+  if (it) openWallItem(it);
+}
 
 const empty = () => props.items.length === 0;
 // 标题/厂牌 SVG 依赖 locale（切换语言即时重算）
@@ -375,7 +381,14 @@ function onVis() {
           :ref="(el) => bindOuter(elsB, n, el)"
           class="fcard"
         >
-          <div :ref="(el) => bindInner(elsB, n, el)" class="fcard-inner">
+          <div
+            :ref="(el) => bindInner(elsB, n, el)"
+            class="fcard-inner"
+            :class="{ clickable: !!itemAt(n)?.url }"
+            role="link"
+            :title="itemAt(n)?.domain ?? undefined"
+            @click="openAt(n)"
+          >
             <FilmCard v-if="itemAt(n)" v-bind="cardAt(n)" :w="146" :h="234" />
           </div>
         </div>
@@ -404,7 +417,14 @@ function onVis() {
           :ref="(el) => bindOuter(elsA, n, el)"
           class="fcard"
         >
-          <div :ref="(el) => bindInner(elsA, n, el)" class="fcard-inner">
+          <div
+            :ref="(el) => bindInner(elsA, n, el)"
+            class="fcard-inner"
+            :class="{ clickable: !!itemAt(n)?.url }"
+            role="link"
+            :title="itemAt(n)?.domain ?? undefined"
+            @click="openAt(n)"
+          >
             <FilmCard v-if="itemAt(n)" v-bind="cardAt(n)" :w="146" :h="234" />
           </div>
         </div>
@@ -463,6 +483,15 @@ function onVis() {
   width: 146px;
   height: 234px;
   transform-origin: 0 0;
+}
+/* 点卡直达：父容器 pointer-events-none，这里单独放行命中 */
+.clickable {
+  pointer-events: auto;
+  cursor: pointer;
+}
+/* 悬停掀帘：--veil 是 rAF 写在外层内联样式上的，需 !important 才能盖过 */
+.clickable:hover {
+  --veil: 0 !important;
 }
 .start-link {
   position: absolute;

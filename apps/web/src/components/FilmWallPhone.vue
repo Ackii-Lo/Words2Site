@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import FilmCard from "@/components/FilmCard.vue";
 import { t } from "@/i18n";
-import type { WallItem } from "@/lib/wall";
+import { openWallItem, type WallItem } from "@/lib/wall";
 import {
   PERF_TILE,
   PCH,
@@ -120,11 +120,15 @@ onUnmounted(() => removeEventListener("resize", fit));
             v-for="(it, i) in trackL"
             :key="i"
             class="pcard"
+            :class="{ clickable: !!it.url }"
+            role="link"
+            :title="it.domain ?? undefined"
             :style="{
               width: PCW + 'px',
               height: PCH + 'px',
               marginBottom: PSTRIDE - PCH + 'px',
             }"
+            @click="openWallItem(it)"
           >
             <FilmCard v-bind="it" :w="PCW" :h="PCH" />
           </div>
@@ -145,11 +149,15 @@ onUnmounted(() => removeEventListener("resize", fit));
             v-for="(it, i) in trackR"
             :key="i"
             class="pcard"
+            :class="{ clickable: !!it.url }"
+            role="link"
+            :title="it.domain ?? undefined"
             :style="{
               width: PCW + 'px',
               height: PCH + 'px',
               marginBottom: PSTRIDE - PCH + 'px',
             }"
+            @click="openWallItem(it)"
           >
             <FilmCard v-bind="it" :w="PCW" :h="PCH" />
           </div>
@@ -181,6 +189,10 @@ onUnmounted(() => removeEventListener("resize", fit));
 .film-svg {
   font-family:
     -apple-system, "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+}
+/* 点卡直达：触屏无 hover，cursor 只对外接鼠标生效 */
+.pcard.clickable {
+  cursor: pointer;
 }
 .start-link {
   position: absolute;
