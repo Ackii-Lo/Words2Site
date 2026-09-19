@@ -31,6 +31,7 @@ const dict: Record<keyof typeof en, string> = {
   "form.domainChecking": "正在检查是否可用…",
   "form.domainFree": "可用",
   "form.domainTaken": "已被别人用了，换一个试试",
+  "form.domainInvalid": "至少 3 个字符，仅小写字母、数字和连字符",
   "form.pageLangLabel": "网页语言",
   "form.publicLabel": "大屏展示",
   "form.publicOn": "在现场大屏滚动展示",

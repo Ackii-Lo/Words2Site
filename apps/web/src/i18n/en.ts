@@ -30,6 +30,8 @@ const dict = {
   "form.domainChecking": "Checking availability…",
   "form.domainFree": "Available",
   "form.domainTaken": "Already taken — try another",
+  "form.domainInvalid":
+    "3–31 chars — lowercase letters, digits and hyphens only",
   "form.pageLangLabel": "Page language",
   "form.publicLabel": "Visibility",
   "form.publicOn": "Scroll on the live wall",

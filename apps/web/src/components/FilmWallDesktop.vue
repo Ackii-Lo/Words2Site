@@ -103,6 +103,11 @@ let elapsed = 0; // 累计走带时间（s）；改名避免与 i18n 的 t() 撞
 let last = performance.now();
 let paused = false;
 let raf = 0;
+/** 30fps 渲染门限：走带速度约 14px/s（屏幕），60→30fps 每帧位移 0.46px，肉眼无感 */
+const FRAME_MS = 33;
+let lastRenderAt = 0;
+/** 上次渲染的相位：未变化则跳过整帧（悬停/减少动效时白算归零） */
+let renderedPhase = -1;
 
 function renderBand(
   band: Band,
@@ -112,7 +117,6 @@ function renderBand(
   slots: { value: number[] },
   els: Map<number, HTMLElement>,
   holesEl: SVGElement | null,
-  updateHoles: boolean,
 ) {
   const ph = dir * phase;
   const nMin = Math.ceil((rng[0] - A0 - ph) / STRIDE);
@@ -142,22 +146,24 @@ function renderBand(
     }
     el.style.visibility = "visible";
   }
-  // 齿孔是小视觉元素，30fps 足够（transform 仍每帧）——innerHTML 重建是
-  // 每帧最大的 DOM/光栅开销，砍一半帧率换来整体 GPU 大幅下降
-  if (holesEl && updateHoles) holesEl.innerHTML = holesAt(band, ph);
+  if (holesEl) holesEl.innerHTML = holesAt(band, ph);
 }
 
-let lastHolesAt = 0;
 function frame(now: number) {
+  raf = requestAnimationFrame(frame);
+  // 整体 30fps 门控：单应求解、transform/veil 赋值、齿孔 innerHTML
+  // （每帧最大的 JS+DOM+光栅开销）全部减半
+  if (now - lastRenderAt < FRAME_MS) return;
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
+  lastRenderAt = now;
   if (!paused && !reduced) elapsed += dt;
   const phase = elapsed * SPEED;
-  const updateHoles = now - lastHolesAt >= 33;
-  if (updateHoles) lastHolesAt = now;
-  renderBand(bandB, rngB, 1, phase, slotsB, elsB, holesB.value, updateHoles);
-  renderBand(bandA, rngA, -1, phase, slotsA, elsA, holesA.value, updateHoles);
-  raf = requestAnimationFrame(frame);
+  // 相位未变（悬停/减少动效/首帧后）→ 画面无变化，整帧跳过
+  if (phase === renderedPhase) return;
+  renderedPhase = phase;
+  renderBand(bandB, rngB, 1, phase, slotsB, elsB, holesB.value);
+  renderBand(bandA, rngA, -1, phase, slotsA, elsA, holesA.value);
 }
 
 // ---------- 缩放（设计画布 cover 铺满视口） ----------
@@ -177,12 +183,26 @@ function onLeave() {
 onMounted(() => {
   fit();
   addEventListener("resize", fit);
+  document.addEventListener("visibilitychange", onVis);
   raf = requestAnimationFrame(frame);
 });
 onUnmounted(() => {
   removeEventListener("resize", fit);
+  document.removeEventListener("visibilitychange", onVis);
   cancelAnimationFrame(raf);
 });
+
+// 标签页隐藏时彻底停摆（投影仪切信号/值班机切窗口不再空烧 CPU/GPU）
+function onVis() {
+  if (document.hidden) {
+    cancelAnimationFrame(raf);
+    raf = 0;
+  } else if (!raf) {
+    last = performance.now();
+    lastRenderAt = 0;
+    raf = requestAnimationFrame(frame);
+  }
+}
 </script>
 
 <template>

@@ -39,14 +39,27 @@ const domainValid = computed(() =>
   /^[a-z0-9][a-z0-9-]{2,30}$/.test(domainLabel.value.trim()),
 );
 
+/* 输入即清洗：下划线转连字符、强制小写、剔除其他非法字符
+   （域名 label 只允许小写字母/数字/连字符，避免「输了下划线没反应」的困惑） */
+watch(domainLabel, (v) => {
+  const s = v
+    .toLowerCase()
+    .replace(/_/g, "-")
+    .replace(/[^a-z0-9-]/g, "");
+  if (s !== v) domainLabel.value = s;
+});
+
 /* ---------- 网址占用即时校验：输入停顿 400ms 即查（非破坏性，提交仍以原子预约为准） ---------- */
-const domainStatus = ref<"idle" | "checking" | "free" | "taken">("idle");
+const domainStatus = ref<"idle" | "checking" | "free" | "taken" | "invalid">(
+  "idle",
+);
 let checkTimer: ReturnType<typeof setTimeout> | null = null;
 
-watch([domainLabel, domainValid], ([, valid]) => {
+watch([domainLabel, domainValid], ([label, valid]) => {
   if (checkTimer) clearTimeout(checkTimer);
   if (!valid) {
-    domainStatus.value = "idle";
+    // 有输入但不合法（清洗后通常是太短）→ 红字提示；空输入 → 静默
+    domainStatus.value = label ? "invalid" : "idle";
     return;
   }
   domainStatus.value = "checking";
@@ -149,7 +162,9 @@ function submit() {
             ? t("form.domainChecking")
             : domainStatus === "free"
               ? t("form.domainFree")
-              : t("form.domainTaken")
+              : domainStatus === "taken"
+                ? t("form.domainTaken")
+                : t("form.domainInvalid")
         }}
       </p>
     </div>
@@ -361,7 +376,8 @@ function submit() {
 .is-free {
   color: #15803d;
 }
-.is-taken {
+.is-taken,
+.is-invalid {
   color: #b42318;
 }
 .is-checking {
