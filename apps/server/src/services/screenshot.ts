@@ -5,9 +5,12 @@ import { taskLog } from "../util/logger.js";
 
 /**
  * 大屏截图：发布成功后对线上 URL 截全页 PNG。
- * 运行时按需加载 puppeteer(可选依赖，未安装则大屏自动降级为 iframe 实时预览):
+ *
+ * 主路径已改为**浏览器端截图**：/start done 步的 ShotCapture 组件用
+ * html-to-image 截产物页后 POST 到 routes/tasks.ts 的 `POST /:id/screenshot`，
+ * 部署机零额外依赖。本文件是可选的服务端补充（未装 puppeteer 时直接跳过）：
  *   pnpm --filter @words2site/server add puppeteer
- * 部署机首次运行会下载 Chromium，活动前务必预热。
+ * 装了需预热（首次下载 Chromium），可作为没有前端参与时的兜底。
  */
 
 export function shotPath(taskId: string): string {

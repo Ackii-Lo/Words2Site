@@ -10,6 +10,7 @@ import IntroStep from "@/components/home/IntroStep.vue";
 import FormStep from "@/components/home/FormStep.vue";
 import WaitingStep from "@/components/home/WaitingStep.vue";
 import DoneStep from "@/components/home/DoneStep.vue";
+import ShotCapture from "@/components/home/ShotCapture.vue";
 
 /**
  * /start 壳 + 四步状态机：intro → form → waiting → done。
@@ -176,6 +177,13 @@ function restart() {
       <p class="foot-brand">Presented by CPU</p>
       <!-- <p class="foot-sub">The University of Nottingham Ningbo China</p> -->
     </footer>
+
+    <!-- 发布完成：用户浏览器给产物页拍一张截图存服务端（大屏走 <img> 的前提） -->
+    <ShotCapture
+      v-if="step === 'done' && cert && taskId"
+      :key="taskId"
+      :task-id="taskId"
+    />
   </div>
 </template>
 

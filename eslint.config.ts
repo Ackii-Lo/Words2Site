@@ -14,6 +14,7 @@ export default tseslint.config(
       "**/node_modules/**",
       "**/*.tsbuildinfo",
       "pnpm-lock.yaml",
+      "**/vendor/**",
     ],
   },
   eslint.configs.recommended,

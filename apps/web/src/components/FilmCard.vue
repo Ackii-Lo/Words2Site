@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import LazyFrame from "@/components/LazyFrame.vue";
 import { demoPage } from "@/lib/demoPages";
 import { apiUrl } from "@/lib/apiBase";
@@ -46,17 +47,22 @@ const style: CardStyle = isCardStyle(props.styleHint)
  *   大屏几十张卡同时滚动时这是性能命门）
  * - 演示卡 → frameSrc.srcdoc：iframe 内置示例页
  * - 真实页无截图 → frameSrc.src：iframe 兜底（活动常态是人人有截图，此档近零）
+ *
+ * 必须是 computed：卡片实例按槽位 index 复用，hasScreenshot 会在轮询里
+ * 从 0 翻 1（用户浏览器上传截图后 15s 内），const 只在 setup 算一次就永远翻不过去。
  */
-const frameImg =
+const frameImg = computed(() =>
   props.demoIndex === undefined && props.hasScreenshot
     ? apiUrl(`/api/tasks/${props.taskId}/screenshot`)
-    : null;
-const frameSrc =
+    : null,
+);
+const frameSrc = computed(() =>
   props.demoIndex !== undefined
     ? { srcdoc: demoPage(props.demoIndex ?? 0) }
     : props.hasScreenshot
       ? {}
-      : { src: apiUrl(`/api/tasks/${props.taskId}/html`) };
+      : { src: apiUrl(`/api/tasks/${props.taskId}/html`) },
+);
 
 const cardTitle = props.domain ?? props.taskId;
 

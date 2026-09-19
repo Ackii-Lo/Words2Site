@@ -1,4 +1,4 @@
-import { Router, type Request, type Response } from "express";
+import express, { Router, type Request, type Response } from "express";
 import fs from "node:fs";
 import path from "node:path";
 import { config } from "../config.js";
@@ -6,6 +6,7 @@ import { tasks, reservations } from "../db.js";
 import { allow } from "../services/ratelimit.js";
 import { queue } from "../services/queue.js";
 import { shotPath } from "../services/screenshot.js";
+import { taskLog } from "../util/logger.js";
 import { pickStyle } from "../services/styleHint/index.js";
 import { fullDomain } from "../util/domain.js";
 import { newTaskId, isValidDeviceId } from "../util/ids.js";
@@ -171,6 +172,46 @@ tasksRouter.get("/:id/screenshot", (req: Request, res: Response) => {
   }
   res.type("png").send(fs.readFileSync(file));
 });
+
+/**
+ * 收浏览器端拍的产物截图（/start done 步的 ShotCapture 组件用 html-to-image
+ * 截 420×760@2x 后原样 POST 过来；puppeteer 未装时这是截图的唯一来源）。
+ * 收的是 PNG 二进制而非 JSON——全局 express.json 只放 64kb，路由级 raw 单独放宽。
+ * 只许首次写入：已有截图的任务拒绝，防止任意客户端覆盖别人的图。
+ */
+tasksRouter.post(
+  "/:id/screenshot",
+  express.raw({ type: "image/png", limit: "6mb" }),
+  (req: Request, res: Response) => {
+    const t = tasks.get(req.params.id);
+    if (!t || !TERMINAL.has(t.status)) {
+      res.status(404).json({ error: "任务不存在或未完成" });
+      return;
+    }
+    if (t.screenshot) {
+      res.status(409).json({ error: "截图已存在" });
+      return;
+    }
+    const buf = req.body as Buffer;
+    const isPng =
+      Buffer.isBuffer(buf) &&
+      buf.length > 8 &&
+      buf[0] === 0x89 &&
+      buf[1] === 0x50 &&
+      buf[2] === 0x4e &&
+      buf[3] === 0x47;
+    if (!isPng) {
+      res.status(400).json({ error: "仅接受 PNG" });
+      return;
+    }
+    const file = shotPath(t.id);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, buf);
+    tasks.update({ id: t.id, screenshot: 1 });
+    taskLog(t.id, `浏览器端截图已上传（${Math.round(buf.length / 1024)}KB）`);
+    res.json({ ok: true });
+  },
+);
 
 /** 凭证数据 */
 tasksRouter.get("/:id/certificate", (req: Request, res: Response) => {
