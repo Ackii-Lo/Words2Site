@@ -2,6 +2,7 @@
 import { computed, ref, watch } from "vue";
 import { api } from "@/composables/useApi";
 import { useTaskPolling } from "@/composables/useTaskPolling";
+import { watchCapture } from "@/lib/captureQueue";
 import { deviceId } from "@/lib/utils";
 import { t, type MessageKey } from "@/i18n";
 import CpuLogo from "@/components/CpuLogo.vue";
@@ -10,16 +11,22 @@ import IntroStep from "@/components/home/IntroStep.vue";
 import FormStep from "@/components/home/FormStep.vue";
 import WaitingStep from "@/components/home/WaitingStep.vue";
 import DoneStep from "@/components/home/DoneStep.vue";
-import ShotCapture from "@/components/home/ShotCapture.vue";
+import SentStep from "@/components/home/SentStep.vue";
 
 /**
- * /start 壳 + 四步状态机：intro → form → waiting → done。
- * 各步骤的 UI/交互在 components/home/* 里；这里只管步骤切换、
- * 提交（API）、轮询与 published→凭证 组装、restart。
+ * /start 壳 + 状态机，按设备分叉（断点与 CSS 一致，≥900px = 电脑）：
+ * - 手机：intro → form → waiting → done（完整流程，用户可盯着自己手机等）
+ * - 电脑（公用机）：intro → form → sent——提交即释放电脑，生成在服务端后台
+ *   进行，结果与失败都走邮件；截图由 lib/captureQueue.ts 守护，与步骤无关。
+ * 提交（API）、轮询与 published→凭证 组装、restart 都在这里管。
  */
-type Step = "intro" | "form" | "waiting" | "done";
+type Step = "intro" | "form" | "waiting" | "done" | "sent";
 
-const STEPS: Step[] = ["intro", "form", "waiting", "done"];
+/** 装载时判一次：公用电脑不会中途变手机，跨断点刷新即重判 */
+const desktop = matchMedia("(min-width: 900px)").matches;
+const STEPS: Step[] = desktop
+  ? ["intro", "form", "sent"]
+  : ["intro", "form", "waiting", "done"];
 
 const step = ref<Step>("intro");
 const submitting = ref(false);
@@ -45,7 +52,7 @@ const cert = ref<{
   email: string | null;
 } | null>(null);
 
-const { status, start: startPolling } = useTaskPolling();
+const { status, start: startPolling, stop: stopPolling } = useTaskPolling();
 
 const stepIndex = computed(() => Math.max(1, STEPS.indexOf(step.value) + 1));
 const stepLabel = computed(() => t(`home.step.${step.value}` as MessageKey));
@@ -94,14 +101,32 @@ async function submitTask() {
       }),
     });
     taskId.value = data.taskId;
-    step.value = "waiting";
-    startPolling(data.taskId);
+    // 截图守护：提交即挂上（自己轮询到 published 再截，与界面步骤无关）；
+    // 电脑端用户点完确认就离开，靠的就是它不绑步骤
+    watchCapture(data.taskId);
+    if (desktop) {
+      step.value = "sent"; // 电脑：提交即释放，后台生成 + 邮件通知
+    } else {
+      step.value = "waiting"; // 手机：完整流程，用户自己盯着等
+      startPolling(data.taskId);
+    }
   } catch (e) {
     submitError.value = e instanceof Error ? e.message : String(e);
     step.value = "form"; // 回表单步改信息（409 撞名等场景）
   } finally {
     submitting.value = false;
   }
+}
+
+/** 电脑端 sent 页确认：彻底重置给下一位（表单步输入是组件局部，卸载即清） */
+function kioskReset() {
+  step.value = "intro";
+  lastPayload = null;
+  lastEmail.value = "";
+  taskId.value = "";
+  cert.value = null;
+  submitError.value = "";
+  stopPolling();
 }
 
 function restart() {
@@ -162,14 +187,24 @@ function restart() {
           :error="submitError"
           @submit="onSubmit"
         />
+        <!-- 手机：生成中/完成；电脑：sent（提交即释放，不渲染等待与完成） -->
         <WaitingStep
-          v-else-if="step === 'waiting'"
+          v-else-if="!desktop && step === 'waiting'"
           :email="lastEmail"
           :failed="failed"
           :error="status?.error ?? null"
           @retry="submitTask"
         />
-        <DoneStep v-else-if="cert" :cert="cert" @restart="restart" />
+        <DoneStep
+          v-else-if="!desktop && step === 'done' && cert"
+          :cert="cert"
+          @restart="restart"
+        />
+        <SentStep
+          v-else-if="desktop && step === 'sent'"
+          :email="lastEmail"
+          @confirm="kioskReset"
+        />
       </div>
     </main>
 
@@ -177,13 +212,6 @@ function restart() {
       <p class="foot-brand">Presented by CPU</p>
       <!-- <p class="foot-sub">The University of Nottingham Ningbo China</p> -->
     </footer>
-
-    <!-- 发布完成：用户浏览器给产物页拍一张截图存服务端（大屏走 <img> 的前提） -->
-    <ShotCapture
-      v-if="step === 'done' && cert && taskId"
-      :key="taskId"
-      :task-id="taskId"
-    />
   </div>
 </template>
 

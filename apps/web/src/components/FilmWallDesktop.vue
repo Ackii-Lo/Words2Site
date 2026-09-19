@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
+import QRCode from "qrcode";
 import FilmCard from "@/components/FilmCard.vue";
 import { t } from "@/i18n";
 import { openWallItem, type WallItem } from "@/lib/wall";
@@ -73,6 +74,8 @@ const holesA = ref<HTMLCanvasElement | null>(null);
 const holesB = ref<HTMLCanvasElement | null>(null);
 const slotsA = ref<number[]>([]);
 const slotsB = ref<number[]>([]);
+/** 手机入口二维码（dataURL，onMounted 生成一次） */
+const qrDataUrl = ref("");
 
 /** 卡片两级结构：outer 每帧改位移；inner 只在形变超阈值时重写 */
 interface El {
@@ -330,6 +333,15 @@ onMounted(() => {
   addEventListener("resize", fit);
   document.addEventListener("visibilitychange", onVis);
   raf = requestAnimationFrame(frame);
+  // 手机参与入口：真二维码（qrcode 库），指 /start。生成失败静默不显示，
+  // START 按钮仍在（右下角），不挡主路径
+  void QRCode.toDataURL(`${location.origin}/start`, {
+    width: 256,
+    margin: 2,
+    color: { dark: "#1C1917", light: "#FFFFFF" },
+  })
+    .then((url) => (qrDataUrl.value = url))
+    .catch(() => undefined);
 });
 onUnmounted(() => {
   removeEventListener("resize", fit);
@@ -455,6 +467,14 @@ function onVis() {
     >
       START
     </RouterLink>
+    <!-- 手机参与入口：左下角二维码 + 单行文案。同样钉在视口；
+         会压到一点走带下缘（现场确认可接受），纯静态零渲染开销 -->
+    <div v-if="qrDataUrl" class="qr-plate">
+      <img class="qr-img" :src="qrDataUrl" :alt="t('screen.qrAlt')" />
+      <div class="qr-text">
+        <p class="qr-main">{{ t("screen.qrMain") }}</p>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -517,5 +537,37 @@ function onVis() {
   filter: brightness(1.08);
   outline: 1.5px dashed rgba(247, 212, 71, 0.75);
   outline-offset: 5px;
+}
+/* 左下角二维码牌：米白卡 + 黑描边 + 黄硬影，与 START 按钮同一视觉层 */
+.qr-plate {
+  position: absolute;
+  left: 28px;
+  bottom: 28px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px 10px 10px;
+  background: #fffdf9;
+  border: 2.5px solid #1c1917;
+  border-radius: 12px;
+  box-shadow: 5px 5px 0 rgba(247, 212, 71, 0.85);
+}
+.qr-img {
+  display: block;
+  width: 104px;
+  height: 104px;
+  border-radius: 6px;
+}
+.qr-text {
+  max-width: 330px;
+}
+.qr-main {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1.5;
+  color: #1c1917;
+  white-space: pre-line; /* 双行文案用 \n 分行 */
 }
 </style>

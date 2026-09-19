@@ -10,6 +10,7 @@ const dict: Record<keyof typeof en, string> = {
   "home.step.form": "填写信息",
   "home.step.waiting": "生成中",
   "home.step.done": "完成",
+  "home.step.sent": "已提交",
   "home.stepOf": "步骤 {n} / {total}",
   "home.backToScreen": "返回现场大屏",
 
@@ -20,6 +21,18 @@ const dict: Record<keyof typeof en, string> = {
   "intro.how2": "AI 现场为你生成网页",
   "intro.how3": "自动发布，网址发送到你的邮箱",
   "intro.start": "开始体验",
+  "intro.noticeBar": "开始之前",
+  "intro.noticeTitle": "关于你可通过本活动得到的网页",
+  "intro.noticeLead":
+    "我们生成的 site 是一个单 HTML 网页；如果你想加一些比较复杂的逻辑，它可能不一定能实现。",
+  "intro.noticeCanTitle": "能做到",
+  "intro.noticeCan1": "图文排版与展示",
+  "intro.noticeCan2": "简单动画与交互效果",
+  "intro.noticeCantTitle": "不能做到",
+  "intro.noticeCant1": "注册登录、账号体系",
+  "intro.noticeCant2": "数据保存、支付、发邮件",
+  "intro.noticeCant3": "多人实时同步",
+  "intro.noticeOk": "开始描述",
 
   /* ② 填写信息 */
   "form.descLabel": "描述你想要的网页",
@@ -48,10 +61,15 @@ const dict: Record<keyof typeof en, string> = {
   "waiting.help": "找工作人员帮忙",
   "waiting.errorCode": "错误码",
 
-  /* ④ 完成 */
+  /* ④ 完成（手机端） */
   "done.title": "网页发布成功！",
   "done.mailed": "网址也已发送到你的邮箱：{email}",
   "done.restart": "帮朋友也做一个 →",
+
+  /* ③' 已提交（电脑端：提交即释放） */
+  "sent.title": "提交成功，接下来交给 AI",
+  "sent.sub": "你的网页与凭证稍后会以邮件形式\n发送到下面的邮箱，请耐心等候",
+  "sent.confirm": "了解了，换下一位",
 
   /* 凭证卡 */
   "cert.urlLabel": "你的网页地址",
@@ -65,6 +83,10 @@ const dict: Record<keyof typeof en, string> = {
   "screen.onlinePost": " 个网页",
   "screen.demo": "演示模式 ×{n}",
   "screen.start": "开始制作你的网页",
+  /* 大屏文字全场共见：中英同显，不随语言切换 */
+  "screen.qrMain":
+    "也可在自己设备上尝试!\nAlternatively, try it on your own device!",
+  "screen.qrAlt": "跳转制作页的二维码",
 
   /* 大屏卡片外壳 */
   "film.proof": "凭证",

@@ -7,6 +7,7 @@ import { validateHtmlFile, ensureAttribution } from "./validator.js";
 import { sessionManager } from "./codexSession.js";
 import { sessionLog } from "./sessionLog.js";
 import { finalizeTask } from "./finalize.js";
+import { sendFailureMail } from "./mailer.js";
 import { taskLog, log } from "../util/logger.js";
 
 type Job = { taskId: string; kind: "gen" | "publish" };
@@ -207,7 +208,8 @@ async function handleFailure(taskId: string, error: string) {
   }
 }
 
-/** 终态失败：标 failed + 释放域名预约（域名可被再预约，admin retry 会重新抢） */
+/** 终态失败：标 failed + 释放域名预约（域名可被再预约，admin retry 会重新抢）；
+ *  用户已异步离场（2026-09-20 电脑端改造），页面的负反馈他看不到——补发失败邮件 */
 async function failFinal(taskId: string, error: string) {
   tasks.update({
     id: taskId,
@@ -218,6 +220,16 @@ async function failFinal(taskId: string, error: string) {
   });
   reservations.releaseByTask(taskId);
   taskLog(taskId, `最终失败（域名预约已释放）： ${error}`);
+  const t = tasks.get(taskId);
+  if (t?.email) {
+    void sendFailureMail({
+      taskId,
+      to: t.email,
+      domainLabel: t.domain ?? taskId,
+      prompt: t.prompt,
+      lang: t.page_lang === "en" ? "en" : "zh",
+    });
+  }
 }
 
 export const queue = {

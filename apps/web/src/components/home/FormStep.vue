@@ -106,6 +106,7 @@ function submit() {
       <textarea
         v-model="draft"
         class="edit-area"
+        autocomplete="off"
         :placeholder="t('form.descPlaceholder')"
       ></textarea>
       <span class="edit-count" :class="{ over: draft.length > 300 }"
@@ -123,6 +124,7 @@ function submit() {
           v-model="emailPrefix"
           class="email-input"
           type="text"
+          autocomplete="off"
           autocapitalize="off"
           autocorrect="off"
           spellcheck="false"
@@ -138,6 +140,7 @@ function submit() {
           v-model="domainLabel"
           class="email-input"
           type="text"
+          autocomplete="off"
           autocapitalize="off"
           autocorrect="off"
           spellcheck="false"

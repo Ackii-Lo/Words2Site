@@ -8,6 +8,7 @@ const dict = {
   "home.step.form": "Your Info",
   "home.step.waiting": "Generating",
   "home.step.done": "Done",
+  "home.step.sent": "Submitted",
   "home.stepOf": "Step {n} / {total}",
   "home.backToScreen": "Back to the live wall",
 
@@ -19,6 +20,18 @@ const dict = {
   "intro.how2": "The AI builds your page on the spot",
   "intro.how3": "Auto-published — the URL goes to your inbox",
   "intro.start": "Start",
+  "intro.noticeBar": "BEFORE WE START",
+  "intro.noticeTitle": "About the page you'll get in this event",
+  "intro.noticeLead":
+    "The site we generate is a single HTML page — if you'd like to add more complex logic, it may not be able to deliver that.",
+  "intro.noticeCanTitle": "Can do",
+  "intro.noticeCan1": "Rich text, images and layout",
+  "intro.noticeCan2": "Animations and interactions",
+  "intro.noticeCantTitle": "Cannot",
+  "intro.noticeCant1": "Sign-in and accounts",
+  "intro.noticeCant2": "Storing data, payments or emails",
+  "intro.noticeCant3": "Realtime multi-user features",
+  "intro.noticeOk": "Start describing",
 
   /* ② 填写信息 */
   "form.descLabel": "Describe the page you want",
@@ -48,10 +61,16 @@ const dict = {
   "waiting.help": "Ask staff for help",
   "waiting.errorCode": "Error",
 
-  /* ④ 完成 */
+  /* ④ 完成（手机端） */
   "done.title": "Your page is live!",
   "done.mailed": "The URL has also been emailed to: {email}",
   "done.restart": "Make one for a friend →",
+
+  /* ③' 已提交（电脑端：提交即释放） */
+  "sent.title": "Submitted — the AI takes it from here",
+  "sent.sub":
+    "Your page and stamp code will be emailed\nto the inbox below shortly — please wait.",
+  "sent.confirm": "Got it — next one, please",
 
   /* 凭证卡 */
   "cert.urlLabel": "Your page URL",
@@ -65,6 +84,10 @@ const dict = {
   "screen.onlinePost": " PAGES ONLINE",
   "screen.demo": "DEMO ×{n}",
   "screen.start": "Start building your page",
+  /* 大屏文字全场共见：中英同显，不随语言切换 */
+  "screen.qrMain":
+    "也可在自己设备上尝试!\nAlternatively, try it on your own device!",
+  "screen.qrAlt": "QR code to the start page",
 
   /* 大屏卡片外壳 */
   "film.proof": "PROOF",

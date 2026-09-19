@@ -239,12 +239,17 @@ function extractHtmlFromStdout(stdout: string): string | null {
   return html.length > 512 && /<html|<!doctype/i.test(html) ? html : null;
 }
 
-/** mock:3s 后产出内置示例页（无需 codex，本地开发/演练用） */
+/** mock:3s 后产出内置示例页（无需 codex，本地开发/演练用）。
+ *  描述里含 MOCK_FAIL 则模拟一次失败（E2E 验证失败邮件路径；仅 mock 生效） */
 async function mockGenerate(opts: GenOptions): Promise<GenResult> {
   const userText = fs.readFileSync(
     path.join(opts.workdir, "prompt.txt"),
     "utf-8",
   );
+  if (userText.includes("MOCK_FAIL")) {
+    await new Promise((r) => setTimeout(r, 1500));
+    return { ok: false, error: "mock 模拟失败（MOCK_FAIL）" };
+  }
   await new Promise((r) => setTimeout(r, 3000));
   const htmlPath = path.join(opts.workdir, "index.html");
   fs.writeFileSync(htmlPath, mockHtml(userText));
