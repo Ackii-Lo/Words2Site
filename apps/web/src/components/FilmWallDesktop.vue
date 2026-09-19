@@ -5,6 +5,8 @@ import { t } from "@/i18n";
 import type { WallItem } from "@/lib/wall";
 import {
   A0,
+  CARD_H,
+  CARD_W,
   HW,
   PERF,
   SPEED,
@@ -258,7 +260,14 @@ function renderBand(
     const cy = (h[3] * 0.5 + h[4] * 0.5 + h[5]) / den;
     el.style.transform = `translate3d(${cx.toFixed(2)}px,${cy.toFixed(2)}px,0)`;
     if (rec.inner && needsReshape(rec, h)) {
-      rec.inner.style.transform = matrix3d(centered(h, cx, cy), 146, 234);
+      // 内层相对外层原点自带 (-CARD_W/2, -CARD_H/2) 偏移（让卡心落在外层原点上），
+      // 所以单应要按「卡心 − 这个偏移」归位。写成 centered(h, cx, cy) 会让整张卡
+      // 往左上偏半张卡（e949835 引入，2026-09-19 线上截图比对时发现）。
+      rec.inner.style.transform = matrix3d(
+        centered(h, cx - CARD_W / 2, cy - CARD_H / 2),
+        CARD_W,
+        CARD_H,
+      );
     }
     const p = atLs(band.P, l);
     const veil =
