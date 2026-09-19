@@ -586,22 +586,41 @@ export function demoPage(index: number): string {
  * 390×625 = 卡片 146×234 等比放大，FilmCard 的 object-cover 不裁切；
  * SVG 按 intrinsic 尺寸布局后整体缩放，等效一张静态截图。
  * XHTML 内嵌 <svg> 必须自带 xmlns（XML 解析不认 HTML 的命名空间推断）。
+ * 按 index 记忆化：encodeURIComponent 构建是纯 CPU，轮询导致的重复调用
+ * 会攒出主线程尖峰。
  */
+const shotCache = new Map<number, string>();
 export function demoShot(index: number): string {
-  const spec = SPECS[index % SPECS.length];
-  const page =
-    `<svg xmlns="http://www.w3.org/2000/svg" width="390" height="625" viewBox="0 0 390 625">` +
-    `<foreignObject width="390" height="625">` +
-    `<div xmlns="http://www.w3.org/1999/xhtml" style="width:390px;height:625px;${shellStyle(spec)}">` +
-    `<style>* { margin: 0; box-sizing: border-box; }</style>` +
-    chrome(index) +
-    body(spec) +
-    `</div></foreignObject></svg>`;
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(page)}`;
+  let shot = shotCache.get(index);
+  if (shot === undefined) {
+    const spec = SPECS[index % SPECS.length];
+    const page =
+      `<svg xmlns="http://www.w3.org/2000/svg" width="390" height="625" viewBox="0 0 390 625">` +
+      `<foreignObject width="390" height="625">` +
+      `<div xmlns="http://www.w3.org/1999/xhtml" style="width:390px;height:625px;${shellStyle(spec)}">` +
+      `<style>* { margin: 0; box-sizing: border-box; }</style>` +
+      chrome(index) +
+      body(spec) +
+      `</div></foreignObject></svg>`;
+    shot = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(page)}`;
+    shotCache.set(index, shot);
+  }
+  return shot;
 }
 
-/** 模拟条目（与真实条目同构） */
-export function demoItems(count: number): Array<{
+/** 模拟条目（与真实条目同构）；按 count 记忆化，保证对象身份稳定，
+ *  轮询重新赋值 items 时下游 computed / v-for 才能真正跳过重渲染 */
+let itemsCache: {
+  count: number;
+  items: ReturnType<typeof buildDemoItems>;
+} | null = null;
+export function demoItems(count: number): ReturnType<typeof buildDemoItems> {
+  if (itemsCache?.count !== count) {
+    itemsCache = { count, items: buildDemoItems(count) };
+  }
+  return itemsCache.items;
+}
+function buildDemoItems(count: number): Array<{
   taskId: string;
   code: string | null;
   domain: string | null;

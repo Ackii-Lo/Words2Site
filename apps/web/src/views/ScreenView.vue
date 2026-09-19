@@ -9,7 +9,19 @@ import LanguageSwitch from "@/components/LanguageSwitch.vue";
 
 const items = ref<WallItem[]>([]);
 const demoCount = Number(new URLSearchParams(location.search).get("demo") ?? 0);
+// 演示条目只建一次（demoItems 已记忆化，身份稳定）
+const demo = demoCount > 0 ? demoItems(demoCount) : [];
 let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+/** 内容签名：墙消费的字段拼一串。url/prompt 发布后不变，createdAt 只影响排序（服务端排好） */
+const sigOf = (list: WallItem[]): string =>
+  list
+    .map(
+      (r) =>
+        `${r.taskId}|${r.code ?? ""}|${r.domain ?? ""}|${r.hasScreenshot ? 1 : 0}|${r.styleHint ?? ""}`,
+    )
+    .join(";");
+let lastSig: string | null = null;
 
 async function refresh() {
   let real: WallItem[] = [];
@@ -18,7 +30,12 @@ async function refresh() {
   } catch {
     /* 后端不可达：演示模式下仍可独立展示，真实模式留给空态 */
   }
-  items.value = demoCount > 0 ? [...real, ...demoItems(demoCount)] : real;
+  // 内容没变就不赋值：整体替换 items 会让整墙几十张卡重渲染
+  // （含 SVG 截图字符串重建），是轮询瞬间掉帧的元凶
+  const sig = sigOf(real);
+  if (sig === lastSig) return;
+  lastSig = sig;
+  items.value = [...real, ...demo];
 }
 onMounted(() => {
   void refresh();

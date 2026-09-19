@@ -138,7 +138,6 @@ const emptySvg =
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 let elapsed = 0; // 累计走带时间（s）；改名避免与 i18n 的 t() 撞名
 let last = performance.now();
-let paused = false;
 let raf = 0;
 /** 30fps 渲染门限：走带速度约 14px/s（屏幕），60→30fps 每帧位移 0.46px，肉眼无感 */
 const FRAME_MS = 33;
@@ -290,9 +289,9 @@ function frame(now: number) {
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
   lastRenderAt = now;
-  if (!paused && !reduced) elapsed += dt;
+  if (!reduced) elapsed += dt;
   const phase = elapsed * SPEED;
-  // 相位未变且没有待补的新卡片（悬停/减少动效）→ 画面无变化，整帧跳过
+  // 相位未变且没有待补的新卡片（减少动效）→ 画面无变化，整帧跳过
   if (phase === renderedPhase && !dirty) return;
   dirty = false;
   renderedPhase = phase;
@@ -316,13 +315,6 @@ function fit() {
     }
     renderedPhase = -1; // 重绘一帧
   }
-}
-
-function onEnter() {
-  paused = true;
-}
-function onLeave() {
-  paused = false;
 }
 
 onMounted(() => {
@@ -353,12 +345,7 @@ function onVis() {
 </script>
 
 <template>
-  <div
-    ref="wrap"
-    class="absolute inset-0 overflow-hidden bg-[#1C1917]"
-    @mouseenter="onEnter"
-    @mouseleave="onLeave"
-  >
+  <div ref="wrap" class="absolute inset-0 overflow-hidden bg-[#1C1917]">
     <div
       ref="stage"
       class="absolute left-0 top-0"

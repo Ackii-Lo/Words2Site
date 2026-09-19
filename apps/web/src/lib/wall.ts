@@ -9,7 +9,7 @@ export interface WallItem {
   prompt: string;
   hasScreenshot: boolean;
   createdAt: number;
-  demoIndex?: number; // 演示卡片：用 srcdoc
+  demoIndex?: number; // 演示卡片：内置 SVG 截图，走 img 路径
   /** 大屏卡片外壳（七式之一）。未传 → FilmCard 走 archive 默认。 */
   styleHint?: CardStyle | null;
 }
