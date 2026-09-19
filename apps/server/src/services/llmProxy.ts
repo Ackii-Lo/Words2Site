@@ -39,23 +39,26 @@ export function startLlmProxy(): void {
                 dirty = true;
               }
           }
-          // codex 对未知模型（glm-5.3）带过小的输出上限，生成整页 HTML 会打到
-          // 上限被截断 → 上游回 finish_reason:"length"，codex 0.92 将其误报为
-          // "ran out of room in the model's context window"。删除输出上限，
-          // 交由上游自然 stop（实测不带 max_tokens 时正常以 stop 收尾）。
-          for (const k of [
-            "max_tokens",
-            "max_completion_tokens",
-            "max_output_tokens",
-          ] as const) {
-            if (json[k] !== undefined) {
-              log(
-                "llm-proxy",
-                `移除输出上限 ${k}=${json[k]}（finish_reason:length 会被 codex 误判为上下文耗尽）`,
-              );
-              delete json[k];
-              dirty = true;
-            }
+          // codex 对未知模型（glm-5.3）不带 max_tokens，而网关上游是 Anthropic
+          // 协议（max_tokens 必填），new-api 转换时自填小默认（~4k）→ 生成整页
+          // HTML 被截断 → finish_reason:"length" → codex 0.92 误报为
+          // "ran out of room in the model's context window"。显式给足输出上限。
+          const MAX_OUT = 65536;
+          const cur =
+            json.max_tokens ??
+            json.max_completion_tokens ??
+            json.max_output_tokens;
+          if (cur === undefined || cur < MAX_OUT) {
+            if (json.max_completion_tokens !== undefined)
+              json.max_completion_tokens = MAX_OUT;
+            else if (json.max_output_tokens !== undefined)
+              json.max_output_tokens = MAX_OUT;
+            else json.max_tokens = MAX_OUT;
+            log(
+              "llm-proxy",
+              `输出上限 ${cur ?? "未带(网关会自填小默认)"} → ${MAX_OUT}（length 截断会被 codex 误判为上下文耗尽）`,
+            );
+            dirty = true;
           }
           if (dirty) body = Buffer.from(JSON.stringify(json), "utf-8");
         } catch {
