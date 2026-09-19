@@ -596,7 +596,7 @@ const emBase = (props.w / 146) * 12.5;
           <span
             class="italic text-[#F7D447]"
             style="
-              font-family: Georgia, &quot;SimSun&quot;, serif;
+              font-family: Georgia, SimSun, serif;
               font-size: 0.72em;
               letter-spacing: 1.5px;
             "
@@ -649,7 +649,7 @@ const emBase = (props.w / 146) * 12.5;
           <span
             class="text-[#F7D447]"
             style="
-              font-family: Georgia, &quot;SimSun&quot;, serif;
+              font-family: Georgia, SimSun, serif;
               font-size: 0.62em;
               letter-spacing: 1.5px;
             "

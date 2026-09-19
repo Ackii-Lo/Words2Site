@@ -6,4 +6,11 @@ data/
 .DS_Store
 .playwright-mcp/
 .husky/_/
-data/
+
+# build artifacts
+*.tsbuildinfo
+
+# runtime artifacts
+tasks/
+audio-tmp/
+logs/
