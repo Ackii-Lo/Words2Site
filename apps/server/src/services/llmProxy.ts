@@ -22,21 +22,42 @@ export function startLlmProxy(): void {
     req.on("error", () => res.destroy());
     req.on("end", () => {
       let body = Buffer.concat(chunks);
-      // 仅对 chat 请求改写 role（其他路径/非 JSON 原样透传）
+      // 仅对 chat 请求改写（其他路径/非 JSON 原样透传）
       if (req.url?.includes("/chat/completions")) {
         try {
           const json = JSON.parse(body.toString("utf-8")) as {
             messages?: Array<{ role: string }>;
+            max_tokens?: number;
+            max_completion_tokens?: number;
+            max_output_tokens?: number;
           };
+          let dirty = false;
           if (Array.isArray(json.messages)) {
-            let n = 0;
             for (const m of json.messages)
               if (m && m.role === "developer") {
                 m.role = "system";
-                n++;
+                dirty = true;
               }
-            if (n > 0) body = Buffer.from(JSON.stringify(json), "utf-8");
           }
+          // codex 对未知模型（glm-5.3）带过小的输出上限，生成整页 HTML 会打到
+          // 上限被截断 → 上游回 finish_reason:"length"，codex 0.92 将其误报为
+          // "ran out of room in the model's context window"。删除输出上限，
+          // 交由上游自然 stop（实测不带 max_tokens 时正常以 stop 收尾）。
+          for (const k of [
+            "max_tokens",
+            "max_completion_tokens",
+            "max_output_tokens",
+          ] as const) {
+            if (json[k] !== undefined) {
+              log(
+                "llm-proxy",
+                `移除输出上限 ${k}=${json[k]}（finish_reason:length 会被 codex 误判为上下文耗尽）`,
+              );
+              delete json[k];
+              dirty = true;
+            }
+          }
+          if (dirty) body = Buffer.from(JSON.stringify(json), "utf-8");
         } catch {
           /* 非 JSON body 不动 */
         }
